@@ -2,5 +2,5 @@ all:
 	javac *.java 
 	make -C sensors/
 clean:
-	rm -rf *.class
+	rm -f *.class
 	make -C sensors/ clean

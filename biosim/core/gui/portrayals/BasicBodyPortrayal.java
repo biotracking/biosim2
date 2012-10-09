@@ -33,8 +33,8 @@ public class BasicBodyPortrayal extends OvalPortrayal2D implements Oriented2D{
 	}
 	public void draw(Object object, Graphics2D graphics, DrawInfo2D info){
 		super.draw(object,graphics,info);
-		double width = info.draw.width*0.008;
-		double height = info.draw.height*0.008;
+		double width = info.draw.width*body.getSize();//0.008;
+		double height = info.draw.height*body.getSize();//0.008;
 		graphics.setColor(Color.red);
 		double d = orientation2D();
 		graphics.drawLine((int)info.draw.x, (int)info.draw.y,

@@ -6,7 +6,7 @@ import sim.util.MutableDouble2D;
 import java.util.ArrayList;
 
 import biosim.core.body.Body;
-import biosim.core.sim.Obstacle
+import biosim.core.sim.Obstacle;
 
 public class Environment{
 	public ArrayList<String> poi;
@@ -14,7 +14,7 @@ public class Environment{
 	public ArrayList<Obstacle> obstacles;
 	public ArrayList<Double2D> obstacleLocations;
 	public ArrayList<Body> initialBodies;
-	public ArrayList<Double2D> initalBodyLocations
+	public ArrayList<Double2D> initialBodyLocations;
 	public ArrayList<Double2D> initialBodyOrientations;
 	public double width, height;
 	
@@ -26,6 +26,8 @@ public class Environment{
 		initialBodies = new ArrayList<Body>();
 		initialBodyLocations = new ArrayList<Double2D>();
 		initialBodyOrientations = new ArrayList<Double2D>();
+		this.width=width;
+		this.height=height;
 	}
 	
 	public void addStaticPOI(String name, double x, double y){

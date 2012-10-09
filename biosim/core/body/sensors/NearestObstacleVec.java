@@ -1,7 +1,7 @@
 package biosim.core.body.sensors;
 
-import sim.util.Double2D;
+import sim.util.MutableDouble2D;
 public interface NearestObstacleVec {
-	public Double2D getNearestObstacleVec();
+	public boolean getNearestObstacleVec(MutableDouble2D rv);
 	public double getNearestObstacleVecSensorRange();
 }

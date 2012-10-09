@@ -1,4 +1,4 @@
 all:
-	make *.java
+	javac *.java
 clean:
-	rm -rf *.class
+	rm -f *.class
