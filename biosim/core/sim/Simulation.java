@@ -17,15 +17,6 @@ public class Simulation extends SimState{
 	public ArrayList<Double2D> bodyOrientations;
 	public double resolution;	
 
-	/*
-	public Simulation(Environment e){
-		super(System.currentTimeMillis());
-		bodies = new ArrayList<Body>();
-		bodyOrientations = new ArrayList<Double2D>();
-		env = e;
-		field2D = new Continuous2D(1,env.width,env.height);
-	}
-	*/
 	public Simulation(long seed){
 		super(seed);
 		bodies = new ArrayList<Body>();
@@ -39,28 +30,12 @@ public class Simulation extends SimState{
 	
 	public void start(){
 		super.start();
-		//System.out.println("Starting!");
-		/*
+
 		bodies.clear();
 		bodyOrientations.clear();
-		field2D = new Continuous2D(fieldDiscretization,env.width, env.height);
-		for(int i=0;i<env.obstacles.size();i++){
-			Double2D tmp = env.obstacleLocations.get(env.obstacles.get(i));
-			if(tmp == null){
-				tmp = new Double2D(
-			}
-			field2D.setObjectLocation(env.obstacles.get(i),env.obstacleLocations.get(i));
-		}
-		for(int i=0;i<env.poi.size();i++){
-			field2D.setObjectLocation(env.poi.get(i),env.poiLocations.get(i));
-		}
-		for(int i=0;i<env.initialBodies.size();i++){
-			field2D.setObjectLocation(env.initialBodies.get(i),env.initialBodyLocations.get(i));
-			bodies.add(env.initialBodies.get(i));
-			bodyOrientations.add(env.initialBodyOrientations.get(i));
-			//System.out.println("B"+i+":"+field2D.getObjectLocation(bodies.get(i)));
-		}
-		*/
+		obstacles.clear();
+		poi.clear();
+		
 		env.configSim(this);
 		for(int i=0;i<bodies.size();i++){
 			schedule.scheduleRepeating(bodies.get(i));

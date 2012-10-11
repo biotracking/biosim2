@@ -54,6 +54,7 @@ public class Environment implements MakesSimState{
 		configSim(sim);
 		return sim;
 	}
+
 	public Class simulationClass(){ return Simulation.class; }
 	
 	/**
@@ -69,12 +70,74 @@ public class Environment implements MakesSimState{
 		return sim;
 	}
 
+	protected void addObjectsToSim(Simulation sim){
+		for(int i=0;i<obstacles.size();i++){
+			sim.obstacles.add(obstacles.get(i));
+		}
+		for(int i=0;i<poi.size();i++){
+			sim.poi.add(poi.get(i));
+		}
+		for(int i=0;i<initialBodies.size();i++){
+			sim.bodies.add(initialBodies.get(i));
+		}
+	
+	}
+
+	/**
+	 * Method which initializes the Simulation object's internal field2D. A Simulation 
+	 * object does not initalize it's internal field2D object in its constructor 
+	 * because it may not have access to an Environment object until after it has been
+	 * created. By default Obstacle and POI objects are initialized at fixed locations
+	 * and Body objects are initialized to random locations within the field2D that
+	 * do not collide with any obstacle. Users are encouraged to override this method
+	 * for more control over how object locations are initialized. 
+	 */
+	protected void initSimField(Simulation sim){
+		for(int i=0;i<obstacles.size();i++){
+			Double2D tmp = obstacleLocations.get(i);
+			sim.field2D.setObjectLocation(obstacles.get(i),tmp);
+		}
+		for(int i=0;i<poi.size();i++){
+			sim.field2D.setObjectLocation(poi.get(i),poiLocations.get(i));
+		}
+		for(int i=0;i<initialBodies.size();i++){
+			Double2D tmp;
+			Body b = initialBodies.get(i);
+			boolean collides;
+			do{
+				tmp = new Double2D(sim.random.nextDouble()*width, sim.random.nextDouble()*height);
+				collides = false;
+				for(int j=0;j<obstacles.size();j++){
+					Double2D objLoc = obstacleLocations.get(j);
+					if(tmp.distance(obstacles.get(j).closestPoint(tmp,objLoc)) < b.getSize()){
+						collides = true;
+						break;
+					}
+				}
+			} while(collides);
+			sim.field2D.setObjectLocation(b,tmp);
+			tmp = new Double2D(sim.random.nextDouble(),sim.random.nextDouble()).normalize();
+			sim.bodyOrientations.add(tmp);
+		}
+	
+	}
+	
+	/**
+	 * Method which sets up a simulation according to the configuration
+	 * modeled by this class. This method is called by newSimulation()
+	 * and runSimulation() on newly created Simulation objects, and by
+	 * Simulation.start(). It in turn calls addObjectsToSim(...) to
+	 * add Body, Obstacle, and POI objects to the Simulation object, and
+	 * then initSimField(sim) to add these objects to its field2D.
+	 * Users who want control over where Body objects are initally
+	 * placed should override the initSimField method in a subclass.
+	 */
 	protected void configSim(Simulation sim){
 		sim.resolution=resolution;
-		sim.bodies.clear();
-		sim.bodyOrientations.clear();
-		sim.obstacles.clear();
-		sim.poi.clear();
+		sim.field2D = new Continuous2D(fieldDiscretizationSize,width,height);
+		addObjectsToSim(sim);
+		initSimField(sim);
+		/*
 		sim.field2D = new Continuous2D(fieldDiscretizationSize,width,height);
 		for(int i=0;i<obstacles.size();i++){
 			Double2D tmp = obstacleLocations.get(i);
@@ -105,6 +168,7 @@ public class Environment implements MakesSimState{
 			tmp = new Double2D(sim.random.nextDouble(),sim.random.nextDouble()).normalize();
 			sim.bodyOrientations.add(tmp);
 		}
+		*/
 	}
 	
 	public void runSimulation(String[] args){
