@@ -1,4 +1,4 @@
-import core.util.annwrapper.SimpleANN;
+import biosim.core.util.annwrapper.SimpleANN;
 public class Test{
 	public static void main(String[] args){
 		System.loadLibrary("annwrapper");

@@ -12,10 +12,12 @@ public class Simulation extends SimState{
 	public Environment env;
 	public Continuous2D field2D;
 	public ArrayList<Body> bodies;
+	public ArrayList<Obstacle> obstacles;
+	public ArrayList<String> poi;
 	public ArrayList<Double2D> bodyOrientations;
 	public double resolution;	
-	private String cmdLineArgs = null;
 
+	/*
 	public Simulation(Environment e){
 		super(System.currentTimeMillis());
 		bodies = new ArrayList<Body>();
@@ -23,13 +25,30 @@ public class Simulation extends SimState{
 		env = e;
 		field2D = new Continuous2D(1,env.width,env.height);
 	}
-
+	*/
+	public Simulation(long seed){
+		super(seed);
+		bodies = new ArrayList<Body>();
+		bodyOrientations = new ArrayList<Double2D>();
+		obstacles = new ArrayList<Obstacle>();
+		poi = new ArrayList<String>();
+		field2D = null;
+		env = null;
+		resolution = 0.0;
+	}
+	
 	public void start(){
 		super.start();
 		//System.out.println("Starting!");
+		/*
 		bodies.clear();
 		bodyOrientations.clear();
+		field2D = new Continuous2D(fieldDiscretization,env.width, env.height);
 		for(int i=0;i<env.obstacles.size();i++){
+			Double2D tmp = env.obstacleLocations.get(env.obstacles.get(i));
+			if(tmp == null){
+				tmp = new Double2D(
+			}
 			field2D.setObjectLocation(env.obstacles.get(i),env.obstacleLocations.get(i));
 		}
 		for(int i=0;i<env.poi.size();i++){
@@ -41,18 +60,11 @@ public class Simulation extends SimState{
 			bodyOrientations.add(env.initialBodyOrientations.get(i));
 			//System.out.println("B"+i+":"+field2D.getObjectLocation(bodies.get(i)));
 		}
+		*/
+		env.configSim(this);
 		for(int i=0;i<bodies.size();i++){
 			schedule.scheduleRepeating(bodies.get(i));
 		}
-	}
-	public void runSimulation(long steps){
-		start();
-		long step;
-		do {
-			if(!schedule.step(this)) break;
-			step = schedule.getSteps();
-		} while(step < steps);
-		finish();
 	}
 
 	public void finish(){
@@ -65,9 +77,6 @@ public class Simulation extends SimState{
 		*/
 	}
 	
-	public void setResolution(double secondsPerStep){
-		resolution = secondsPerStep;
-	}
 	public boolean getBodyOrientation(Body b,MutableDouble2D rv){
 		for(int i=0;i<bodies.size();i++){
 			if(bodies.get(i) == b){

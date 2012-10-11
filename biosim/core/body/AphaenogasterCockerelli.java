@@ -38,9 +38,9 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 		Double2D loc = sim.field2D.getObjectLocation(this);
 		MutableDouble2D dir = new MutableDouble2D();
 		if(sim.getBodyOrientation(this,dir)){
-			for(int i=0;i<sim.env.poi.size();i++){
-				if(sim.env.poi.get(i).equalsIgnoreCase("nest")){
-					Double2D nestLoc = sim.env.poiLocations.get(i);
+			for(int i=0;i<sim.poi.size();i++){
+				if(sim.poi.get(i).equalsIgnoreCase("nest")){
+					Double2D nestLoc = sim.field2D.getObjectLocation(sim.poi.get(i));
 					rv.setTo(nestLoc);
 					rv.subtractIn(loc);
 					rv.rotate(-dir.angle());
@@ -56,9 +56,9 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 		MutableDouble2D dir = new MutableDouble2D();
 		if(sim.getBodyOrientation(this,dir)){
 			MutableDouble2D nearestObsPoint = null;
-			for(int i=0;i<sim.env.obstacles.size();i++){
-				Double2D tmpPoint = sim.env.obstacleLocations.get(i);
-				MutableDouble2D mutTmp = new MutableDouble2D(sim.env.obstacles.get(i).closestPoint(loc,tmpPoint));
+			for(int i=0;i<sim.obstacles.size();i++){
+				Double2D tmpPoint = sim.field2D.getObjectLocation(sim.obstacles.get(i));
+				MutableDouble2D mutTmp = new MutableDouble2D(sim.obstacles.get(i).closestPoint(loc,tmpPoint));
 				mutTmp.subtractIn(loc);
 				mutTmp.rotate(-dir.angle());
 				if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
@@ -78,7 +78,7 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 		Double2D loc = sim.field2D.getObjectLocation(this);
 		MutableDouble2D dir = new MutableDouble2D();
 		if(sim.getBodyOrientation(this,dir)){
-			Bag nearest = sim.field2D.getObjectsExactlyWithinDistance(loc,RANGE);
+			Bag nearest = sim.field2D.getAllObjects();//sim.field2D.getObjectsExactlyWithinDistance(loc,RANGE);
 			MutableDouble2D nearestLoc = null;
 			for(int i=0;i<nearest.numObjs;i++){
 				if(nearest.objs[i] instanceof AphaenogasterCockerelli){
@@ -159,13 +159,11 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 			}
 			Double2D oldLoc = sim.field2D.getObjectLocation(this);
 			Double2D newLoc = new Double2D(oldLoc.x+(xVel*sim.resolution),oldLoc.y+(yVel*sim.resolution));
-			//System.out.println("Old:"+oldLoc);
-			//System.out.println("New:"+newLoc);
 			//for now, just check against all obstacles defined in the Environment object, since the
 			//continuous field doesn't have a sense of the extent of large obstacles
 			boolean collides = false;
-			for(int i=0;i<sim.env.obstacles.size();i++){
-				Obstacle o = sim.env.obstacles.get(i);
+			for(int i=0;i<sim.obstacles.size();i++){
+				Obstacle o = sim.obstacles.get(i);
 				if(newLoc.distance(o.closestPoint(newLoc,sim.field2D.getObjectLocation(o)))<SIZE){
 					collides = true;
 					//System.out.println("Collision!");

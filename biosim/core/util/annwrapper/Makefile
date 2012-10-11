@@ -1,13 +1,13 @@
 UNAME := $(shell uname)
-ifeq ($(UNAME), Darwin)
 #Mac
+ifeq ($(UNAME), Darwin)
 LIBNAME := libannwrapper.dylib
 JNI_INC := -I/System/Library/Frameworks/javaVM.framework/Headers
 libannwrapper.dylib: simple_ann.o annwrapper_wrap.o ann/lib/libANN.a
 	g++ -shared simple_ann.o annwrapper_wrap.o ann/lib/libANN.a -o libannwrapper.dylib
 endif
-ifeq($(UNAME), Linux)
 #Linux
+ifeq ($(UNAME), Linux)
 LIBNAME := libannwrapper.so
 libannwrapper.so: simple_ann.o annwrapper_wrap.o  ann/src/*.o
 	g++ -shared simple_ann.o annwrapper_wrap.o ann/src/*.o -o libannwrapper.so

@@ -109,6 +109,11 @@ public class GUISimulation extends GUIState {
 		setupPortrayals();
 	}
 	
+	public void load(SimState s){
+		super.load(s);
+		setupPortrayals();
+	}
+	
 	public void init(Controller c){
 		super.init(c);
 		if(state instanceof Simulation){
