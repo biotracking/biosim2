@@ -8,6 +8,7 @@ import biosim.core.body.Body;
 import biosim.core.body.AphaenogasterCockerelli;
 import biosim.core.agent.Agent;
 import biosim.core.gui.GUISimulation;
+//import biosim.core.util.BTFLogger;
 public class Tutorial {
 	public static final double WIDTH=0.2;
 	public static final double HEIGHT=0.2;
@@ -33,6 +34,7 @@ public class Tutorial {
 		}
 		//env.runSimulation(args);
 		Simulation sim = env.newSimulation();
+		sim.addLogger(new AvoidAntLogger());
 		GUISimulation gui = new GUISimulation(sim);
 		gui.createController();
 	}

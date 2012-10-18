@@ -13,7 +13,11 @@ public class BTFData{
 	public BTFData(){
 		columns = new HashMap<String,File>();
 	}
-	public void loadBTF(File parentDirectory){
+	public void loadBTF(File btfFile){
+		String columnName = btfFile.getName().split("\\.")[0];
+		columns.put(columnName,btfFile);
+	}
+	public void loadDir(File parentDirectory){
 		if(parentDirectory.isDirectory()){
 			File[] btfFiles = parentDirectory.listFiles(new FileFilter(){
 					public boolean accept(File pathname){

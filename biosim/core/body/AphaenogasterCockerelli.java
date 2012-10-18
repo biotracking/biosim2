@@ -142,6 +142,7 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 			MutableDouble2D curDir = new MutableDouble2D();
 			sim.getBodyOrientation(this,curDir);
 			tmp.rotate(curDir.angle());
+			/*
 			desiredVelXYT[0] = tmp.x;
 			desiredVelXYT[1] = tmp.y;
 			double velMag = Math.sqrt(Math.pow(desiredVelXYT[0],2)+Math.pow(desiredVelXYT[1],2));
@@ -154,6 +155,20 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 			}
 			if(desiredVelXYT[2] > MAX_VELOCITY_THETA){
 				tVel = MAX_VELOCITY_THETA;
+			} else {
+				tVel = desiredVelXYT[2];
+			}
+			*/
+			double velMag = Math.sqrt(Math.pow(tmp.x,2)+Math.pow(tmp.y,2));
+			if(velMag > MAX_VELOCITY_XY){
+				xVel = (tmp.x/velMag)*MAX_VELOCITY_XY;
+				yVel = (tmp.y/velMag)*MAX_VELOCITY_XY;
+			} else {
+				xVel = tmp.x;
+				yVel = tmp.y;
+			}
+			if(Math.abs(desiredVelXYT[2]) > MAX_VELOCITY_THETA){
+				tVel = MAX_VELOCITY_THETA*Math.signum(desiredVelXYT[2]);
 			} else {
 				tVel = desiredVelXYT[2];
 			}
