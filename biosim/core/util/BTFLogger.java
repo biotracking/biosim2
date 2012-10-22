@@ -42,11 +42,11 @@ public class BTFLogger implements Logger{
 	}
 	public void finish(){
 		try{
-			FileWriter xout = new FileWriter(new File(parentDirectory,"ximage.btf"));
-			FileWriter yout = new FileWriter(new File(parentDirectory,"yimage.btf"));
+			FileWriter xout = new FileWriter(new File(parentDirectory,"xpos.btf"));
+			FileWriter yout = new FileWriter(new File(parentDirectory,"ypos.btf"));
 			FileWriter tout = new FileWriter(new File(parentDirectory,"timage.btf"));
 			FileWriter idout = new FileWriter(new File(parentDirectory,"id.btf"));
-			FileWriter timeout = new FileWriter(new File(parentDirectory,"timestamp.btf"));
+			FileWriter timeout = new FileWriter(new File(parentDirectory,"clocktime.btf"));
 			for(int i=0;i<timestamp.size();i++){
 				xout.write(ximage.get(i)+"\n");
 				yout.write(yimage.get(i)+"\n");
