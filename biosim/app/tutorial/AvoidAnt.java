@@ -8,7 +8,7 @@ public class AvoidAnt implements Agent {
 	public AvoidAnt(AbstractAnt b){
 		antBody = b;
 	}
-	public double[] act(long time){
+	public double[] act(double time){
 		double[] rv = new double[3];
 		//our default is to move forward in a straight line
 		rv[0] = 0.024; 	//24mm per second straight ahead

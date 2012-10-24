@@ -29,8 +29,8 @@ public class AddSensorsBTF{
 				FileWriter antBoolOut = new FileWriter(new File(cwd,"antbool.btf"));
 				FileWriter desiredVelOut = new FileWriter(new File(cwd,"dvel.btf"));
 				FileWriter desiredBoolOut = new FileWriter(new File(cwd,"dbool.btf"));
-				for(int i=0;i<data.get("id").length;i++){
-					if(i%(data.get("id").length/10)==0){
+				for(int i=0;i<data.get("clocktime").length;i++){
+					if(i%(data.get("clocktime").length/10)==0){
 						System.out.println("On track "+i+" of "+data.get("id").length);
 					}
 					//find the end of the block
