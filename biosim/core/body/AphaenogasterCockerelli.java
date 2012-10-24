@@ -136,7 +136,7 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 	public void step(SimState simstate){
 		if(simstate instanceof Simulation){
 			sim= (Simulation)simstate;
-			desiredVelXYT = agent.act(sim.schedule.getSteps());
+			desiredVelXYT = agent.act(sim.schedule.getSteps()*sim.resolution);
 			//rotate back to global frame
 			MutableDouble2D tmp = new MutableDouble2D(desiredVelXYT[0],desiredVelXYT[1]);
 			MutableDouble2D curDir = new MutableDouble2D();

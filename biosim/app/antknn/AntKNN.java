@@ -23,7 +23,7 @@ public class AntKNN implements Agent{
 		antBody = b;
 		this.knn = knn;
 	}
-	public double[] act(long time){
+	public double[] act(double time){
 		double[] rv = new double[3];
 		MutableDouble2D ant = new MutableDouble2D();
 		boolean sawAnt = antBody.getNearestSameAgentVec(ant);

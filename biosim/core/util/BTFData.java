@@ -39,9 +39,11 @@ public class BTFData{
 		if(col != null){
 			BufferedReader buf = new BufferedReader(new FileReader(col));
 			String line = buf.readLine();
-			while(line != null && buf.ready()){
+			while(line != null){// && buf.ready()){
 				data.add(line);
-				line = buf.readLine();
+				if(buf.ready())
+					line = buf.readLine();
+				else line = null;
 			}
 		}
 		return data.toArray(rv);
