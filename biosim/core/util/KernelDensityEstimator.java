@@ -13,6 +13,8 @@ public class KernelDensityEstimator{
 	private SimpleANN kdann;
 	private int dimensionality;
 	private Kernel kernel;
+	private boolean clean;
+	private double[] djk;
 	
 	static { System.loadLibrary("annwrapper"); }
 	
@@ -21,6 +23,7 @@ public class KernelDensityEstimator{
 		kdann = new SimpleANN(dim);
 		samples = new ArrayList<double[]>();
 		this.kernel = kernel;
+		clean = false;
 	}
 	
 	public void add(double[] sample){
@@ -28,6 +31,7 @@ public class KernelDensityEstimator{
 		System.arraycopy(sample,0,tmp_s,0,tmp_s.length);
 		samples.add(tmp_s);
 		kdann.add(sample);
+		clean = false;
 	}
 	
 	public double estimate(double[] target, double bandwidth){
@@ -43,22 +47,31 @@ public class KernelDensityEstimator{
 	}
 	
 	public double adaptive_bandwidth_estimate(double[] target, double bandwidth, int k){
-		double sum=0.0, d_jk=0.0;
+		double sum=0.0;
 		double[] tmp = new double[target.length];
-		double[] kth_neighbor, current_sample;
-		int[] neighborIDX = new int[k];
+		double[] current_sample;
+		if(!clean){
+			int[] neighborIDX = new int[k];
+			double[] kth_neighbor;
+			djk = new double[samples.size()];
+			for(int i=0;i<samples.size();i++){
+				djk[i] = 0.0;
+				current_sample = samples.get(i);
+				kdann.query(current_sample, neighborIDX,k);
+				kth_neighbor = samples.get(neighborIDX[k-1]);
+				for(int j=0;j<current_sample.length;j++){
+					djk[i] += Math.pow(current_sample[j] - kth_neighbor[j],2);
+				}
+				djk[i] = Math.sqrt(djk[i]);
+			}
+			clean = true;
+		}
 		for(int i=0;i<samples.size();i++){
 			current_sample = samples.get(i);
-			if(!kdann.query(current_sample, neighborIDX,k)) System.out.println("ANN query failed");
-			kth_neighbor = samples.get(neighborIDX[k-1]);
-			for(int j=0;j<current_sample.length;j++){
-				d_jk += Math.pow(current_sample[j] - kth_neighbor[j],2);
-			}
-			d_jk = Math.sqrt(d_jk);
 			for(int j=0;j<target.length;j++){
-				tmp[j] = (target[j] - current_sample[j])/(bandwidth*d_jk);
+				tmp[j] = (target[j] - current_sample[j])/(bandwidth*djk[i]);
 			}
-			sum += kernel.k(tmp)*(1.0/bandwidth*d_jk);
+			sum += kernel.k(tmp)*Math.pow(bandwidth*djk[i],-target.length);
 		}
 		return (1.0/(samples.size()))*sum;
 	}
@@ -86,7 +99,7 @@ public class KernelDensityEstimator{
 			System.out.println("Usage: java KernelDensityEstimator <SamplesFilename>");
 		} else {
 			try{
-				KernelDensityEstimator kde = new KernelDensityEstimator(1,new NormalKernel(1));
+				KernelDensityEstimator kde = new KernelDensityEstimator(1,new NormalKernel(0.25));
 				System.out.println("#Adding data");
 				BufferedReader bRead = new BufferedReader(new FileReader(args[0]));
 				String line = bRead.readLine();
@@ -102,8 +115,8 @@ public class KernelDensityEstimator{
 				System.out.println("#Generating estimated output, range:[-5,15), step size:0.01");
 				for(double i = -5.0;i<15.0;i+= 0.01){
 					tmp[0] = i;
-					//double estimate = kde.estimate(tmp,1);
-					double estimate = kde.adaptive_bandwidth_estimate(tmp,1,5);
+					double estimate = kde.estimate(tmp,1);
+					//double estimate = kde.adaptive_bandwidth_estimate(tmp,15,10);
 					System.out.println(i+" "+estimate);
 				}
 				System.out.println("#Done!");
