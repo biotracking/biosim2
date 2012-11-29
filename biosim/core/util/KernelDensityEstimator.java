@@ -26,6 +26,8 @@ public class KernelDensityEstimator{
 		clean = false;
 	}
 	
+	public int numSamples(){ return samples.size(); }
+	
 	public void add(double[] sample){
 		double[] tmp_s = new double[sample.length];
 		System.arraycopy(sample,0,tmp_s,0,tmp_s.length);
@@ -46,6 +48,24 @@ public class KernelDensityEstimator{
 		return (1.0/(samples.size()*bandwidth))*sum;
 	}
 	
+	/**
+	 * Estimate f(x) using an adaptive bandwidth.  Kernel density estimates that
+	 * use fixed bandwidth can have issues in areas of the space with few sample
+	 * points. An adaptive bandwidth estimate adjusts the width of the kernel
+	 * at each sample point according to the distance from that sample point to 
+	 * it's kth nearest neighbor (d_jk). The exact equation used is:
+	 * 
+	 * f(x) = 1/n sum( (bandwidth*d_jk)^(-M) K( (x - x_i) / (bandwidth*d_jk) )
+	 * 
+	 * where M is the dimensionality of x, and K is the kernel. According to
+	 * Breiman, Meisel, and Purcell (who original proposed this technique in 1977)
+	 * finding a good combination of k and the bandwidth can be difficult. They
+	 * suggest starting with k = 10% of the number of sample points, or by
+	 * plotting the average value of d_jk versus k and using a value for k
+	 * "past the knee of the curve", and then optimizing a goodness of fit
+	 * metric by making small changes to k and d_jk individually.  They note 
+	 * that small values of k usually lead to very poor results.
+	 **/
 	public double adaptive_bandwidth_estimate(double[] target, double bandwidth, int k){
 		double sum=0.0;
 		double[] tmp = new double[target.length];
@@ -115,8 +135,8 @@ public class KernelDensityEstimator{
 				System.out.println("#Generating estimated output, range:[-5,15), step size:0.01");
 				for(double i = -5.0;i<15.0;i+= 0.01){
 					tmp[0] = i;
-					double estimate = kde.estimate(tmp,1);
-					//double estimate = kde.adaptive_bandwidth_estimate(tmp,15,10);
+					//double estimate = kde.estimate(tmp,1);
+					double estimate = kde.adaptive_bandwidth_estimate(tmp,1,kde.numSamples()/10);
 					System.out.println(i+" "+estimate);
 				}
 				System.out.println("#Done!");

@@ -20,13 +20,11 @@ public class AvoidAnt implements Agent {
 		MutableDouble2D wall = new MutableDouble2D();
 		boolean sawWall = antBody.getNearestObstacleVec(wall);
 		MutableDouble2D avoidPoint = null;
-		if(sawWall && sawAnt){
-			avoidPoint = (ant.lengthSq() >= wall.lengthSq())?wall:ant;
-		} else if(sawWall){
+		if(sawWall){
 			avoidPoint = wall;
-		} else if(sawAnt){
+		} else if (sawAnt){
 			avoidPoint = ant;
-		} 
+		}
 		if(avoidPoint != null){
 			if(avoidPoint.y > 0) rv[2] = -40.0*(Math.PI/180.0);
 			else rv[2] = 40.0*(Math.PI/180.0);

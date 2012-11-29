@@ -44,19 +44,14 @@ public class TwoStateAnt implements Agent {
 		if(state == AVOID){
 			timeAvoiding += time - lastTime;
 			MutableDouble2D avoidPoint = null;
-			if(sawWall && sawAnt){
-				avoidPoint = (ant.lengthSq() >= wall.lengthSq())?wall:ant;
-			} else if(sawWall){
+			if(sawWall){
 				avoidPoint = wall;
 			} else if(sawAnt){
 				avoidPoint = ant;
 			} 
 			if(avoidPoint != null){
-				rv[2] = Math.toRadians(-40.0)*Math.signum(avoidPoint.angle());
-				/*
 				if(avoidPoint.y > 0) rv[2] = Math.toRadians(-40.0);
 				else rv[2] = Math.toRadians(40.0);
-				*/
 			}
 			if(timeAvoiding > AVOID_TIME){
 				timeAvoiding = 0.0;
