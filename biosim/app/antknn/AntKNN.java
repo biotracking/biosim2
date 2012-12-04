@@ -17,6 +17,7 @@ import java.io.IOException;
 
 
 public class AntKNN implements Agent{
+	public static final int FEATURE_DIM = 4;
 	AbstractAnt antBody;
 	FastKNN knn;
 	double[] prevVel ={0.0, 0.0, 0.0};
@@ -26,6 +27,7 @@ public class AntKNN implements Agent{
 		this.knn = knn;
 	}
 	public double[] act(double time){
+		//System.out.println("Ant body:"+antBody);
 		double[] rv = new double[3];
 		MutableDouble2D ant = new MutableDouble2D();
 		boolean sawAnt = antBody.getNearestSameAgentVec(ant);
@@ -33,17 +35,18 @@ public class AntKNN implements Agent{
 		boolean sawWall = antBody.getNearestObstacleVec(wall);
 		MutableDouble2D home = new MutableDouble2D();
 		boolean sawHome = antBody.getHomeDir(home);
-		double[] sensorVec = new double[9];
-		double[][] nearestK = new double[10][3];
+		double[] sensorVec = new double[FEATURE_DIM];
+		double[][] nearestK = new double[5][3];
 		sensorVec[0] = ant.x;
 		sensorVec[1] = ant.y;
 		sensorVec[2] = wall.x;
 		sensorVec[3] = wall.y;
-		sensorVec[4] = home.x;
-		sensorVec[5] = home.y;
-		sensorVec[6] = prevVel[0];
-		sensorVec[7] = prevVel[1];
-		sensorVec[8] = prevVel[2];
+		//System.out.println("Sensor vec: ["+sensorVec[0]+", "+sensorVec[1]+", "+sensorVec[2]+", "+sensorVec[3]+"]");
+		//sensorVec[4] = home.x;
+		//sensorVec[5] = home.y;
+		//sensorVec[6] = prevVel[0];
+		//sensorVec[7] = prevVel[1];
+		//sensorVec[8] = prevVel[2];
 		knn.query(sensorVec,nearestK);
 		//now, do median, average, or random selection
 		//average
@@ -58,24 +61,27 @@ public class AntKNN implements Agent{
 		prevVel[0] = rv[0];
 		prevVel[1] = rv[1];
 		prevVel[2] = rv[2];
+		//System.out.println("rv: ["+rv[0]+", "+rv[1]+", "+rv[2]+"]");
 		return rv;
 	}
 	
 	public static FastKNN loadKNN(BTFData btf) throws IOException{
-		FastKNN knn = new FastKNN(9,3);
+		System.out.println("[AntKNN] Loading BTF data...");
+		FastKNN knn = new FastKNN(FEATURE_DIM,3);
 		String[] desiredVel = btf.loadColumn("dvel");
 		String[] desiredVelBool = btf.loadColumn("dbool");
 		String[] wallVec = btf.loadColumn("wallvec");
-		//String[] wallBool = btf.loadColumn("wallbool");
+		String[] wallBool = btf.loadColumn("wallbool");
 		String[] antVec = btf.loadColumn("antvec");
-		//String[] antBool = btf.loadColumn("antbool");
+		String[] antBool = btf.loadColumn("antbool");
 		String[] homeVec = btf.loadColumn("homevec");
 		String[] prevVec = btf.loadColumn("pvel");
 		String[] prevBoolVec = btf.loadColumn("pbool");
 		int numRows = desiredVel.length;
-		double[] sample = new double[9];
+		double[] sample = new double[FEATURE_DIM];
 		double[] velclass = new double[3];
 		for(int i=0;i<numRows;i++){
+			if(i%(numRows/10)==0) System.out.println("[AntKNN] "+i+"/"+numRows);
 			if(Boolean.parseBoolean(desiredVelBool[i])){
 				String[] tmp = desiredVel[i].split(" ");
 				velclass[0] = Double.parseDouble(tmp[0]);
@@ -87,16 +93,19 @@ public class AntKNN implements Agent{
 				tmp = wallVec[i].split(" ");
 				sample[2] = Double.parseDouble(tmp[0]);
 				sample[3] = Double.parseDouble(tmp[1]);
-				tmp = homeVec[i].split(" ");
-				sample[4] = Double.parseDouble(tmp[0]);
-				sample[5] = Double.parseDouble(tmp[1]);
-				tmp = prevVec[i].split(" ");
-				sample[6] = Double.parseDouble(tmp[0]);
-				sample[7] = Double.parseDouble(tmp[1]);
-				sample[8] = Double.parseDouble(tmp[2]);
+				//tmp = homeVec[i].split(" ");
+				//sample[4] = Double.parseDouble(tmp[0]);
+				//sample[5] = Double.parseDouble(tmp[1]);
+				//tmp = prevVec[i].split(" ");
+				//sample[6] = Double.parseDouble(tmp[0]);
+				//sample[7] = Double.parseDouble(tmp[1]);
+				//sample[8] = Double.parseDouble(tmp[2]);
 				knn.add(sample,velclass);
 			}
 		}
+		//sigmaNormalize currently broken, don't use it! (Dec 4th, 2012)
+		//knn.sigmaNormalize();
+		System.out.println("[AntKNN] Done!");
 		return knn;
 	}
 	

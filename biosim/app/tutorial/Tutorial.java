@@ -34,7 +34,7 @@ public class Tutorial {
 		}
 		//env.runSimulation(args);
 		Simulation sim = env.newSimulation();
-		//sim.addLogger(new AvoidAntLogger());
+		sim.addLogger(new AvoidAntLogger());
 		GUISimulation gui = new GUISimulation(sim);
 		gui.createController();
 	}

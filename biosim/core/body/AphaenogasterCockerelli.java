@@ -14,7 +14,7 @@ import biosim.core.sim.RectObstacle;
 
 
 public class AphaenogasterCockerelli extends AbstractAnt {
-	public double[] desiredVelXYT;
+	public double[] desiredVelXYT, previousVelXYT;
 	private double xVel, yVel, tVel;
 	private Simulation sim; //most recent sim object
 	
@@ -30,6 +30,8 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 
 	public AphaenogasterCockerelli(){
 		desiredVelXYT = new double[3];
+		previousVelXYT = new double[3];
+		previousVelXYT[0] = previousVelXYT[1] = previousVelXYT[2] = 0.0;
 	}
 
 	public double getSize(){ return SIZE; }
@@ -186,8 +188,13 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 				}
 			}
 			if(!collides){
+				previousVelXYT[0] = xVel;
+				previousVelXYT[1] = yVel;
 				sim.field2D.setObjectLocation(this,newLoc);
+			} else {
+				previousVelXYT[0] = previousVelXYT[1] = 0.0;
 			}
+			previousVelXYT[2] = tVel;
 			for(int i=0;i<sim.bodies.size();i++){
 				if(sim.bodies.get(i) == this){
 					MutableDouble2D oldDir = new MutableDouble2D(sim.bodyOrientations.get(i));

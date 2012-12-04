@@ -25,6 +25,17 @@ public class BIOHMM{
 		transitionFunction = new double[numStates][numStates][(int)Math.pow(2,binarySwitchNames.length)];
 		prior = new double[numStates];
 		partition = new int[data.loadColumn("id").length];
+		for(int i=0;i<numStates;i++){
+			for(int j=0;j<numStates;j++){
+				for(int k=0;k<(int)Math.pow(2,binarySwitchNames.length);k++){
+					transitionFunction[i][j][k] = 1.0/(numStates*numStates);
+				}
+			}
+			prior[i] = 1.0/numStates;
+		}
+		for(int i=0;i<partition.length;i++){
+			partition[i] = (int)Math.floor(i/(partition.length/numStates));
+		}
 	}
 	
 	private double[] getDataAtIDX(int idx){
@@ -58,9 +69,9 @@ public class BIOHMM{
 		return k;
 	}
 	
-	public void learn() throws IOException{ learn(getSequences(data)); }
+	public void learn(double epsilon) throws IOException{ learn(getSequences(data), epsilon); }
 	
-	public void learn(ArrayList<ArrayList<Integer>> sequences) throws IOException{
+	public void learn(ArrayList<ArrayList<Integer>> sequences, double epsilon) throws IOException{
 		boolean converged = false;
 		desiredVel = data.loadColumn("dvel");
 		wallVec = data.loadColumn("wallvec");
@@ -68,8 +79,10 @@ public class BIOHMM{
 		antVec = data.loadColumn("antvec");
 		antBool = data.loadColumn("antbool");
 		prevVec = data.loadColumn("pvel");
+		int iter = 0;
 		//until transitionFunction/prior/partition has converged:
 		do{
+			System.out.println("Iteration "+(iter+1));
 			double[] newPrior = new double[prior.length];
 			double[][][] newTransition = new double[newPrior.length][newPrior.length][(int)Math.pow(2,binarySwitchNames.length)];
 			double[][][] newTransitionNumerator = new double[newPrior.length][newPrior.length][(int)Math.pow(2,binarySwitchNames.length)];
@@ -83,6 +96,7 @@ public class BIOHMM{
 					}
 				}
 			}
+			System.out.println("Initializing KDE's");
 			int[] newPartition = new int[partition.length];
 			KernelDensityEstimator[] b = new KernelDensityEstimator[prior.length];
 			double[] datapoint;
@@ -96,8 +110,10 @@ public class BIOHMM{
 			}
 			//for each sequence:
 			for(int s=0;s<sequences.size();s++){
+				System.out.println("\tSequence "+s);
 				ArrayList<Integer> seq = sequences.get(s);
 				//compute alpha_t(j), all t, all j
+				System.out.println("\t Computing alpha");
 				double[][] alpha = new double[seq.size()][prior.length];
 				for(int j=0;j<prior.length;j++){
 					alpha[0][j] = prior[j]*b[j].estimate(getDataAtIDX(seq.get(0)),bandwidth);
@@ -112,6 +128,7 @@ public class BIOHMM{
 					}
 				}
 				//compute beta_t(i), all t, all i
+				System.out.println("\t Computing beta");
 				double[][] beta = new double[seq.size()][prior.length];
 				for(int i=0;i<prior.length;i++){
 					beta[seq.size()-1][i] = 1.0;
@@ -129,6 +146,7 @@ public class BIOHMM{
 					}
 				}
 				//compute gamma_t(i) for all t, for all i
+				System.out.println("\t Computing gamma");
 				double[][] gamma = new double[seq.size()][prior.length];
 				for(int t=0;t<seq.size();t++){
 					double sum = 0.0;
@@ -140,6 +158,7 @@ public class BIOHMM{
 					}
 				}
 				//compute xi_t(i,j) for all t, for all i, for all j
+				System.out.println("\t Computing xi");
 				double[][][] xi = new double[seq.size()][prior.length][prior.length];
 				//initialize to zero since we don't hit everything
 				for(int i=0;i<prior.length;i++){
@@ -172,11 +191,13 @@ public class BIOHMM{
 				}
 				
 				//compute prior
+				System.out.println("\t Updating prior");
 				for(int i=0;i<prior.length;i++){
 					//remember, we're doing this over a 
 					//number of sequences
 					newPrior[i] += gamma[0][i]/sequences.size();
 				}
+				System.out.println("\t Updating transition table");
 				//compute transitionFunction
 				//accumulate numerator and denom seperately
 				for(int i=0;i<prior.length;i++){
@@ -195,6 +216,7 @@ public class BIOHMM{
 					}
 				}
 				//compute veterbi, outputFunction
+				System.out.println("\t Computing viterbi");
 				//since we only update one patch of data per
 				//sequence, we don't have to do anything different here
 				double[][] delta = new double[seq.size()][prior.length];
@@ -256,6 +278,10 @@ public class BIOHMM{
 				if(partition[i] != newPartition[i]) percentPartChanged += 1.0;
 			}
 			percentPartChanged /= partition.length;
+			System.out.println("Prior delta: "+priorDifference);
+			System.out.println("Transition delta: "+ transitionDiff);
+			System.out.println("Partition delta: "+ percentPartChanged);
+			if(priorDifference < epsilon && transitionDiff < epsilon && percentPartChanged < epsilon) converged = true;
 		} while(!converged);
 	}
 	
@@ -329,6 +355,7 @@ public class BIOHMM{
 				BIOHMM biohmm = new BIOHMM(2,10,names,btf);
 				sequences = biohmm.getSequences(btf);
 				System.out.println("Num sequences:"+sequences.size());
+				biohmm.learn(sequences,0.01);
 			} catch(Exception e){
 				throw new RuntimeException(e);
 			}

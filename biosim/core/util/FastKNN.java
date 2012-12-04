@@ -31,21 +31,73 @@ public class FastKNN{
 		System.arraycopy(class_vec,0,tmp_c,0,tmp_c.length);
 		samples.add(tmp_s);
 		classes.add(tmp_c);
-		kdann.add(sample);
+		kdann.add(tmp_s);
+		/*
+		System.out.print("added [");
+		for(int i=0;i<tmp_s.length;i++)
+			System.out.print(" "+tmp_s[i]);
+		System.out.println(" ]");
+		*/
+	}
+	
+	public void sigmaNormalize(){
+		double[] sampleAvg = new double[sample_dim];
+		double[] sampleStdDev = new double[sample_dim];
+		for(int i=0;i<sample_dim;i++){ 
+			sampleAvg[i] = 0.0;
+			sampleStdDev[i] = 0.0;
+		}
+		for(int i=0;i<samples.size();i++){
+			for(int j=0;j<sample_dim;j++){
+				sampleAvg[j] += samples.get(i)[j];
+			}
+		}
+		for(int i=0;i<sample_dim;i++) sampleAvg[i] =sampleAvg[i]/samples.size();
+		for(int i=0;i<samples.size();i++){
+			for(int j=0;j<sample_dim;j++){
+				sampleStdDev[j] += Math.pow(samples.get(i)[j]-sampleAvg[j],2);
+			}
+		}
+		for(int i=0;i<sample_dim;i++) sampleStdDev[i] = Math.sqrt(sampleStdDev[i]/samples.size());
+		//System.out.print("Sample sigma: [");
+		for(int i=0;i<sample_dim;i++) System.out.print(" "+sampleStdDev[i]);
+		//System.out.println(" ]");
+		kdann = new SimpleANN(sample_dim);
+		for(int i=0;i<samples.size();i++){
+			double[] tmp_s = new double[sample_dim];
+			for(int j=0;j<sample_dim;j++){
+				tmp_s[j] = samples.get(i)[j]/sampleStdDev[j];
+			}
+			kdann.add(tmp_s);
+		}
 	}
 	
 	public void query(double[] sample, double[][] neighbor_classes){
 		int k = neighbor_classes.length;
 		int[] neighborIdx = new int[k];
-		if(!kdann.query(sample,neighborIdx,k)) System.out.println("ANN query failed!");
+		if(!kdann.query(sample,neighborIdx,k)) System.err.println("ANN query failed!");
 		for(int i=0;i<k;i++){ 
-			//System.out.println("IDX: "+neighborIdx[i]);
+			//System.out.print("IDX: "+neighborIdx[i]+":[");
 			for(int j=0;j<class_dim;j++){
-					neighbor_classes[i][j] = classes.get(neighborIdx[i])[j];
+				neighbor_classes[i][j] = classes.get(neighborIdx[i])[j];
+				//System.out.print(" "+samples.get(neighborIdx[i])[j]);
 			}
+			//System.out.println("]");
 		}
+		//System.out.println();
 		
 	}
+	
+	/*
+	public void query_point(double[] sample, double[][] neighbors){
+		int k = neighbors.length;
+		int[] neighborIdx = new int[k];
+		if(!kdann.query(sample,neighborIdx,k)) System.err.println("Ann query failed!");
+		for(int i=0;i<k;i++){
+			
+		}
+	}
+	*/
 
 	public void printEverything(){
 		for(int i=0;i<samples.size();i++){

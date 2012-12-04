@@ -21,9 +21,9 @@ public class TwoStateAnt implements Agent {
 	public int state;
 	public static final int AVOID=1;
 	public static final int APPROACH=2;
-	public static final double VISIT_TIME=3.0; //seconds
+	public static final double VISIT_TIME=5.0; //seconds
 	public static final double VISIT_RANGE=AphaenogasterCockerelli.SIZE*2; //meters
-	public static final double AVOID_TIME=5.0;
+	public static final double AVOID_TIME=10.0;
 	public TwoStateAnt(AbstractAnt b){
 		antBody = b;
 		timeAvoiding = timeNearAnt = 0.0;
