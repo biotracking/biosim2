@@ -10,6 +10,7 @@ import java.util.ArrayList;
 
 public class BIOHMM{
 	double[][][] transitionFunction;
+	Object[][][] transitionMonitors;
 	double[] prior;
 	int[] partition;
 	String[] binarySwitchNames;
@@ -24,6 +25,14 @@ public class BIOHMM{
 		this.data = data;
 		dim = outputDimensionality;
 		transitionFunction = new double[numStates][numStates][(int)Math.pow(2,binarySwitchNames.length)];
+		transitionMonitors = new Object[numStates][numStates][(int)Math.pow(2,binarySwitchNames.length)];
+		for(int i=0;i<transitionMonitors.length;i++){
+			for(int j=0;j<transitionMonitors[i].length;j++){
+				for(int k=0;k<transitionMonitors[i][j].length;k++){
+					transitionMonitors[i][j][k] = new Object();
+				}
+			}
+		}
 		prior = new double[numStates];
 		partition = new int[data.loadColumn("id").length];
 		for(int i=0;i<numStates;i++){
@@ -180,8 +189,10 @@ public class BIOHMM{
 	}
 	
 	public void updatePrior(double[] newPrior, double[][] gamma, int numSequences){
-		for(int i=0;i<prior.length;i++){
-			newPrior[i] += gamma[0][i]/numSequences;
+		synchronized(newPrior){
+			for(int i=0;i<prior.length;i++){
+				newPrior[i] += gamma[0][i]/numSequences;
+			}
 		}
 	}
 	
@@ -200,8 +211,10 @@ public class BIOHMM{
 							denomSum += gamma[t][i];
 						}
 					}
-					transNumerator[i][j][k] += numSum;
-					transDenominator[i][j][k] +=denomSum;
+					synchronized(transitionMonitors[i][j][k]){
+						transNumerator[i][j][k] += numSum;
+						transDenominator[i][j][k] +=denomSum;
+					}
 				}
 			}
 		}		
@@ -236,10 +249,13 @@ public class BIOHMM{
 				tmpMaxState = i;
 			}
 		}
-		newPartition[seq.get(seq.size()-1)] = tmpMaxState;
-		for(int t = seq.size()-2;t >=0;t--){
-			newPartition[seq.get(t)] = psi[t+1][newPartition[seq.get(t+1)]];
-		}		
+		
+		//synchronized(newPartition){
+			newPartition[seq.get(seq.size()-1)] = tmpMaxState;
+			for(int t = seq.size()-2;t >=0;t--){
+				newPartition[seq.get(t)] = psi[t+1][newPartition[seq.get(t+1)]];
+			}
+		//}
 	}
 	
 	public void learn(double epsilon) throws IOException{ learn(getSequences(data), epsilon); }
@@ -253,6 +269,7 @@ public class BIOHMM{
 		antBool = data.loadColumn("antbool");
 		prevVec = data.loadColumn("pvel");
 		int iter = 0;
+		BigDecimal prevLL = BigDecimal.ZERO;
 		//until transitionFunction/prior/partition has converged:
 		do{
 			System.out.println("Iteration "+(iter+1));
@@ -284,21 +301,26 @@ public class BIOHMM{
 			}
 			//do each sequence in parallel
 			/* */
-			final ArrayList<ArrayList<Integer>> tmpSeqs = new ArrayList<ArrayList<Integer>>(sequences.size());
-			for(int s=0;s<sequences.size();s++) tmpSeqs.add(sequences.get(s));
+			final ArrayList<Integer> tmpSeqIdx = new ArrayList<Integer>(sequences.size());
+			final BigDecimal[] loglike = new BigDecimal[sequences.size()];
+			for(int s=0;s<sequences.size();s++){ 
+				tmpSeqIdx.add(s);
+			}
 			Thread[] threads = new Thread[numThreads];
 			for(int th=0;th<threads.length;th++){
 				threads[th] = new Thread(new Runnable(){
 						public void run(){
 							int seqsLeft;
-							synchronized(tmpSeqs){
-								seqsLeft = tmpSeqs.size();
+							synchronized(tmpSeqIdx){
+								seqsLeft = tmpSeqIdx.size();
 							}
 							while(seqsLeft > 0){
 								ArrayList<Integer> seq;
-								synchronized(tmpSeqs){
-									seq = tmpSeqs.remove(0);
+								int tmpIdx = -1;
+								synchronized(tmpSeqIdx){
+									tmpIdx = tmpSeqIdx.remove(0);
 								}
+								seq = sequences.get(tmpIdx);
 								//do the crap
 								double[][] hat_alpha = new double[seq.size()][prior.length];
 								double[] coeff_c = new double[seq.size()];
@@ -309,19 +331,20 @@ public class BIOHMM{
 								calcXiFromScaled(seq,b,hat_alpha,hat_beta,xi);
 								double[][] gamma = new double[seq.size()][prior.length];
 								calcGammaFromXi(xi,gamma);
-								synchronized(newPrior){
+								//synchronized(newPrior){
 									updatePrior(newPrior,gamma,sequences.size());
-								}
-								synchronized(newTransitionNumerator){
+								//}
+								//synchronized(newTransitionNumerator){
 									updateTransitions(seq,newTransitionNumerator, newTransitionDenominator, xi, gamma);
-								}
-								synchronized(newPartition){
+								//}
+								//synchronized(newPartition){
 									updatePartition(seq, b, newPartition);
-								}
-								System.out.println("Log likelihood of sequences: "+ calculateSeqLogLikelihood(hat_alpha,coeff_c));
+								//}
+								System.out.println("Sequence "+tmpIdx+" completed");
+								loglike[tmpIdx] = calculateSeqLogLikelihood(hat_alpha,coeff_c);
 								//end do the crap
-								synchronized(tmpSeqs){
-									seqsLeft = tmpSeqs.size();
+								synchronized(tmpSeqIdx){
+									seqsLeft = tmpSeqIdx.size();
 								}
 							}
 						}
@@ -654,6 +677,12 @@ public class BIOHMM{
 			System.out.println("Prior delta: "+priorDifference);
 			System.out.println("Transition delta: "+ transitionDiff);
 			System.out.println("Partition delta: "+ percentPartChanged);
+			BigDecimal llsum = BigDecimal.ZERO;
+			for(int i=0;i<loglike.length;i++){
+				llsum = llsum.add(loglike[i]);
+			}
+			System.out.println("Sum log-likelihood of all sequences: "+llsum);
+			prevLL = llsum;
 			if(priorDifference < epsilon && transitionDiff < epsilon && percentPartChanged < epsilon) converged = true;
 			prior = newPrior;
 			transitionFunction = newTransition;
