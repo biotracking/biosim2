@@ -269,7 +269,8 @@ public class BIOHMM{
 		antBool = data.loadColumn("antbool");
 		prevVec = data.loadColumn("pvel");
 		int iter = 0;
-		BigDecimal prevLL = BigDecimal.ZERO;
+		BigDecimal prevLL = null;
+		BigDecimal eps = new BigDecimal(epsilon);
 		//until transitionFunction/prior/partition has converged:
 		do{
 			System.out.println("Iteration "+(iter+1));
@@ -682,8 +683,10 @@ public class BIOHMM{
 				llsum = llsum.add(loglike[i]);
 			}
 			System.out.println("Sum log-likelihood of all sequences: "+llsum);
+			
+			//if(priorDifference < epsilon && transitionDiff < epsilon && percentPartChanged < epsilon) converged = true;
+			if(prevLL!= null && eps.compareTo(llsum.subtract(prevLL)) > 0) converged = true;
 			prevLL = llsum;
-			if(priorDifference < epsilon && transitionDiff < epsilon && percentPartChanged < epsilon) converged = true;
 			prior = newPrior;
 			transitionFunction = newTransition;
 			partition = newPartition;
