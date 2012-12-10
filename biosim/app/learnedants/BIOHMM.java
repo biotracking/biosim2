@@ -410,7 +410,7 @@ public class BIOHMM{
 			
 			//if(priorDifference < epsilon && transitionDiff < epsilon && percentPartChanged < epsilon) converged = true;
 			if(prevLL!= null && eps.compareTo(llsum.subtract(prevLL).abs()) > 0) converged = true;
-			if(prevLL.compareTo(llsum) > 0) System.out.println("Log-likelihood DECREASING!");
+			if(prevLL!=null && prevLL.compareTo(llsum) > 0) System.out.println("Log-likelihood DECREASING!");
 			prevLL = llsum;
 			prior = newPrior;
 			transitionFunction = newTransition;
