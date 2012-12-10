@@ -4,6 +4,7 @@ import biosim.core.util.BTFData;
 import biosim.core.util.KernelDensityEstimator;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -475,7 +476,7 @@ public class BIOHMM{
 		return sequences;
 	}
 	
-	public void writeParameters(File parameterFile){
+	public void writeParameters(File parameterFile) throws IOException{
 		FileWriter outf = new FileWriter(parameterFile);
 		//write prior
 		outf.write(prior.length+"\n");
@@ -523,7 +524,7 @@ public class BIOHMM{
 				}
 				System.out.println("]");
 				System.out.println("Transition matrix:");
-				for(int k=0;k<biohmm.transitioinFunction[0][0].length;k++){
+				for(int k=0;k<biohmm.transitionFunction[0][0].length;k++){
 					System.out.println("Binary switch: "+k);
 					for(int i=0;i<biohmm.transitionFunction.length;i++){
 						System.out.print("\t [");
