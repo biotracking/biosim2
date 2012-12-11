@@ -101,9 +101,10 @@ public class BIOHMM{
 				for(int i=0;i<prior.length;i++){
 					double tmp = hat_alpha[t-1][i];
 					tmp = tmp*transitionFunction[i][j][getSwitchAtIDX(seq.get(t-1))];
-					tmp = tmp*b[j].estimate(getDataAtIDX(seq.get(t)),bandwidth);
+					//tmp = tmp*b[j].estimate(getDataAtIDX(seq.get(t)),bandwidth);
 					bar_alpha[j] += tmp;
 				}
+				bar_alpha[j] = bar_alpha[j]*b[j].estimate(getDataAtIDX(seq.get(t)),bandwidth);
 				coeff_c[t] += bar_alpha[j];
 			}
 			coeff_c[t] = 1.0/coeff_c[t];
@@ -128,10 +129,11 @@ public class BIOHMM{
 				bar_beta[j] = 0.0;
 				for(int i=0;i<prior.length;i++){
 					double tmp = transitionFunction[i][j][getSwitchAtIDX(seq.get(t))];
-					tmp = tmp * b[j].estimate(getDataAtIDX(seq.get(t+1)),bandwidth);
+					//tmp = tmp * b[j].estimate(getDataAtIDX(seq.get(t+1)),bandwidth);
 					tmp = tmp * hat_beta[t+1][i];
 					bar_beta[j] += tmp;
 				}
+				bar_beta[j] = bar_beta[j] * b[j].estimate(getDataAtIDX(seq.get(t+1)),bandwidth);
 				hat_beta[t][j] = coeff_c[t]*bar_beta[j];
 			}
 		}
@@ -143,32 +145,54 @@ public class BIOHMM{
 									double[][] hat_beta,
 									double[][][] xi){
 		for(int t=0;t<seq.size();t++){
+			double sum = 0.0;
 			for(int i=0;i<prior.length;i++){
 				for(int j=0;j<prior.length;j++){
 					//the beta check goes one step past the end of the
 					//sequences, so we set our probability of 
 					//transitioning from i at time T to j at time T+1
 					//equal to 1.0, just like we do for beta
+					//Maybe this is wrong? When implementing this in python
+					//I set xi[T][i][j] = 0.0, so lets try that
 					if(t == (seq.size()-1)){
-						xi[t][i][j] = 1.0;
+						xi[t][i][j] = 0.0;
 					} else {
 						xi[t][i][j] = hat_alpha[t][i];
 						xi[t][i][j] *= transitionFunction[i][j][getSwitchAtIDX(seq.get(t))];
 						xi[t][i][j] *= b[j].estimate(getDataAtIDX(seq.get(t+1)),bandwidth);
 						xi[t][i][j] *= hat_beta[t+1][j];
 					}
+					sum += xi[t][i][j];
 				}
+			}
+			if(sum != 1.0 && sum != 0.0){
+				for(int i=0;i<prior.length;i++){
+					for(int j=0;j<prior.length;j++){
+						xi[t][i][j] = xi[t][i][j]/sum;
+					}
+				}
+				//System.out.println("sum_ij(Xi["+t+"]) = "+sum);
+				//throw new RuntimeException("Xi not summint to one.");
 			}
 		}
 	}
 	
 	public void calcGammaFromXi(double[][][] xi, double[][] gamma){
 		for(int t=0;t<xi.length;t++){
+			double sum = 0.0;
 			for(int i=0;i<prior.length;i++){
 				gamma[t][i] = 0.0;
 				for(int j=0;j<prior.length;j++){
 					gamma[t][i] += xi[t][i][j];
 				}
+				sum = sum+ gamma[t][i];
+			}
+			if(sum != 1.0 && sum != 0.0){
+				for(int i=0;i<prior.length;i++){
+					gamma[t][i] = gamma[t][i]/sum;
+				}
+				//System.out.println("sum_i(Gamma["+t+"]) = "+sum);
+				//throw new RuntimeException("Gamma not summing to one.");
 			}
 		}
 	}
@@ -352,8 +376,8 @@ public class BIOHMM{
 									updateTransitions(seq,newTransitionNumerator, newTransitionDenominator, xi, gamma);
 								//}
 								//synchronized(newPartition){
-									//updatePartition(seq, b, newPartition);
-									updatePartition(seq, gamma, newPartition);
+									updatePartition(seq, b, newPartition);
+									//updatePartition(seq, gamma, newPartition);
 								//}
 								System.out.println("Sequence "+tmpIdx+" completed");
 								loglike[tmpIdx] = calculateSeqLogLikelihood(hat_alpha,coeff_c);
@@ -382,9 +406,14 @@ public class BIOHMM{
 				}
 			}
 			//now. Compute the difference between this new model and the old one
-			double priorDifference = 0.0;
+			double priorDifference = 0.0, priorSum=0.0;
 			for(int i=0;i<prior.length;i++){
 				priorDifference += Math.abs(prior[i] - newPrior[i]);
+				priorSum = priorSum + prior[i];
+			}
+			if(priorSum != 1.0){
+				System.out.println("sum_i(prior) = "+priorSum);
+				//throw new RuntimeException("prior not summing to 1");
 			}
 			double transitionDiff = 0.0;
 			for(int i=0;i<prior.length;i++){

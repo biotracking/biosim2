@@ -1,5 +1,4 @@
 package biosim.core.util;
-import biosim.core.util.annwrapper.SimpleANN;
 
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -9,92 +8,42 @@ import java.io.BufferedReader;
 
 
 public class KernelDensityEstimator{
+	public ArrayList<Double> weights;
 	private ArrayList<double[]> samples;
-	private SimpleANN kdann;
 	private int dimensionality;
 	private Kernel kernel;
-	private boolean clean;
-	private double[] djk;
-	
-	static { System.loadLibrary("annwrapper"); }
-	
+		
 	public KernelDensityEstimator(int dim, Kernel kernel){
 		dimensionality = dim;
-		kdann = new SimpleANN(dim);
 		samples = new ArrayList<double[]>();
+		weights = new ArrayList<Double>();
 		this.kernel = kernel;
-		clean = false;
 	}
 	
 	public int numSamples(){ return samples.size(); }
 	
-	public void add(double[] sample){
+	public void add(double[] sample){ add(sample,1.0); }
+	
+	public void add(double[] sample, double weight){
 		double[] tmp_s = new double[sample.length];
 		System.arraycopy(sample,0,tmp_s,0,tmp_s.length);
 		samples.add(tmp_s);
-		kdann.add(sample);
-		clean = false;
+		weights.add(weight);
 	}
 	
 	public double estimate(double[] target, double bandwidth){
-		double sum=0.0;
+		double sum=0.0, weightSum=0.0;
 		double[] tmp = new double[target.length];
 		for(int i=0;i<samples.size();i++){
 			for(int j=0;j<target.length;j++){
 				tmp[j] = (target[j]-samples.get(i)[j])/bandwidth;
 			}
-			sum += kernel.k(tmp);
+			sum += weights.get(i)*kernel.k(tmp);
+			weightSum += weights.get(i);
 		}
-		return (1.0/(samples.size()*bandwidth))*sum;
+		return (1.0/(weightSum*bandwidth))*sum;
 	}
 	
-	/**
-	 * Estimate f(x) using an adaptive bandwidth.  Kernel density estimates that
-	 * use fixed bandwidth can have issues in areas of the space with few sample
-	 * points. An adaptive bandwidth estimate adjusts the width of the kernel
-	 * at each sample point according to the distance from that sample point to 
-	 * it's kth nearest neighbor (d_jk). The exact equation used is:
-	 * 
-	 * f(x) = 1/n sum( (bandwidth*d_jk)^(-M) K( (x - x_i) / (bandwidth*d_jk) )
-	 * 
-	 * where M is the dimensionality of x, and K is the kernel. According to
-	 * Breiman, Meisel, and Purcell (who original proposed this technique in 1977)
-	 * finding a good combination of k and the bandwidth can be difficult. They
-	 * suggest starting with k = 10% of the number of sample points, or by
-	 * plotting the average value of d_jk versus k and using a value for k
-	 * "past the knee of the curve", and then optimizing a goodness of fit
-	 * metric by making small changes to k and d_jk individually.  They note 
-	 * that small values of k usually lead to very poor results.
-	 **/
-	public double adaptive_bandwidth_estimate(double[] target, double bandwidth, int k){
-		double sum=0.0;
-		double[] tmp = new double[target.length];
-		double[] current_sample;
-		if(!clean){
-			int[] neighborIDX = new int[k];
-			double[] kth_neighbor;
-			djk = new double[samples.size()];
-			for(int i=0;i<samples.size();i++){
-				djk[i] = 0.0;
-				current_sample = samples.get(i);
-				kdann.query(current_sample, neighborIDX,k);
-				kth_neighbor = samples.get(neighborIDX[k-1]);
-				for(int j=0;j<current_sample.length;j++){
-					djk[i] += Math.pow(current_sample[j] - kth_neighbor[j],2);
-				}
-				djk[i] = Math.sqrt(djk[i]);
-			}
-			clean = true;
-		}
-		for(int i=0;i<samples.size();i++){
-			current_sample = samples.get(i);
-			for(int j=0;j<target.length;j++){
-				tmp[j] = (target[j] - current_sample[j])/(bandwidth*djk[i]);
-			}
-			sum += kernel.k(tmp)*Math.pow(bandwidth*djk[i],-target.length);
-		}
-		return (1.0/(samples.size()))*sum;
-	}
 	
 	public static class NormalKernel implements Kernel{
 		private double sigma;
@@ -135,8 +84,7 @@ public class KernelDensityEstimator{
 				System.out.println("#Generating estimated output, range:[-5,15), step size:0.01");
 				for(double i = -5.0;i<15.0;i+= 0.01){
 					tmp[0] = i;
-					//double estimate = kde.estimate(tmp,1);
-					double estimate = kde.adaptive_bandwidth_estimate(tmp,1,kde.numSamples()/10);
+					double estimate = kde.estimate(tmp,1);
 					System.out.println(i+" "+estimate);
 				}
 				System.out.println("#Done!");
