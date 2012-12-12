@@ -1,5 +1,6 @@
 package biosim.core.body;
 
+import ec.util.MersenneTwisterFast;
 import sim.util.Double2D;
 import sim.util.MutableDouble2D;
 import sim.util.Double3D;
@@ -34,6 +35,10 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 		previousVelXYT[0] = previousVelXYT[1] = previousVelXYT[2] = 0.0;
 	}
 
+	public MersenneTwisterFast getRandom(){
+		return sim.random;
+	}
+	
 	public double getSize(){ return SIZE; }
 	
 	public boolean getHomeDir(MutableDouble2D rv){

@@ -569,6 +569,7 @@ public class BIOHMM{
 					System.out.print(" "+biohmm.partition[i]);
 				}
 				System.out.println(" ]");
+				biohmm.writeParameters(new File(new File(System.getProperties().getProperty("user.dir")),"biohmm_parameters.txt"));
 			} catch(Exception e){
 				throw new RuntimeException(e);
 			}
