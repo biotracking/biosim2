@@ -12,7 +12,9 @@ import biosim.core.util.FastKNN;
 
 import sim.util.MutableDouble2D;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 
 public class LearnedAnts implements Agent{
@@ -105,8 +107,114 @@ public class LearnedAnts implements Agent{
 		return rv;
 	}
 	
-	public static void buildParameters(File parameterFile, FastKNN[] knns, double[] prior, double[][][] transitionFunction){
-		
+	public void buildParameters(File parameterFile, BTFData btf) throws IOException{
+		BufferedReader fread = new BufferedReader(new FileReader(parameterFile));
+		int priorInt = Integer.parseInt(fread.readLine().trim());
+		prior = new double[priorInt];
+		String[] priorStr = fread.readLine().split(" ");
+		if(priorStr.length != priorInt){
+			throw new RuntimeException("Bad parameter file: priorInt ("+priorInt+") != priorStr.length ("+priorStr.length+")");
+		}
+		for(int i=0;i<priorStr.length;i++){
+			prior[i] = Double.parseDouble(priorStr[i].trim());
+		}
+		String[] transNumStr = fread.readLine().split(" ");
+		if(transNumStr.length != 3){
+			throw new RuntimeException("Bad parameter file: transNumStr.length ("+transNumStr.length+") != 3");
+		}
+		int transK = Integer.parseInt(transNumStr[0].trim());
+		if(transK != prior.length){
+			throw new RuntimeException("Bad parameter file: transNumStr[0] ("+transK+") != prior.length ("+prior.length+")");
+		}
+		transK = Integer.parseInt(transNumStr[1].trim());
+		if(transK != prior.length){
+			throw new RuntimeException("Bad parameter file: transNumStr[1] ("+transK+") != prior.length ("+prior.length+")");
+		}
+		transK = Integer.parseInt(transNumStr[2].trim());
+		transitionMatrix = new double[prior.length][prior.length][transK];
+		String[] transStr = fread.readLine().split(" ");
+		for(int x=0;x<transStr.length;x++){
+			int k = x % transK;
+			int j = (x/transK) % prior.length;
+			int i = (x/transK)/prior.length;
+			transitionMatrix[i][j][k] = Double.parseDouble(transStr[x].trim());
+		}
+		outputFunction = new FastKNN[prior.length];
+		for(int i=0;i<outputFunction.length;i++){
+			outputFunction[i] = new FastKNN(FEATURE_DIM,3);
+		}
+		String[] desiredVel = btf.loadColumn("dvel");
+		String[] wallVec = btf.loadColumn("wallvec");
+		String[] antVec = btf.loadColumn("antvec");
+		String[] prevVec = btf.loadColumn("pvel");
+		int partitionLength = Integer.parseInt(fread.readLine().trim());
+		String[] partitionStr = fread.readLine().split(" ");
+		if(partitionLength != partitionStr.length){
+			throw new RuntimeException("Bad parameter file: partitionLength ("+partitionLength+") != partitionStr.length ("+partitionStr.length+")");
+		}
+		double[] features = new double[FEATURE_DIM];
+		double[] velclass = new double[3];
+		String[] tmp;
+		int partition;
+		for(int i=0;i<partitionLength;i++){
+			partition = Integer.parseInt(partitionStr[i].trim());
+			tmp = antVec[i].split(" ");
+			features[0] = Double.parseDouble(tmp[0]);
+			features[1] = Double.parseDouble(tmp[1]);
+			tmp = wallVec[i].split(" ");
+			features[2] = Double.parseDouble(tmp[0]);
+			features[3] = Double.parseDouble(tmp[1]);
+			tmp = prevVec[i].split(" ");
+			features[4] = Double.parseDouble(tmp[0]);
+			features[5] = Double.parseDouble(tmp[1]);
+			features[6] = Double.parseDouble(tmp[2]);
+			tmp = desiredVel[i].split(" ");
+			velclass[0] = Double.parseDouble(tmp[0]);
+			velclass[1] = Double.parseDouble(tmp[1]);
+			velclass[2] = Double.parseDouble(tmp[2]);
+			
+			outputFunction[partition].add(features,velclass);
+		}
 	}
+
 	
+	public static final double WIDTH=0.2;
+	public static final double HEIGHT=0.2;
+
+
+	public static void main(String[] args){
+		try{
+			File parameterFile = new File(args[0]);
+			BTFData btf = new BTFData();
+			btf.loadDir(new File(args[1]));
+			int numAnts = 10;
+			Environment env = new Environment(WIDTH,HEIGHT,1.0/30.0);
+			env.addStaticPOI("nest",WIDTH/2,0.02);
+			env.addObstacle(new RectObstacle(0.01,0.2), 0.19,  0.0);//east wall
+			env.addObstacle(new RectObstacle(0.01,0.2),  0.0,  0.0);//west
+			env.addObstacle(new RectObstacle(0.2,0.01),  0.0,  0.0);//north
+			env.addObstacle(new RectObstacle(0.2,0.01),  0.0, 0.19);//south
+			//add agents
+			AphaenogasterCockerelli[] bodies = new AphaenogasterCockerelli[numAnts];
+			for(int i=0;i<bodies.length;i++){
+				bodies[i] = new AphaenogasterCockerelli();
+				env.addBody(bodies[i]);
+			}
+			Agent[] agents = new Agent[numAnts];
+			LearnedAnts la = new LearnedAnts(bodies[0],null,null,null);
+			la.buildParameters(parameterFile,btf);
+			agents[0] = la;
+			bodies[0].setAgent(agents[0]);
+			for(int i=1;i<agents.length;i++){
+				agents[i] = new LearnedAnts(bodies[i],la.prior, la.transitionMatrix, la.outputFunction);
+				bodies[i].setAgent(agents[i]);
+			}
+			//env.runSimulation(args);
+			Simulation sim = env.newSimulation();
+			GUISimulation gui = new GUISimulation(sim);
+			gui.createController();
+		} catch(Exception e){
+			throw new RuntimeException(e);
+		}
+	}
 }

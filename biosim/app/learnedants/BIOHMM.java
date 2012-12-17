@@ -531,6 +531,7 @@ public class BIOHMM{
 			outf.write(partition[i]+" ");
 		}
 		outf.write("\n");
+		outf.close();
 	}
 	
 	public static void main(String[] args){
