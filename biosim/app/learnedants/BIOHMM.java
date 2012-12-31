@@ -432,7 +432,7 @@ public class BIOHMM{
 								}
 								seq = sequences.get(tmpIdx);
 								//do the crap
-								/*
+								/* */
 								double[][] hat_alpha = new double[seq.size()][prior.length];
 								double[] coeff_c = new double[seq.size()];
 								calculateScaledAlpha(seq, b, hat_alpha, coeff_c);
@@ -441,7 +441,9 @@ public class BIOHMM{
 								double[][][] xi = new double[seq.size()][prior.length][prior.length];
 								calcXiFromScaled(seq,b,hat_alpha,hat_beta,xi);
 								double[][] gamma = new double[seq.size()][prior.length];
-								*/
+								/* */
+								
+								/*
 								double[][] alpha = new double[seq.size()][prior.length];
 								calculateAlpha(seq,b,alpha);
 								double[][] beta = new double[seq.size()][prior.length];
@@ -450,6 +452,7 @@ public class BIOHMM{
 								calculateXi(seq,b,alpha,beta,xi);
 								double[][] gamma = new double[seq.size()][prior.length];
 								calcGammaFromXi(xi,gamma);
+								*/
 								//synchronized(newPrior){
 									updatePrior(newPrior,gamma,sequences.size());
 								//}
@@ -457,8 +460,8 @@ public class BIOHMM{
 									updateTransitions(seq,newTransitionNumerator, newTransitionDenominator, xi, gamma);
 								//}
 								//synchronized(newPartition){
-									updatePartition(seq, b, newPartition);
-									//updatePartition(seq, gamma, newPartition);
+									//updatePartition(seq, b, newPartition);
+									updatePartition(seq, gamma, newPartition);
 								//}
 								System.out.println("Sequence "+tmpIdx+" completed");
 								//loglike[tmpIdx] = calculateSeqLogLikelihood(hat_alpha,coeff_c);
@@ -553,7 +556,7 @@ public class BIOHMM{
 				for(int j=0;j<currentSeqIDX.size();j++){
 					int tmpLastSeenIDX = currentSeqIDX.get(j).get(currentSeqIDX.get(j).size()-1);
 					String lastTimeSeen = clockTime[tmpLastSeenIDX];
-					if(!lastTimeSeen.equals(oldTime) || currentSeqIDX.get(j).size() >= 10){
+					if(!lastTimeSeen.equals(oldTime)){// || currentSeqIDX.get(j).size() >= 10){
 						sequences.add(currentSeqIDX.get(j));
 						currentSeqIDX.remove(j);
 						j--;
