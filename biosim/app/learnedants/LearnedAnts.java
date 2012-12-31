@@ -18,7 +18,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class LearnedAnts implements Agent{
-	public static final int FEATURE_DIM = 7;
+	public static final int FEATURE_DIM = 4;
 	public static final int NUM_SWITCHES = 2;
 	public static final int NUM_NEIGHBORS = 5;
 	double[][][] transitionMatrix;
@@ -50,9 +50,9 @@ public class LearnedAnts implements Agent{
 		sensorVec[1] = ant.y;
 		sensorVec[2] = wall.x;
 		sensorVec[3] = wall.y;
-		sensorVec[4] = prevVel[0];
-		sensorVec[5] = prevVel[1];
-		sensorVec[6] = prevVel[2];
+		//sensorVec[4] = prevVel[0];
+		//sensorVec[5] = prevVel[1];
+		//sensorVec[6] = prevVel[2];
 		switches[0] = sawWall;
 		switches[1] = sawAnt;
 		//figure out the initial state
@@ -70,6 +70,7 @@ public class LearnedAnts implements Agent{
 			//just in case prior doesn't sum to 1
 			if(currentState == -1) currentState = prior.length-1;
 		}
+		System.out.println("State: "+currentState);
 		//figure out the output for the current state
 		outputFunction[currentState].query(sensorVec,nearestK);
 		for(int i=0;i<rv.length;i++) rv[i] = 0.0;
@@ -79,6 +80,7 @@ public class LearnedAnts implements Agent{
 			}
 		}
 		for(int i=0;i<rv.length;i++) rv[i] = rv[i]/(double)nearestK.length;
+		//System.out.println("rv[2] = "+rv[2]);
 		prevVel[0] = rv[0];
 		prevVel[1] = rv[1];
 		prevVel[2] = rv[2];
@@ -103,7 +105,7 @@ public class LearnedAnts implements Agent{
 		}
 		if(newState == -1) newState = transitionMatrix[currentState].length-1;
 		currentState = newState;
-		
+		//currentState = 1;
 		return rv;
 	}
 	
@@ -115,9 +117,12 @@ public class LearnedAnts implements Agent{
 		if(priorStr.length != priorInt){
 			throw new RuntimeException("Bad parameter file: priorInt ("+priorInt+") != priorStr.length ("+priorStr.length+")");
 		}
+		//System.out.print("[");
 		for(int i=0;i<priorStr.length;i++){
 			prior[i] = Double.parseDouble(priorStr[i].trim());
+			//System.out.print(" "+prior[i]);
 		}
+		//System.out.println(" ]");
 		String[] transNumStr = fread.readLine().split(" ");
 		if(transNumStr.length != 3){
 			throw new RuntimeException("Bad parameter file: transNumStr.length ("+transNumStr.length+") != 3");
@@ -164,10 +169,10 @@ public class LearnedAnts implements Agent{
 			tmp = wallVec[i].split(" ");
 			features[2] = Double.parseDouble(tmp[0]);
 			features[3] = Double.parseDouble(tmp[1]);
-			tmp = prevVec[i].split(" ");
-			features[4] = Double.parseDouble(tmp[0]);
-			features[5] = Double.parseDouble(tmp[1]);
-			features[6] = Double.parseDouble(tmp[2]);
+			//tmp = prevVec[i].split(" ");
+			//features[4] = Double.parseDouble(tmp[0]);
+			//features[5] = Double.parseDouble(tmp[1]);
+			//features[6] = Double.parseDouble(tmp[2]);
 			tmp = desiredVel[i].split(" ");
 			velclass[0] = Double.parseDouble(tmp[0]);
 			velclass[1] = Double.parseDouble(tmp[1]);

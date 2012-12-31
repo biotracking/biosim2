@@ -17,7 +17,7 @@ import java.io.IOException;
 
 
 public class AntKNN implements Agent{
-	public static final int FEATURE_DIM = 4;
+	public static final int FEATURE_DIM = 7;
 	AbstractAnt antBody;
 	FastKNN knn;
 	double[] prevVel ={0.0, 0.0, 0.0};
@@ -42,11 +42,11 @@ public class AntKNN implements Agent{
 		sensorVec[2] = wall.x;
 		sensorVec[3] = wall.y;
 		//System.out.println("Sensor vec: ["+sensorVec[0]+", "+sensorVec[1]+", "+sensorVec[2]+", "+sensorVec[3]+"]");
-		//sensorVec[4] = home.x;
-		//sensorVec[5] = home.y;
-		//sensorVec[6] = prevVel[0];
-		//sensorVec[7] = prevVel[1];
-		//sensorVec[8] = prevVel[2];
+		sensorVec[4] = prevVel[0];
+		sensorVec[5] = prevVel[1];
+		sensorVec[6] = prevVel[2];
+		//sensorVec[7] = home.x;
+		//sensorVec[8] = home.y;
 		knn.query(sensorVec,nearestK);
 		//now, do median, average, or random selection
 		//average
@@ -93,13 +93,13 @@ public class AntKNN implements Agent{
 				tmp = wallVec[i].split(" ");
 				sample[2] = Double.parseDouble(tmp[0]);
 				sample[3] = Double.parseDouble(tmp[1]);
-				//tmp = homeVec[i].split(" ");
+				//tmp = prevVec[i].split(" ");
 				//sample[4] = Double.parseDouble(tmp[0]);
 				//sample[5] = Double.parseDouble(tmp[1]);
-				//tmp = prevVec[i].split(" ");
-				//sample[6] = Double.parseDouble(tmp[0]);
-				//sample[7] = Double.parseDouble(tmp[1]);
-				//sample[8] = Double.parseDouble(tmp[2]);
+				//sample[6] = Double.parseDouble(tmp[2]);
+				//tmp = homeVec[i].split(" ");
+				//sample[7] = Double.parseDouble(tmp[0]);
+				//sample[8] = Double.parseDouble(tmp[1]);
 				knn.add(sample,velclass);
 			}
 		}

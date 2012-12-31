@@ -50,7 +50,7 @@ public class BIOHMM{
 	}
 	
 	private double[] getDataAtIDX(int idx){
-		double[] datapoint = new double[10];
+		double[] datapoint = new double[7];
 		String[] tmp = desiredVel[idx].split(" ");
 		datapoint[0] = Double.parseDouble(tmp[0]);
 		datapoint[1] = Double.parseDouble(tmp[1]);
@@ -61,10 +61,10 @@ public class BIOHMM{
 		tmp = antVec[idx].split(" ");
 		datapoint[5] = Double.parseDouble(tmp[0]);
 		datapoint[6] = Double.parseDouble(tmp[1]);
-		tmp = prevVec[idx].split(" ");
-		datapoint[7] = Double.parseDouble(tmp[0]);
-		datapoint[8] = Double.parseDouble(tmp[1]);
-		datapoint[9] = Double.parseDouble(tmp[2]);
+		//tmp = prevVec[idx].split(" ");
+		//datapoint[7] = Double.parseDouble(tmp[0]);
+		//datapoint[8] = Double.parseDouble(tmp[1]);
+		//datapoint[9] = Double.parseDouble(tmp[2]);
 		return datapoint;
 	}
 	
@@ -78,6 +78,23 @@ public class BIOHMM{
 			k+=1;
 		}
 		return k;
+	}
+	
+	public void calculateAlpha(	ArrayList<Integer> seq,
+								KernelDensityEstimator[] b,
+								double[][] alpha){
+		for(int i=0;i<prior.length;i++){
+			alpha[0][i] = prior[i]*b[i].estimate(getDataAtIDX(seq.get(0)),bandwidth);
+		}
+		for(int t=1;t<seq.size();t++){
+			for(int j=0;j<prior.length;j++){
+				alpha[t][j] = 0.0;
+				for(int i=0;i<prior.length;i++){
+					alpha[t][j] += alpha[t-1][i]*transitionFunction[i][j][getSwitchAtIDX(seq.get(t-1))];
+				}
+				alpha[t][j] *= b[j].estimate(getDataAtIDX(seq.get(0)),bandwidth);
+			}
+		}
 	}
 	
 	public void calculateScaledAlpha(	ArrayList<Integer> seq,
@@ -114,6 +131,22 @@ public class BIOHMM{
 		}
 	}
 	
+	public void calculateBeta(	ArrayList<Integer> seq,
+								KernelDensityEstimator[] b,
+								double[][] beta){
+		for(int i=0;i<prior.length;i++){
+			beta[seq.size()-1][i] = 1.0;
+		}
+		for(int t=seq.size()-2;t>=0;t--){
+			for(int i=0;i<prior.length;i++){
+				beta[t][i] = 0.0;
+				for(int j=0;j<prior.length;j++){
+					beta[t][i] += transitionFunction[i][j][getSwitchAtIDX(seq.get(t))]*b[j].estimate(getDataAtIDX(seq.get(t+1)),bandwidth)*beta[t+1][j];
+				}
+			}
+		}
+	}
+	
 	public void calculateScaledBeta(	ArrayList<Integer> seq,
 										KernelDensityEstimator[] b,
 										double[][] hat_beta,
@@ -139,6 +172,37 @@ public class BIOHMM{
 		}
 	}
 	
+	public void calculateXi(	ArrayList<Integer> seq,
+								KernelDensityEstimator[] b,
+								double[][] alpha,
+								double[][] beta,
+								double[][][] xi){
+		double sum;
+		for(int t=0;t<seq.size();t++){
+			sum = 0.0;
+			for(int i=0;i<prior.length;i++){
+				for(int j=0;j<prior.length;j++){
+					if(t == (seq.size()-1)){
+						xi[t][i][j] = 0.0;
+					} else {
+						xi[t][i][j] = alpha[t][i];
+						xi[t][i][j] *= transitionFunction[i][j][getSwitchAtIDX(seq.get(t))];
+						xi[t][i][j] *= b[j].estimate(getDataAtIDX(seq.get(t+1)),bandwidth);
+						xi[t][i][j] *= beta[t+1][j];
+						sum += xi[t][i][j];
+					}
+				}
+			}
+			if(sum != 0){
+				for(int i=0;i<prior.length;i++){
+					for(int j=0;j<prior.length;j++){
+						xi[t][i][j] = xi[t][i][j]/sum;
+					}
+				}
+			}
+		}
+	}
+		
 	public void calcXiFromScaled(	ArrayList<Integer> seq,
 									KernelDensityEstimator[] b,
 									double[][] hat_alpha,
@@ -211,6 +275,14 @@ public class BIOHMM{
 			rv = rv + hat_alpha[hat_alpha.length-1][i];
 		}
 		return ((new BigDecimal(Math.log(rv))).subtract(C_T));
+	}
+	
+	public BigDecimal calculateSeqLogLikelihood(double[][] alpha){
+		double rv = 0.0;
+		for(int i=0;i<prior.length;i++){
+			rv +=alpha[alpha.length-1][i];
+		}
+		return new BigDecimal(Math.log(rv));
 	}
 	
 	public void updatePrior(double[] newPrior, double[][] gamma, int numSequences){
@@ -360,6 +432,7 @@ public class BIOHMM{
 								}
 								seq = sequences.get(tmpIdx);
 								//do the crap
+								/*
 								double[][] hat_alpha = new double[seq.size()][prior.length];
 								double[] coeff_c = new double[seq.size()];
 								calculateScaledAlpha(seq, b, hat_alpha, coeff_c);
@@ -367,6 +440,14 @@ public class BIOHMM{
 								calculateScaledBeta(seq, b, hat_beta, coeff_c);
 								double[][][] xi = new double[seq.size()][prior.length][prior.length];
 								calcXiFromScaled(seq,b,hat_alpha,hat_beta,xi);
+								double[][] gamma = new double[seq.size()][prior.length];
+								*/
+								double[][] alpha = new double[seq.size()][prior.length];
+								calculateAlpha(seq,b,alpha);
+								double[][] beta = new double[seq.size()][prior.length];
+								calculateBeta(seq,b,beta);
+								double[][][] xi = new double[seq.size()][prior.length][prior.length];
+								calculateXi(seq,b,alpha,beta,xi);
 								double[][] gamma = new double[seq.size()][prior.length];
 								calcGammaFromXi(xi,gamma);
 								//synchronized(newPrior){
@@ -380,7 +461,8 @@ public class BIOHMM{
 									//updatePartition(seq, gamma, newPartition);
 								//}
 								System.out.println("Sequence "+tmpIdx+" completed");
-								loglike[tmpIdx] = calculateSeqLogLikelihood(hat_alpha,coeff_c);
+								//loglike[tmpIdx] = calculateSeqLogLikelihood(hat_alpha,coeff_c);
+								loglike[tmpIdx] = calculateSeqLogLikelihood(alpha);
 								//end do the crap
 								synchronized(tmpSeqIdx){
 									seqsLeft = tmpSeqIdx.size();
@@ -471,7 +553,7 @@ public class BIOHMM{
 				for(int j=0;j<currentSeqIDX.size();j++){
 					int tmpLastSeenIDX = currentSeqIDX.get(j).get(currentSeqIDX.get(j).size()-1);
 					String lastTimeSeen = clockTime[tmpLastSeenIDX];
-					if(!lastTimeSeen.equals(oldTime)){
+					if(!lastTimeSeen.equals(oldTime) || currentSeqIDX.get(j).size() >= 10){
 						sequences.add(currentSeqIDX.get(j));
 						currentSeqIDX.remove(j);
 						j--;
