@@ -464,8 +464,8 @@ public class BIOHMM{
 									updatePartition(seq, gamma, newPartition);
 								//}
 								System.out.println("Sequence "+tmpIdx+" completed");
-								//loglike[tmpIdx] = calculateSeqLogLikelihood(hat_alpha,coeff_c);
-								loglike[tmpIdx] = calculateSeqLogLikelihood(alpha);
+								loglike[tmpIdx] = calculateSeqLogLikelihood(hat_alpha,coeff_c);
+								//loglike[tmpIdx] = calculateSeqLogLikelihood(alpha);
 								//end do the crap
 								synchronized(tmpSeqIdx){
 									seqsLeft = tmpSeqIdx.size();
