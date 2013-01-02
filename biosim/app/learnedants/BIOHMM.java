@@ -460,8 +460,8 @@ public class BIOHMM{
 									updateTransitions(seq,newTransitionNumerator, newTransitionDenominator, xi, gamma);
 								//}
 								//synchronized(newPartition){
-									//updatePartition(seq, b, newPartition);
-									updatePartition(seq, gamma, newPartition);
+									updatePartition(seq, b, newPartition);
+									//updatePartition(seq, gamma, newPartition);
 								//}
 								System.out.println("Sequence "+tmpIdx+" completed");
 								loglike[tmpIdx] = calculateSeqLogLikelihood(hat_alpha,coeff_c);
