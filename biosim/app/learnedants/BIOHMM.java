@@ -443,7 +443,7 @@ public class BIOHMM{
 								double[][] gamma = new double[seq.size()][prior.length];
 								/* */
 								
-								/*
+								/* 
 								double[][] alpha = new double[seq.size()][prior.length];
 								calculateAlpha(seq,b,alpha);
 								double[][] beta = new double[seq.size()][prior.length];
@@ -451,8 +451,8 @@ public class BIOHMM{
 								double[][][] xi = new double[seq.size()][prior.length][prior.length];
 								calculateXi(seq,b,alpha,beta,xi);
 								double[][] gamma = new double[seq.size()][prior.length];
+								/* */
 								calcGammaFromXi(xi,gamma);
-								*/
 								//synchronized(newPrior){
 									updatePrior(newPrior,gamma,sequences.size());
 								//}
@@ -628,7 +628,7 @@ public class BIOHMM{
 				BTFData btf = new BTFData();
 				btf.loadDir(new File(args[0]));
 				ArrayList<ArrayList<Integer>> sequences;
-				BIOHMM biohmm = new BIOHMM(2,10,names,btf);
+				BIOHMM biohmm = new BIOHMM(2,7,names,btf);
 				sequences = biohmm.getSequences(btf);
 				System.out.println("Num sequences:"+sequences.size());
 				biohmm.learn(sequences,0.01);
