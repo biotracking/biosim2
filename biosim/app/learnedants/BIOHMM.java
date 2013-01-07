@@ -377,7 +377,7 @@ public class BIOHMM{
 			for(int s=0;s<sequences.size();s++){ 
 				tmpSeqIdx.add(s);
 			}
-			Thread[] threads = new Thread[numThreads];
+			Thread[] threads = new Thread[(int)Math.min(numThreads,sequences.size())];
 			for(int th=0;th<threads.length;th++){
 				threads[th] = new Thread(new Runnable(){
 						public void run(){

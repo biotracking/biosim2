@@ -23,8 +23,8 @@ public class TestGen{
 		
 	public double[] genOutput(){
 		double randNum;
-		double[] rv = new double[2];
-		double switched, output;
+		double[] rv = new double[3];
+		double switched, output, lastState = curState;
 		if(curState == -1){
 			double sum = 0.0;
 			randNum = random.nextDouble();
@@ -58,6 +58,7 @@ public class TestGen{
 		}
 		rv[0] = output;
 		rv[1] = switched;
+		rv[2] = lastState;
 		return rv;
 	}
 	
@@ -71,13 +72,16 @@ public class TestGen{
 			TestGen tg = new TestGen(tf,pr,sigma,mu,switching);
 			FileWriter outf = new FileWriter(new File("output.btf"));
 			FileWriter switchf = new FileWriter(new File("switching.btf"));
+			FileWriter statef = new FileWriter(new File("state.btf"));
 			for(int i=0;i<10000;i++){
 				double[] rv = tg.genOutput();
 				outf.write(rv[0]+"\n");
 				switchf.write((int)rv[1]+"\n");
+				statef.write((int)rv[2]+"\n");
 			}
 			outf.close();
 			switchf.close();
+			statef.close();
 		} catch(IOException ioe){
 			throw new RuntimeException(ioe);
 		}
