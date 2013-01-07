@@ -10,23 +10,20 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 
 public class BIOHMM{
+	BIOHMMInputParser bip;
 	public double[][][] transitionFunction;
 	Object[][][] transitionMonitors;
 	public double[] prior;
 	public int[] partition;
-	String[] binarySwitchNames;
 	BTFData data;
 	int dim, numThreads = 4;
 	double kernelSigma = 1.0, bandwidth = 1.0;
-	
-	private String[] desiredVel, wallVec, wallBool, antVec, antBool, prevVec;
-	
-	public BIOHMM(int numStates, int outputDimensionality, String[] binarySwitchNames, BTFData data) throws IOException{
-		this.binarySwitchNames = binarySwitchNames;
-		this.data = data;
-		dim = outputDimensionality;
-		transitionFunction = new double[numStates][numStates][(int)Math.pow(2,binarySwitchNames.length)];
-		transitionMonitors = new Object[numStates][numStates][(int)Math.pow(2,binarySwitchNames.length)];
+		
+	public BIOHMM(int numStates, BIOHMMInputParser bip) throws IOException{
+		this.bip = bip;
+		dim = bip.outputDim();
+		transitionFunction = new double[numStates][numStates][(int)Math.pow(2,bip.numSwitches())];
+		transitionMonitors = new Object[numStates][numStates][(int)Math.pow(2,bip.numSwitches())];
 		for(int i=0;i<transitionMonitors.length;i++){
 			for(int j=0;j<transitionMonitors[i].length;j++){
 				for(int k=0;k<transitionMonitors[i][j].length;k++){
@@ -35,64 +32,33 @@ public class BIOHMM{
 			}
 		}
 		prior = new double[numStates];
-		partition = new int[data.loadColumn("id").length];
+		partition = new int[bip.partSize()];
 		for(int i=0;i<numStates;i++){
 			for(int j=0;j<numStates;j++){
-				for(int k=0;k<(int)Math.pow(2,binarySwitchNames.length);k++){
+				for(int k=0;k<(int)Math.pow(2,bip.numSwitches());k++){
 					transitionFunction[i][j][k] = 1.0/(numStates*numStates);
 				}
 			}
 			prior[i] = 1.0/numStates;
 		}
 		for(int i=0;i<partition.length;i++){
-			partition[i] = (int)Math.floor(i/(partition.length/numStates));
+			partition[i] = (int)Math.floor((i/(partition.length/numStates)));
 		}
-	}
-	
-	private double[] getDataAtIDX(int idx){
-		double[] datapoint = new double[7];
-		String[] tmp = desiredVel[idx].split(" ");
-		datapoint[0] = Double.parseDouble(tmp[0]);
-		datapoint[1] = Double.parseDouble(tmp[1]);
-		datapoint[2] = Double.parseDouble(tmp[2]);
-		tmp = wallVec[idx].split(" ");
-		datapoint[3] = Double.parseDouble(tmp[0]);
-		datapoint[4] = Double.parseDouble(tmp[1]);
-		tmp = antVec[idx].split(" ");
-		datapoint[5] = Double.parseDouble(tmp[0]);
-		datapoint[6] = Double.parseDouble(tmp[1]);
-		//tmp = prevVec[idx].split(" ");
-		//datapoint[7] = Double.parseDouble(tmp[0]);
-		//datapoint[8] = Double.parseDouble(tmp[1]);
-		//datapoint[9] = Double.parseDouble(tmp[2]);
-		return datapoint;
-	}
-	
-	private int getSwitchAtIDX(int idx){
-		int k = 0;
-		if(Boolean.parseBoolean(wallBool[idx])){
-			k += 1;
-		}
-		k = k<<1;
-		if(Boolean.parseBoolean(antBool[idx])){
-			k+=1;
-		}
-		return k;
 	}
 	
 	public void calculateAlpha(	ArrayList<Integer> seq,
 								KernelDensityEstimator[] b,
 								double[][] alpha){
 		for(int i=0;i<prior.length;i++){
-			alpha[0][i] = prior[i]*b[i].estimate(getDataAtIDX(seq.get(0)),bandwidth);
+			alpha[0][i] = prior[i]*b[i].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth);
 		}
 		for(int t=1;t<seq.size();t++){
 			for(int j=0;j<prior.length;j++){
 				alpha[t][j] = 0.0;
 				for(int i=0;i<prior.length;i++){
-					alpha[t][j] += alpha[t-1][i]*transitionFunction[i][j][getSwitchAtIDX(seq.get(t-1))];
+					alpha[t][j] += alpha[t-1][i]*transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t-1))];
 				}
-				alpha[t][j] *= b[j].estimate(getDataAtIDX(seq.get(0)),bandwidth);
+				alpha[t][j] *= b[j].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth);
 			}
 		}
 	}
@@ -104,7 +70,7 @@ public class BIOHMM{
 		double[] bar_alpha = new double[prior.length];
 		for(int t=0;t<seq.size();t++) coeff_c[t] = 0.0;
 		for(int j=0;j<prior.length;j++){
-			bar_alpha[j] = prior[j]*b[j].estimate(getDataAtIDX(seq.get(0)),bandwidth);
+			bar_alpha[j] = prior[j]*b[j].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth);
 			coeff_c[0] += bar_alpha[j];
 		}
 		coeff_c[0] = 1.0/coeff_c[0];
@@ -117,11 +83,11 @@ public class BIOHMM{
 				bar_alpha[j] = 0.0;
 				for(int i=0;i<prior.length;i++){
 					double tmp = hat_alpha[t-1][i];
-					tmp = tmp*transitionFunction[i][j][getSwitchAtIDX(seq.get(t-1))];
+					tmp = tmp*transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t-1))];
 					//tmp = tmp*b[j].estimate(getDataAtIDX(seq.get(t)),bandwidth);
 					bar_alpha[j] += tmp;
 				}
-				bar_alpha[j] = bar_alpha[j]*b[j].estimate(getDataAtIDX(seq.get(t)),bandwidth);
+				bar_alpha[j] = bar_alpha[j]*b[j].estimate(bip.getDataAtIDX(seq.get(t)),bandwidth);
 				coeff_c[t] += bar_alpha[j];
 			}
 			coeff_c[t] = 1.0/coeff_c[t];
@@ -141,7 +107,7 @@ public class BIOHMM{
 			for(int i=0;i<prior.length;i++){
 				beta[t][i] = 0.0;
 				for(int j=0;j<prior.length;j++){
-					beta[t][i] += transitionFunction[i][j][getSwitchAtIDX(seq.get(t))]*b[j].estimate(getDataAtIDX(seq.get(t+1)),bandwidth)*beta[t+1][j];
+					beta[t][i] += transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t))]*b[j].estimate(bip.getDataAtIDX(seq.get(t+1)),bandwidth)*beta[t+1][j];
 				}
 			}
 		}
@@ -161,12 +127,12 @@ public class BIOHMM{
 			for(int j=0;j<prior.length;j++){
 				bar_beta[j] = 0.0;
 				for(int i=0;i<prior.length;i++){
-					double tmp = transitionFunction[i][j][getSwitchAtIDX(seq.get(t))];
+					double tmp = transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t))];
 					//tmp = tmp * b[j].estimate(getDataAtIDX(seq.get(t+1)),bandwidth);
 					tmp = tmp * hat_beta[t+1][i];
 					bar_beta[j] += tmp;
 				}
-				bar_beta[j] = bar_beta[j] * b[j].estimate(getDataAtIDX(seq.get(t+1)),bandwidth);
+				bar_beta[j] = bar_beta[j] * b[j].estimate(bip.getDataAtIDX(seq.get(t+1)),bandwidth);
 				hat_beta[t][j] = coeff_c[t]*bar_beta[j];
 			}
 		}
@@ -186,8 +152,8 @@ public class BIOHMM{
 						xi[t][i][j] = 0.0;
 					} else {
 						xi[t][i][j] = alpha[t][i];
-						xi[t][i][j] *= transitionFunction[i][j][getSwitchAtIDX(seq.get(t))];
-						xi[t][i][j] *= b[j].estimate(getDataAtIDX(seq.get(t+1)),bandwidth);
+						xi[t][i][j] *= transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t))];
+						xi[t][i][j] *= b[j].estimate(bip.getDataAtIDX(seq.get(t+1)),bandwidth);
 						xi[t][i][j] *= beta[t+1][j];
 						sum += xi[t][i][j];
 					}
@@ -222,8 +188,8 @@ public class BIOHMM{
 						xi[t][i][j] = 0.0;
 					} else {
 						xi[t][i][j] = hat_alpha[t][i];
-						xi[t][i][j] *= transitionFunction[i][j][getSwitchAtIDX(seq.get(t))];
-						xi[t][i][j] *= b[j].estimate(getDataAtIDX(seq.get(t+1)),bandwidth);
+						xi[t][i][j] *= transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t))];
+						xi[t][i][j] *= b[j].estimate(bip.getDataAtIDX(seq.get(t+1)),bandwidth);
 						xi[t][i][j] *= hat_beta[t+1][j];
 					}
 					sum += xi[t][i][j];
@@ -303,7 +269,7 @@ public class BIOHMM{
 				for(int k=0;k<transNumerator[i][j].length;k++){
 					double numSum = 0.0, denomSum = 0.0;
 					for(int t=0;t<seq.size();t++){
-						if(k== getSwitchAtIDX(seq.get(t))){
+						if(k== bip.getSwitchAtIDX(seq.get(t))){
 							numSum += xi[t][i][j];
 							denomSum += gamma[t][i];
 						}
@@ -333,22 +299,22 @@ public class BIOHMM{
 		double[][] delta = new double[seq.size()][prior.length];
 		int[][] psi = new int[seq.size()][prior.length];
 		for(int i=0;i<prior.length;i++){
-			delta[0][i] = prior[i]*b[i].estimate(getDataAtIDX(seq.get(0)),bandwidth);
+			delta[0][i] = prior[i]*b[i].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth);
 			psi[0][i] = 0;
 		}
 		for(int t=1;t<seq.size();t++){
 			for(int j=0;j<prior.length;j++){
 				int maxState = 0;
 				double max = delta[t-1][0], tmp;
-				max *= transitionFunction[0][j][getSwitchAtIDX(seq.get(t-1))];
+				max *= transitionFunction[0][j][bip.getSwitchAtIDX(seq.get(t-1))];
 				for(int i=1;i<prior.length;i++){
-					tmp = delta[t-1][i] * transitionFunction[i][j][getSwitchAtIDX(seq.get(t-1))];
+					tmp = delta[t-1][i] * transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t-1))];
 					if(tmp > max){ 
 						max = tmp;
 						maxState = i;
 					}
 				}
-				delta[t][j] = max * b[j].estimate(getDataAtIDX(seq.get(t)),bandwidth);
+				delta[t][j] = max * b[j].estimate(bip.getDataAtIDX(seq.get(t)),bandwidth);
 				psi[t][j] = maxState;
 			}
 		}
@@ -367,16 +333,10 @@ public class BIOHMM{
 		//}
 	}
 	
-	public void learn(double epsilon) throws IOException{ learn(getSequences(data), epsilon); }
+	public void learn(double epsilon) throws IOException{ learn(bip.getSequences(), epsilon); }
 	
 	public void learn(final ArrayList<ArrayList<Integer>> sequences, double epsilon) throws IOException{
 		boolean converged = false;
-		desiredVel = data.loadColumn("dvel");
-		wallVec = data.loadColumn("wallvec");
-		wallBool = data.loadColumn("wallbool");
-		antVec = data.loadColumn("antvec");
-		antBool = data.loadColumn("antbool");
-		prevVec = data.loadColumn("pvel");
 		int iter = 0;
 		BigDecimal prevLL = null;
 		BigDecimal eps = new BigDecimal(epsilon);
@@ -385,9 +345,9 @@ public class BIOHMM{
 			System.out.println("Iteration "+(iter+1));
 			iter++;
 			final double[] newPrior = new double[prior.length];
-			final double[][][] newTransition = new double[newPrior.length][newPrior.length][(int)Math.pow(2,binarySwitchNames.length)];
-			final double[][][] newTransitionNumerator = new double[newPrior.length][newPrior.length][(int)Math.pow(2,binarySwitchNames.length)];
-			final double[][][] newTransitionDenominator = new double[newPrior.length][newPrior.length][(int)Math.pow(2,binarySwitchNames.length)];
+			final double[][][] newTransition = new double[newPrior.length][newPrior.length][(int)Math.pow(2,bip.numSwitches())];
+			final double[][][] newTransitionNumerator = new double[newPrior.length][newPrior.length][(int)Math.pow(2,bip.numSwitches())];
+			final double[][][] newTransitionDenominator = new double[newPrior.length][newPrior.length][(int)Math.pow(2,bip.numSwitches())];
 			for(int i=0;i<newPrior.length;i++){
 				for(int j=0;j<newPrior.length;j++){
 					for(int k=0;k<newTransitionNumerator[i][j].length;k++){
@@ -399,13 +359,14 @@ public class BIOHMM{
 			}
 			System.out.println("Initializing KDE's");
 			final int[] newPartition = new int[partition.length];
+			for(int i=0;i<newPartition.length;i++) newPartition[i] = -1;
 			final KernelDensityEstimator[] b = new KernelDensityEstimator[prior.length];
 			double[] datapoint;
 			for(int i=0;i<b.length;i++){
 				b[i] = new KernelDensityEstimator(dim,new KernelDensityEstimator.NormalKernel(kernelSigma));
 				for(int j=0;j<partition.length;j++){
 					if(partition[j] == i){
-						b[i].add(getDataAtIDX(j));
+						b[i].add(bip.getDataAtIDX(j));
 					}
 				}
 			}
@@ -483,6 +444,10 @@ public class BIOHMM{
 				throw new RuntimeException(ie);
 			}
 			
+			System.out.print("New Partition: [");
+			for(int i=0;i<newPartition.length;i++) System.out.print(newPartition[i]);
+			System.out.println("]");
+			
 			for(int i=0;i<prior.length;i++){
 				for(int j=0;j<prior.length;j++){
 					for(int k=0;k<newTransition[i][j].length;k++){
@@ -531,65 +496,7 @@ public class BIOHMM{
 			partition = newPartition;
 		} while(!converged);
 	}
-	
-	public ArrayList<ArrayList<Integer>> getSequences(BTFData data) throws IOException{
-		//parse file's into sequences
-		//a sequence is an arraylist of indecies into the BTFData
-		String[] antID = data.loadColumn("id");
-		//String[] desiredVel = data.loadColumn("dvel");
-		//String[] desiredVelBool = data.loadColumn("dbool");
-		//String[] wallVec = data.loadColumn("wallvec");
-		//String[] antVec = data.loadColumn("antvec");
-		//String[] antBool = data.loadColumn("antbool");
-		//String[] prevVec = data.loadColumn("pvel");
-		//String[] prevBoolVec = data.loadColumn("pbool");
-		String[] clockTime = data.loadColumn("clocktime");
-		ArrayList<ArrayList<Integer>> sequences = new ArrayList<ArrayList<Integer>>();
-		ArrayList<ArrayList<Integer>> currentSeqIDX = new ArrayList<ArrayList<Integer>>();
-		String oldTime = "start";
-		for(int i=0;i<antID.length;i++){
-			//if the current time != old time
-			if(!clockTime[i].equals(oldTime)){
-				//check to make sure each sequence in currentSeqIDX got updated
-				//if a sequence didn't get updated, remove it from currentSeqIDX
-				//and add it to sequences
-				for(int j=0;j<currentSeqIDX.size();j++){
-					int tmpLastSeenIDX = currentSeqIDX.get(j).get(currentSeqIDX.get(j).size()-1);
-					String lastTimeSeen = clockTime[tmpLastSeenIDX];
-					if(!lastTimeSeen.equals(oldTime)){// || currentSeqIDX.get(j).size() >= 10){
-						sequences.add(currentSeqIDX.get(j));
-						currentSeqIDX.remove(j);
-						j--;
-					}
-				}
-				oldTime = clockTime[i];
-			}
-			//get the ID of the current line. If it's not currently being
-			//tracked, add it to currentSeqIDX along with a new arraylist.
-			int curID = Integer.parseInt(antID[i]);
-			boolean found = false;
-			for(int j=0;j<currentSeqIDX.size();j++){
-				int tmpIDX = currentSeqIDX.get(j).get(currentSeqIDX.get(j).size()-1);
-				int thisSeqID = Integer.parseInt(antID[tmpIDX]);
-				if(thisSeqID == curID){
-					currentSeqIDX.get(j).add(i);
-					found = true;
-					break;
-				}
-			}
-			if(!found){
-				ArrayList<Integer> tmpSeqIDX = new ArrayList<Integer>();
-				tmpSeqIDX.add(i);
-				currentSeqIDX.add(tmpSeqIDX);
-			}
-		}
-		//now add all the remaining active sequences
-		for(int j=0;j<currentSeqIDX.size();j++){
-			sequences.add(currentSeqIDX.get(j));
-		}
-		return sequences;
-	}
-	
+
 	public void writeParameters(File parameterFile) throws IOException{
 		FileWriter outf = new FileWriter(parameterFile);
 		//write prior
@@ -624,12 +531,12 @@ public class BIOHMM{
 			System.out.println("Usage: java BIOHMM <btfDirectory>");
 		} else {
 			try{
-				String[] names = {"antbool","wallbool"};
 				BTFData btf = new BTFData();
 				btf.loadDir(new File(args[0]));
 				ArrayList<ArrayList<Integer>> sequences;
-				BIOHMM biohmm = new BIOHMM(2,7,names,btf);
-				sequences = biohmm.getSequences(btf);
+				BIOHMMInputParser bip = new SimpleInputParser(btf);//BIOHMMInputParser(btf);
+				BIOHMM biohmm = new BIOHMM(2,bip);
+				sequences = bip.getSequences();
 				System.out.println("Num sequences:"+sequences.size());
 				biohmm.learn(sequences,0.01);
 				System.out.println("Prior:");
