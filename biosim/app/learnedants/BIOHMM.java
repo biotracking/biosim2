@@ -19,6 +19,33 @@ public class BIOHMM{
 	int dim, numThreads = 4;
 	double kernelSigma = 1.0, bandwidth = 1.0;
 		
+	public static double elnsum(double logx, double logy){
+		//given log(x), and log(y), return log(x+y)
+		if(logx == Double.NEGATIVE_INFINITY || logy == Double.NEGATIVE_INFINITY){
+			if(logx != Double.NEGATIVE_INFINITY) return logx;
+			else return logy;
+		} else {
+			//So the log of the sum of two non-zero numbers can be
+			//expressed as a function of their logs in the following way:
+			//ln(x+y) = ln(x) + ln(1 + exp(ln(y) - ln(x)))
+			//we reduce this down like so:
+			//ln(x) + ln(1 + exp(ln(y/x)))
+			//ln(x) + ln(1 + y/x)
+			//ln(x) + ln( (x+y) / x)
+			//ln(x) + ln(x+y) - ln(x)
+			//ln(x+y) hooray!
+			//It's noted that it's important to always subtract buy the larger
+			//number in the exponent, so that the result is a exponent that
+			//doesn't overflow to infinity
+			if(logx < logy){
+				double tmp = logx;
+				logx = logy;
+				logy = tmp;
+			}
+			return (logx + Math.log(1 + Math.exp(logy - logx)));
+		}
+	}
+	
 	public BIOHMM(int numStates, BIOHMMInputParser bip) throws IOException{
 		this.bip = bip;
 		dim = bip.outputDim();
@@ -63,6 +90,23 @@ public class BIOHMM{
 		}
 	}
 	
+	public void calculateLogAlpha(	ArrayList<Integer> seq,
+									KernelDensityEstimator[] b,
+									double[][] logalpha){
+		for(int i=0;i<prior.length;i++){
+			logalpha[0][i] = Math.log(prior[i])+Math.log(b[i].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth));
+		}
+		for(int t=1;t<seq.size();t++){
+			for(int j=0;j<prior.length;j++){
+				logalpha[t][j] = Double.NEGATIVE_INFINITY;
+				for(int i=0;i<prior.length;i++){
+					logalpha[t][j] = elnsum(logalpha[t-1][i],Math.log(transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t-1))]));
+				}
+				logalpha[t][j] += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth));
+			}
+		}
+	}
+	
 	public void calculateScaledAlpha(	ArrayList<Integer> seq,
 										KernelDensityEstimator[] b,
 										double[][] hat_alpha,
@@ -70,10 +114,13 @@ public class BIOHMM{
 		double[] bar_alpha = new double[prior.length];
 		for(int t=0;t<seq.size();t++) coeff_c[t] = 0.0;
 		for(int j=0;j<prior.length;j++){
-			bar_alpha[j] = prior[j]*b[j].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth);
+			double tmpprior = prior[j];
+			double tmpoutp = b[j].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth);
+			System.out.println("bar_alpha["+j+"] = "+tmpprior+" * "+tmpoutp);
+			bar_alpha[j] = tmpprior*tmpoutp;//prior[j]*b[j].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth);
 			coeff_c[0] += bar_alpha[j];
 		}
-		coeff_c[0] = 1.0/coeff_c[0];
+		if(coeff_c[0] != 0.0) coeff_c[0] = 1.0/coeff_c[0];
 		for(int j=0;j<prior.length;j++){
 			hat_alpha[0][j] = coeff_c[0] * bar_alpha[j];
 		}
@@ -90,11 +137,18 @@ public class BIOHMM{
 				bar_alpha[j] = bar_alpha[j]*b[j].estimate(bip.getDataAtIDX(seq.get(t)),bandwidth);
 				coeff_c[t] += bar_alpha[j];
 			}
-			coeff_c[t] = 1.0/coeff_c[t];
+			if(coeff_c[t] != 0.0) coeff_c[t] = 1.0/coeff_c[t];
 			for(int j=0;j<prior.length;j++){
 				hat_alpha[t][j] = coeff_c[t] * bar_alpha[j];
 			}
 		}
+		/*
+		System.out.print("[");
+		for(int i=0;i<coeff_c.length;i++){
+			System.out.print(coeff_c[i]);
+		}
+		System.out.println("]");
+		*/
 	}
 	
 	public void calculateBeta(	ArrayList<Integer> seq,
@@ -108,6 +162,25 @@ public class BIOHMM{
 				beta[t][i] = 0.0;
 				for(int j=0;j<prior.length;j++){
 					beta[t][i] += transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t))]*b[j].estimate(bip.getDataAtIDX(seq.get(t+1)),bandwidth)*beta[t+1][j];
+				}
+			}
+		}
+	}
+
+	public void calculateLogBeta(	ArrayList<Integer> seq,
+									KernelDensityEstimator[] b,
+									double[][] logbeta){
+		for(int i=0;i<prior.length;i++){
+			logbeta[seq.size()-1][i] = 0.0;
+		}
+		for(int t=seq.size()-2;t>=0;t--){
+			for(int i=0;i<prior.length;i++){
+				logbeta[t][i] = Double.NEGATIVE_INFINITY;
+				for(int j=0;j<prior.length;j++){
+					double tmplog = Math.log(transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t))]);
+					tmplog += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t+1)),bandwidth));
+					tmplog += logbeta[t+1][j];
+					logbeta[t][i] = elnsum(logbeta[t][i],tmplog);
 				}
 			}
 		}
@@ -163,6 +236,37 @@ public class BIOHMM{
 				for(int i=0;i<prior.length;i++){
 					for(int j=0;j<prior.length;j++){
 						xi[t][i][j] = xi[t][i][j]/sum;
+					}
+				}
+			}
+		}
+	}
+
+	public void calculateLogXi(	ArrayList<Integer> seq,
+								KernelDensityEstimator[] b,
+								double[][] logalpha,
+								double[][] logbeta,
+								double[][][] logxi){
+		double logsum;
+		for(int t=0;t<seq.size();t++){
+			logsum = Double.NEGATIVE_INFINITY;
+			for(int i=0;i<prior.length;i++){
+				for(int j=0;j<prior.length;j++){
+					if(t == (seq.size()-1)){
+						logxi[t][i][j] = Double.NEGATIVE_INFINITY;
+					} else {
+						logxi[t][i][j] = logalpha[t][i];
+						double tmplog = Math.log(transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t))]);
+						tmplog += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t+1)),bandwidth));
+						tmplog += logbeta[t+1][j];
+						logsum = elnsum(logsum,logxi[t][i][j]);
+					}
+				}
+			}
+			for(int i=0;i<prior.length;i++){
+				for(int j=0;j<prior.length;j++){
+					if(logxi[t][i][j] != Double.NEGATIVE_INFINITY){
+						logxi[t][i][j] = logxi[t][i][j]-logsum;
 					}
 				}
 			}
@@ -227,6 +331,20 @@ public class BIOHMM{
 		}
 	}
 	
+	public void calculateLogGamma(double[][] logalpha, double[][] logbeta, double[][] loggamma){
+		for(int t=0;t<logalpha.length;t++){
+			double logsum = Double.NEGATIVE_INFINITY;
+			for(int i=0;i<prior.length;i++){
+				//System.out.println("logbeta["+t+"]["+i+"] = "+logbeta[t][i]);
+				loggamma[t][i] = logalpha[t][i]+logbeta[t][i];
+				logsum = elnsum(logsum,loggamma[t][i]);
+			}
+			for(int i=0;i<prior.length;i++){
+				loggamma[t][i] = loggamma[t][i] - logsum;
+			}
+		}
+	}
+	
 	public BigDecimal calculateSeqLogLikelihood(double[][] hat_alpha, double[] coeff_c){
 		//According to Rabiner, the likelihood of the observation sequence under
 		//a given model is just the sum of the alpha variable at time T of each
@@ -235,6 +353,10 @@ public class BIOHMM{
 		BigDecimal C_T = BigDecimal.ZERO;
 		double rv = 0.0;
 		for(int t=0;t<coeff_c.length;t++){
+			if(coeff_c[t] == 0.0){ 
+				C_T = BigDecimal.ZERO;
+				break;
+			}
 			C_T = C_T.add(new BigDecimal(Math.log(coeff_c[t])));
 		}
 		for(int i=0;i<prior.length;i++){
@@ -251,10 +373,26 @@ public class BIOHMM{
 		return new BigDecimal(Math.log(rv));
 	}
 	
+	public BigDecimal loglikeForSeq(double[][] logalpha){
+		double rv = Double.NEGATIVE_INFINITY;
+		for(int i=0;i<prior.length;i++){
+			rv = elnsum(rv,logalpha[logalpha.length-1][i]);
+		}
+		return new BigDecimal(rv);
+	}
+	
 	public void updatePrior(double[] newPrior, double[][] gamma, int numSequences){
 		synchronized(newPrior){
 			for(int i=0;i<prior.length;i++){
 				newPrior[i] += gamma[0][i]/numSequences;
+			}
+		}
+	}
+	
+	public void updatePriorLog(double[] newPrior, double[][] loggamma, int numSequences){
+		synchronized(newPrior){
+			for(int i=0;i<prior.length;i++){
+				newPrior[i] += Math.exp(loggamma[0][i])/numSequences;
 			}
 		}
 	}
@@ -282,6 +420,31 @@ public class BIOHMM{
 			}
 		}		
 	}
+
+	public void updateTransitionsLog(	ArrayList<Integer> seq,
+										double[][][] logtransNumerator, 
+										double[][][] logtransDenominator,
+										double[][][] logxi,
+										double[][] loggamma){
+		for(int i=0;i<prior.length;i++){
+			for(int j=0;j<prior.length;j++){
+				for(int k=0;k<logtransNumerator[i][j].length;k++){
+					double numSum = Double.NEGATIVE_INFINITY, denomSum = Double.NEGATIVE_INFINITY;
+					for(int t=0;t<seq.size();t++){
+						if(k== bip.getSwitchAtIDX(seq.get(t))){
+							numSum = elnsum(numSum,logxi[t][i][j]);
+							denomSum = elnsum(denomSum,loggamma[t][i]);
+						}
+					}
+					synchronized(transitionMonitors[i][j][k]){
+						logtransNumerator[i][j][k] = elnsum(logtransNumerator[i][j][k], numSum);
+						logtransDenominator[i][j][k] = elnsum(logtransDenominator[i][j][k], denomSum);
+					}
+				}
+			}
+		}		
+	}
+
 	
 	public void updatePartition(ArrayList<Integer> seq, double[][] gamma, int[] newPartition){
 		for(int t=0;t<gamma.length;t++){
@@ -332,6 +495,45 @@ public class BIOHMM{
 			}
 		//}
 	}
+
+	public void updatePartitionLog(ArrayList<Integer> seq, KernelDensityEstimator[] b, int[] newPartition){
+		double[][] logdelta = new double[seq.size()][prior.length];
+		int[][] psi = new int[seq.size()][prior.length];
+		for(int i=0;i<prior.length;i++){
+			logdelta[0][i] = Math.log(prior[i])+Math.log(b[i].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth));
+			psi[0][i] = 0;
+		}
+		for(int t=1;t<seq.size();t++){
+			for(int j=0;j<prior.length;j++){
+				int maxState = 0;
+				double max = logdelta[t-1][0], tmp;
+				max += Math.log(transitionFunction[0][j][bip.getSwitchAtIDX(seq.get(t-1))]);
+				for(int i=1;i<prior.length;i++){
+					tmp = logdelta[t-1][i] + Math.log(transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t-1))]);
+					if(tmp > max){ 
+						max = tmp;
+						maxState = i;
+					}
+				}
+				logdelta[t][j] = max + Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t)),bandwidth));
+				psi[t][j] = maxState;
+			}
+		}
+		int tmpMaxState = 0;
+		for(int i=0;i<prior.length;i++){
+			if(logdelta[seq.size()-1][i] > logdelta[seq.size()-1][tmpMaxState]){
+				tmpMaxState = i;
+			}
+		}
+		
+		//synchronized(newPartition){
+			newPartition[seq.get(seq.size()-1)] = tmpMaxState;
+			for(int t = seq.size()-2;t >=0;t--){
+				newPartition[seq.get(t)] = psi[t+1][newPartition[seq.get(t+1)]];
+			}
+		//}
+	}
+
 	
 	public void learn(double epsilon) throws IOException{ learn(bip.getSequences(), epsilon); }
 	
@@ -393,7 +595,7 @@ public class BIOHMM{
 								}
 								seq = sequences.get(tmpIdx);
 								//do the crap
-								/* */
+								/* scaled BW 
 								double[][] hat_alpha = new double[seq.size()][prior.length];
 								double[] coeff_c = new double[seq.size()];
 								calculateScaledAlpha(seq, b, hat_alpha, coeff_c);
@@ -402,9 +604,17 @@ public class BIOHMM{
 								double[][][] xi = new double[seq.size()][prior.length][prior.length];
 								calcXiFromScaled(seq,b,hat_alpha,hat_beta,xi);
 								double[][] gamma = new double[seq.size()][prior.length];
+								calcGammaFromXi(xi,gamma);
+
+								updatePrior(newPrior,gamma,sequences.size());
+								updateTransitions(seq,newTransitionNumerator, newTransitionDenominator, xi, gamma);
+								updatePartition(seq, b, newPartition);
+								//updatePartition(seq, gamma, newPartition);
+								loglike[tmpIdx] = calculateSeqLogLikelihood(hat_alpha,coeff_c);
+
 								/* */
 								
-								/* 
+								/* regular BW 
 								double[][] alpha = new double[seq.size()][prior.length];
 								calculateAlpha(seq,b,alpha);
 								double[][] beta = new double[seq.size()][prior.length];
@@ -412,21 +622,32 @@ public class BIOHMM{
 								double[][][] xi = new double[seq.size()][prior.length][prior.length];
 								calculateXi(seq,b,alpha,beta,xi);
 								double[][] gamma = new double[seq.size()][prior.length];
-								/* */
 								calcGammaFromXi(xi,gamma);
-								//synchronized(newPrior){
-									updatePrior(newPrior,gamma,sequences.size());
-								//}
-								//synchronized(newTransitionNumerator){
-									updateTransitions(seq,newTransitionNumerator, newTransitionDenominator, xi, gamma);
-								//}
-								//synchronized(newPartition){
-									updatePartition(seq, b, newPartition);
-									//updatePartition(seq, gamma, newPartition);
-								//}
+
+								updatePrior(newPrior,gamma,sequences.size());
+								updateTransitions(seq,newTransitionNumerator, newTransitionDenominator, xi, gamma);
+								updatePartition(seq, b, newPartition);
+								//updatePartition(seq, gamma, newPartition);
+								loglike[tmpIdx] = calculateSeqLogLikelihood(alpha);
+								/* */
+								
+								/* Log-space BW */
+								double[][] logalpha = new double[seq.size()][prior.length];
+								calculateLogAlpha(seq, b, logalpha);
+								double[][] logbeta = new double[seq.size()][prior.length];
+								calculateLogBeta(seq, b, logbeta);
+								double[][][] logxi = new double[seq.size()][prior.length][prior.length];
+								calculateLogXi(seq, b, logalpha, logbeta, logxi);
+								double[][] loggamma = new double[seq.size()][prior.length];
+								calculateLogGamma(logalpha, logbeta, loggamma);
+								
+								updatePriorLog(newPrior, loggamma, sequences.size());
+								updateTransitionsLog(seq, newTransitionNumerator, newTransitionDenominator, logxi, loggamma);
+								updatePartitionLog(seq, b, newPartition);
+								loglike[tmpIdx] = loglikeForSeq(logalpha);
+								/* */
+
 								System.out.println("Sequence "+tmpIdx+" completed");
-								loglike[tmpIdx] = calculateSeqLogLikelihood(hat_alpha,coeff_c);
-								//loglike[tmpIdx] = calculateSeqLogLikelihood(alpha);
 								//end do the crap
 								synchronized(tmpSeqIdx){
 									seqsLeft = tmpSeqIdx.size();
@@ -443,15 +664,17 @@ public class BIOHMM{
 			}catch(InterruptedException ie){
 				throw new RuntimeException(ie);
 			}
-			
+			/*
 			System.out.print("New Partition: [");
 			for(int i=0;i<newPartition.length;i++) System.out.print(newPartition[i]);
 			System.out.println("]");
+			*/
 			
+			System.out.println("ASSUMING NUM/DENOM ARE LOG!!!!");
 			for(int i=0;i<prior.length;i++){
 				for(int j=0;j<prior.length;j++){
 					for(int k=0;k<newTransition[i][j].length;k++){
-						newTransition[i][j][k] = newTransitionNumerator[i][j][k]/newTransitionDenominator[i][j][k];
+						newTransition[i][j][k] = Math.exp(newTransitionNumerator[i][j][k]-newTransitionDenominator[i][j][k]);
 					}
 				}
 			}

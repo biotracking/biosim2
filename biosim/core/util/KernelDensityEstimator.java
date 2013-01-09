@@ -41,6 +41,7 @@ public class KernelDensityEstimator{
 			sum += weights.get(i)*kernel.k(tmp);
 			weightSum += weights.get(i);
 		}
+		if(samples.size() == 0) return 0.0;
 		return (1.0/(weightSum*bandwidth))*sum;
 	}
 	
