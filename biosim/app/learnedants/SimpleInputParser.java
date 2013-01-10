@@ -9,6 +9,7 @@ import java.util.ArrayList;
 public class SimpleInputParser extends BIOHMMInputParser {
 
 	protected String[] output, switching;
+	public static final int SEQMAX=1000;
 	public SimpleInputParser(BTFData data){
 		super(data);
 		this.data = data;
@@ -35,12 +36,14 @@ public class SimpleInputParser extends BIOHMMInputParser {
 	public int outputDim(){ return 1; }
 	
 	public ArrayList<ArrayList<Integer>> getSequences(){
-		ArrayList<Integer> tmp = new ArrayList<Integer>();
-		for(int i=0;i<partSize();i++){
-			tmp.add(i);
-		}
 		ArrayList<ArrayList<Integer>> sequences = new ArrayList<ArrayList<Integer>>();
-		sequences.add(tmp);
+		for(int j=0;j<partSize();j+=SEQMAX){
+			ArrayList<Integer> tmp = new ArrayList<Integer>();
+			for(int i=j;i<partSize()&&i-j<SEQMAX;i++){
+				tmp.add(i);
+			}
+			sequences.add(tmp);
+		}
 		return sequences;
 	}
 }

@@ -18,6 +18,7 @@ public class BIOHMM{
 	BTFData data;
 	int dim, numThreads = 4;
 	double kernelSigma = 1.0, bandwidth = 1.0;
+	public static final boolean PRINT_ITERATIONS = true;
 		
 	public static double elnsum(double logx, double logy){
 		//given log(x), and log(y), return log(x+y)
@@ -717,6 +718,9 @@ public class BIOHMM{
 			prior = newPrior;
 			transitionFunction = newTransition;
 			partition = newPartition;
+			if(PRINT_ITERATIONS){
+				writeParameters(new File("biohmm_parameters_Iteration_"+iter+".txt"));
+			}
 		} while(!converged);
 	}
 
