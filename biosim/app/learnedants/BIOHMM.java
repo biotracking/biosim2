@@ -19,6 +19,7 @@ public class BIOHMM{
 	int dim, numThreads = 4;
 	double kernelSigma = 1.0, bandwidth = 1.0;
 	public static final boolean PRINT_ITERATIONS = true;
+	public final KernelDensityEstimator[] b;
 		
 	public static double elnsum(double logx, double logy){
 		//given log(x), and log(y), return log(x+y)
@@ -72,6 +73,16 @@ public class BIOHMM{
 		for(int i=0;i<partition.length;i++){
 			partition[i] = (int)Math.floor((i/(partition.length/numStates)));
 		}
+		b = new KernelDensityEstimator[prior.length];
+		for(int i=0;i<b.length;i++){
+			b[i] = new KernelDensityEstimator(dim, new KernelDensityEstimator.NormalKernel(kernelSigma));
+			for(int j=0;j<partition.length;j++){
+				if(partition[j] == i){
+					b[i].add(bip.getDataAtIDX(j));
+				}
+			}
+		}
+		
 	}
 	
 	public void calculateAlpha(	ArrayList<Integer> seq,
@@ -534,6 +545,11 @@ public class BIOHMM{
 			}
 		//}
 	}
+	public void addToKDE(KernelDensityEstimator[] b, int[] newPartition){
+		for(int t=0;t<newPartition.length;t++){
+			b[partition[t]].add(bip.getDataAtIDX(t));
+		}
+	}
 
 	
 	public void learn(double epsilon) throws IOException{ learn(bip.getSequences(), epsilon); }
@@ -563,8 +579,9 @@ public class BIOHMM{
 			System.out.println("Initializing KDE's");
 			final int[] newPartition = new int[partition.length];
 			for(int i=0;i<newPartition.length;i++) newPartition[i] = -1;
-			final KernelDensityEstimator[] b = new KernelDensityEstimator[prior.length];
+			//final KernelDensityEstimator[] b = new KernelDensityEstimator[prior.length];
 			double[] datapoint;
+			/*
 			for(int i=0;i<b.length;i++){
 				b[i] = new KernelDensityEstimator(dim,new KernelDensityEstimator.NormalKernel(kernelSigma));
 				for(int j=0;j<partition.length;j++){
@@ -573,6 +590,7 @@ public class BIOHMM{
 					}
 				}
 			}
+			*/
 			//do each sequence in parallel
 			/* */
 			final ArrayList<Integer> tmpSeqIdx = new ArrayList<Integer>(sequences.size());
@@ -718,6 +736,7 @@ public class BIOHMM{
 			prior = newPrior;
 			transitionFunction = newTransition;
 			partition = newPartition;
+			addToKDE(b, newPartition);
 			if(PRINT_ITERATIONS){
 				writeParameters(new File("biohmm_parameters_Iteration_"+iter+".txt"));
 			}
@@ -750,6 +769,20 @@ public class BIOHMM{
 			outf.write(partition[i]+" ");
 		}
 		outf.write("\n");
+		//write KDE weights
+		for(int i=0;i<b.length;i++){
+			//datapoint then weight
+			//x1 x2 x3 ... xD weight
+			outf.write(i+"\n");
+			for(int j=0;j<b[i].samples.size();j++){
+				double[] sample = b[i].samples.get(j);
+				for(int d=0;d<sample.length;d++){
+					outf.write(sample[d]+" ");
+				}
+				outf.write(b[i].weights.get(j)+"\n");
+			}
+			outf.write("\n");
+		}
 		outf.close();
 	}
 	

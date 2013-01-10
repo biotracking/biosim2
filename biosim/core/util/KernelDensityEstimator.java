@@ -9,9 +9,9 @@ import java.io.BufferedReader;
 
 public class KernelDensityEstimator{
 	public ArrayList<Double> weights;
-	private ArrayList<double[]> samples;
-	private int dimensionality;
-	private Kernel kernel;
+	public ArrayList<double[]> samples;
+	public int dimensionality;
+	public Kernel kernel;
 		
 	public KernelDensityEstimator(int dim, Kernel kernel){
 		dimensionality = dim;
@@ -27,10 +27,24 @@ public class KernelDensityEstimator{
 	public void add(double[] sample, double weight){
 		double[] tmp_s = new double[sample.length];
 		System.arraycopy(sample,0,tmp_s,0,tmp_s.length);
+		for(int i=0;i<samples.size();i++){
+			double[] doop = samples.get(i);
+			boolean diff = false;
+			for(int d=0;d<dimensionality;d++){
+				if(tmp_s[d] != doop[d]){
+					diff = true;
+					break;
+				}
+			}
+			if(!diff){
+				weights.set(i,weights.get(i)+weight);
+				return;
+			}
+		}
 		samples.add(tmp_s);
 		weights.add(weight);
 	}
-	
+		
 	public double estimate(double[] target, double bandwidth){
 		double sum=0.0, weightSum=0.0;
 		double[] tmp = new double[target.length];
