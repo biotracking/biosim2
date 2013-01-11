@@ -62,6 +62,11 @@ public class BIOHMM{
 		}
 		prior = new double[numStates];
 		partition = new int[bip.partSize()];
+		b = new KernelDensityEstimator[prior.length];
+		for(int i=0;i<b.length;i++){
+			b[i] = new KernelDensityEstimator(dim, new KernelDensityEstimator.NormalKernel(kernelSigma));
+		}
+		/*
 		for(int i=0;i<numStates;i++){
 			for(int j=0;j<numStates;j++){
 				for(int k=0;k<(int)Math.pow(2,bip.numSwitches());k++){
@@ -73,16 +78,15 @@ public class BIOHMM{
 		for(int i=0;i<partition.length;i++){
 			partition[i] = (int)Math.floor((i/(partition.length/numStates)));
 		}
-		b = new KernelDensityEstimator[prior.length];
 		for(int i=0;i<b.length;i++){
-			b[i] = new KernelDensityEstimator(dim, new KernelDensityEstimator.NormalKernel(kernelSigma));
 			for(int j=0;j<partition.length;j++){
 				if(partition[j] == i){
 					b[i].add(bip.getDataAtIDX(j));
 				}
 			}
 		}
-		
+		*/
+		bip.initParameters(transitionFunction,prior,partition,b);
 	}
 	
 	public void calculateAlpha(	ArrayList<Integer> seq,
@@ -97,7 +101,7 @@ public class BIOHMM{
 				for(int i=0;i<prior.length;i++){
 					alpha[t][j] += alpha[t-1][i]*transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t-1))];
 				}
-				alpha[t][j] *= b[j].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth);
+				alpha[t][j] *= b[j].estimate(bip.getDataAtIDX(seq.get(t)),bandwidth);
 			}
 		}
 	}
@@ -112,9 +116,9 @@ public class BIOHMM{
 			for(int j=0;j<prior.length;j++){
 				logalpha[t][j] = Double.NEGATIVE_INFINITY;
 				for(int i=0;i<prior.length;i++){
-					logalpha[t][j] = elnsum(logalpha[t-1][i],Math.log(transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t-1))]));
+					logalpha[t][j] = elnsum(logalpha[t][j],logalpha[t-1][i]+Math.log(transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t-1))]));
 				}
-				logalpha[t][j] += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth));
+				logalpha[t][j] += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t)),bandwidth));
 			}
 		}
 	}
@@ -345,7 +349,7 @@ public class BIOHMM{
 	
 	public void calculateLogGamma(double[][] logalpha, double[][] logbeta, double[][] loggamma){
 		for(int t=0;t<logalpha.length;t++){
-			double logsum = Double.NEGATIVE_INFINITY;
+			double logsum = Double.NEGATIVE_INFINITY, tmpls = Double.NEGATIVE_INFINITY;
 			for(int i=0;i<prior.length;i++){
 				//System.out.println("logbeta["+t+"]["+i+"] = "+logbeta[t][i]);
 				loggamma[t][i] = logalpha[t][i]+logbeta[t][i];
@@ -655,6 +659,13 @@ public class BIOHMM{
 								calculateLogAlpha(seq, b, logalpha);
 								double[][] logbeta = new double[seq.size()][prior.length];
 								calculateLogBeta(seq, b, logbeta);
+								//double tmpa=Double.NEGATIVE_INFINITY, tmpb=Double.NEGATIVE_INFINITY;
+								//for(int i=0;i<prior.length;i++){
+								//	tmpa = elnsum(tmpa,logalpha[seq.size()-1][i]);
+								//	tmpb = elnsum(tmpb,logbeta[0][i]+Math.log(prior[i])+Math.log(b[i].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth)));
+								//}
+								//System.out.println("tmpa: "+tmpa);
+								//System.out.println("tmpb: "+tmpb);
 								double[][][] logxi = new double[seq.size()][prior.length][prior.length];
 								calculateLogXi(seq, b, logalpha, logbeta, logxi);
 								double[][] loggamma = new double[seq.size()][prior.length];
@@ -683,20 +694,22 @@ public class BIOHMM{
 			}catch(InterruptedException ie){
 				throw new RuntimeException(ie);
 			}
-			/*
+			/* */
 			System.out.print("New Partition: [");
 			for(int i=0;i<newPartition.length;i++) System.out.print(newPartition[i]);
 			System.out.println("]");
-			*/
+			/* */
+			
 			
 			System.out.println("ASSUMING NUM/DENOM ARE LOG!!!!");
 			for(int i=0;i<prior.length;i++){
 				for(int j=0;j<prior.length;j++){
 					for(int k=0;k<newTransition[i][j].length;k++){
-						newTransition[i][j][k] = Math.exp(newTransitionNumerator[i][j][k]-newTransitionDenominator[i][j][k]);
+						newTransition[i][j][k] = Math.exp(newTransitionNumerator[i][j][k]-newTransitionDenominator[i][j][k]);// transitionFunction[i][j][k];//
 					}
 				}
 			}
+			
 			//now. Compute the difference between this new model and the old one
 			double priorDifference = 0.0, priorSum=0.0;
 			for(int i=0;i<prior.length;i++){
@@ -798,7 +811,7 @@ public class BIOHMM{
 				BIOHMM biohmm = new BIOHMM(2,bip);
 				sequences = bip.getSequences();
 				System.out.println("Num sequences:"+sequences.size());
-				biohmm.learn(sequences,0.01);
+				biohmm.learn(sequences,0.000);
 				System.out.println("Prior:");
 				System.out.print("\t[ ");
 				for(int i =0;i<biohmm.prior.length;i++){

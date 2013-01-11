@@ -1,6 +1,7 @@
 package biosim.app.learnedants;
 
 import biosim.core.util.BTFData;
+import biosim.core.util.KernelDensityEstimator;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,6 +11,7 @@ public class BIOHMMInputParser {
 	BTFData data;
 	protected String[] desiredVel, wallVec, wallBool, antVec, antBool, prevVec;
 	protected int numTrackPoints;
+	public static final int DIM = 7;
 	public BIOHMMInputParser(BTFData data){
 		this.data = data;
 		try{
@@ -25,7 +27,7 @@ public class BIOHMMInputParser {
 		}
 	}
 	public double[] getDataAtIDX(int idx){
-		double[] datapoint = new double[7];
+		double[] datapoint = new double[DIM];
 		String[] tmp = desiredVel[idx].split(" ");
 		datapoint[0] = Double.parseDouble(tmp[0]);
 		datapoint[1] = Double.parseDouble(tmp[1]);
@@ -117,5 +119,28 @@ public class BIOHMMInputParser {
 		} catch(IOException ioe){
 			throw new RuntimeException(ioe);
 		}
+	}
+	
+	public void initParameters(double[][][] transitionFunction, double[] prior, int[] partition, KernelDensityEstimator[] b){
+		int numStates = prior.length;
+		for(int i=0;i<numStates;i++){
+			for(int j=0;j<numStates;j++){
+				for(int k=0;k<(int)Math.pow(2,numSwitches());k++){
+					transitionFunction[i][j][k] = 1.0/(numStates*numStates);
+				}
+			}
+			prior[i] = 1.0/numStates;
+		}
+		for(int i=0;i<partition.length;i++){
+			partition[i] = (int)Math.floor((i/(partition.length/numStates)));
+		}
+		for(int i=0;i<b.length;i++){
+			for(int j=0;j<partition.length;j++){
+				if(partition[j] == i){
+					b[i].add(getDataAtIDX(j));
+				}
+			}
+		}
+		
 	}
 }

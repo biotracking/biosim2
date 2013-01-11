@@ -37,6 +37,7 @@ public class TestGen{
 				}
 			}
 			if(curState == -1) curState = prior.length-1;
+			lastState = curState;
 		}
 		output = (sigma[curState]*random.nextGaussian())+mu[curState];
 		//figure out if we're switching
