@@ -275,6 +275,7 @@ public class BIOHMM{
 						double tmplog = Math.log(transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t))]);
 						tmplog += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t+1)),bandwidth));
 						tmplog += logbeta[t+1][j];
+						logxi[t][i][j] = logxi[t][i][j] + tmplog;
 						logsum = elnsum(logsum,logxi[t][i][j]);
 					}
 				}
@@ -670,6 +671,18 @@ public class BIOHMM{
 								calculateLogXi(seq, b, logalpha, logbeta, logxi);
 								double[][] loggamma = new double[seq.size()][prior.length];
 								calculateLogGamma(logalpha, logbeta, loggamma);
+								//loggamma[t][i] == sum(logxi[t][i])
+								//for(int t=0;t<seq.size();t++){
+								//	for(int i=0;i<prior.length;i++){
+								//		double tmpsum = Double.NEGATIVE_INFINITY;
+								//		for(int j=0;j<prior.length;j++){
+								//			tmpsum = elnsum(tmpsum,logxi[t][i][j]);
+								//		}
+								//		if(tmpsum != loggamma[t][i]){
+								//			System.out.println(Math.exp(tmpsum)+" != "+Math.exp(loggamma[t][i]));
+								//		}
+								//	}
+								//}
 								
 								updatePriorLog(newPrior, loggamma, sequences.size());
 								updateTransitionsLog(seq, newTransitionNumerator, newTransitionDenominator, logxi, loggamma);

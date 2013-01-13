@@ -49,17 +49,18 @@ public class SimpleInputParser extends BIOHMMInputParser {
 		return sequences;
 	}
 	
+	/*
 	public void initParameters(double[][][] transitionFunction, double[] prior, int[] partition, KernelDensityEstimator[] b){
 		//from TestGen. If we don't see the switching variable, we stay in our current
 		//state. If we do see it, we switch to the other state 90% of the time
-		transitionFunction[0][0][0] = 1.0;
-		transitionFunction[0][0][1] = 0.1;
-		transitionFunction[0][1][0] = 0.0;
-		transitionFunction[0][1][1] = 0.9;
-		transitionFunction[1][0][0] = 0.0;
-		transitionFunction[1][0][1] = 0.9;
-		transitionFunction[1][1][0] = 1.0;
-		transitionFunction[1][1][1] = 0.1;
+		transitionFunction[0][0][0] = 0.5;//1.0;
+		transitionFunction[0][0][1] = 0.5;//0.1;
+		transitionFunction[0][1][0] = 0.5;//0.0;
+		transitionFunction[0][1][1] = 0.5;//0.9;
+		transitionFunction[1][0][0] = 0.5;//0.0;
+		transitionFunction[1][0][1] = 0.5;//0.9;
+		transitionFunction[1][1][0] = 0.5;//1.0;
+		transitionFunction[1][1][1] = 0.5;//0.1;
 		prior[0] = prior[1] = 0.5;
 		for(int i=0;i<b.length;i++){
 			b[i] = new KernelDensityEstimator(1, new KernelDensityEstimator.NormalKernel(1.0));
@@ -69,4 +70,5 @@ public class SimpleInputParser extends BIOHMMInputParser {
 			b[partition[i]].add(getDataAtIDX(i));
 		}
 	}
+	*/
 }
