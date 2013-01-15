@@ -820,7 +820,7 @@ public class BIOHMM{
 				BTFData btf = new BTFData();
 				btf.loadDir(new File(args[0]));
 				ArrayList<ArrayList<Integer>> sequences;
-				BIOHMMInputParser bip = new SimpleInputParser(btf);//BIOHMMInputParser(btf);
+				BIOHMMInputParser bip = new BIOHMMInputParser(btf);//SimpleInputParser(btf);//
 				BIOHMM biohmm = new BIOHMM(2,bip);
 				sequences = bip.getSequences();
 				System.out.println("Num sequences:"+sequences.size());
