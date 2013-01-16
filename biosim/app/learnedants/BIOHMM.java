@@ -20,6 +20,7 @@ public class BIOHMM{
 	double kernelSigma = 1.0, bandwidth = 1.0;
 	public static final boolean PRINT_ITERATIONS = true;
 	public final KernelDensityEstimator[] b;
+	public final KernelDensityEstimator sensors;
 		
 	public static double elnsum(double logx, double logy){
 		//given log(x), and log(y), return log(x+y)
@@ -63,6 +64,7 @@ public class BIOHMM{
 		prior = new double[numStates];
 		partition = new int[bip.partSize()];
 		b = new KernelDensityEstimator[prior.length];
+		sensors = new KernelDensityEstimator(bip.sensorDim(), new KernelDensityEstimator.NormalKernel(kernelSigma));
 		for(int i=0;i<b.length;i++){
 			b[i] = new KernelDensityEstimator(dim, new KernelDensityEstimator.NormalKernel(kernelSigma));
 		}
@@ -86,7 +88,16 @@ public class BIOHMM{
 			}
 		}
 		*/
+		for(int i=0;i<bip.partSize();i++){
+			sensors.add(bip.getDataAtIDX(i));
+		}
 		bip.initParameters(transitionFunction,prior,partition,b);
+	}
+	
+	public double outputLogProbAtIDX(int idx, int state){
+		double jp = b[state].estimate(bip.getDataAtIDX(idx),bandwidth);
+		double sp = sensors.estimate(bip.getSensorsAtIDX(idx),bandwidth);
+		return Math.log(jp) - Math.log(sp);
 	}
 	
 	public void calculateAlpha(	ArrayList<Integer> seq,
@@ -110,7 +121,9 @@ public class BIOHMM{
 									KernelDensityEstimator[] b,
 									double[][] logalpha){
 		for(int i=0;i<prior.length;i++){
-			logalpha[0][i] = Math.log(prior[i])+Math.log(b[i].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth));
+			double outputLog = outputLogProbAtIDX(seq.get(0),i);
+			//logalpha[0][i] = Math.log(prior[i])+Math.log(b[i].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth));
+			logalpha[0][i] = Math.log(prior[i])+outputLog;
 		}
 		for(int t=1;t<seq.size();t++){
 			for(int j=0;j<prior.length;j++){
@@ -118,7 +131,9 @@ public class BIOHMM{
 				for(int i=0;i<prior.length;i++){
 					logalpha[t][j] = elnsum(logalpha[t][j],logalpha[t-1][i]+Math.log(transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t-1))]));
 				}
-				logalpha[t][j] += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t)),bandwidth));
+				double outputLog = outputLogProbAtIDX(seq.get(t),j);
+				//logalpha[t][j] += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t)),bandwidth));
+				logalpha[t][j] += outputLog;
 			}
 		}
 	}
@@ -194,7 +209,9 @@ public class BIOHMM{
 				logbeta[t][i] = Double.NEGATIVE_INFINITY;
 				for(int j=0;j<prior.length;j++){
 					double tmplog = Math.log(transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t))]);
-					tmplog += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t+1)),bandwidth));
+					double outputLog = outputLogProbAtIDX(seq.get(t+1),j);
+					//tmplog += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t+1)),bandwidth));
+					tmplog += outputLog;
 					tmplog += logbeta[t+1][j];
 					logbeta[t][i] = elnsum(logbeta[t][i],tmplog);
 				}
@@ -273,7 +290,9 @@ public class BIOHMM{
 					} else {
 						logxi[t][i][j] = logalpha[t][i];
 						double tmplog = Math.log(transitionFunction[i][j][bip.getSwitchAtIDX(seq.get(t))]);
-						tmplog += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t+1)),bandwidth));
+						double outputLog = outputLogProbAtIDX(seq.get(t+1),j);
+						//tmplog += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t+1)),bandwidth));
+						tmplog += outputLog;
 						tmplog += logbeta[t+1][j];
 						logxi[t][i][j] = logxi[t][i][j] + tmplog;
 						logsum = elnsum(logsum,logxi[t][i][j]);
@@ -517,7 +536,9 @@ public class BIOHMM{
 		double[][] logdelta = new double[seq.size()][prior.length];
 		int[][] psi = new int[seq.size()][prior.length];
 		for(int i=0;i<prior.length;i++){
-			logdelta[0][i] = Math.log(prior[i])+Math.log(b[i].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth));
+			double outputLog = outputLogProbAtIDX(seq.get(0),i);
+			//logdelta[0][i] = Math.log(prior[i])+Math.log(b[i].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth));
+			logdelta[0][i] = Math.log(prior[i])+outputLog;
 			psi[0][i] = 0;
 		}
 		for(int t=1;t<seq.size();t++){
@@ -532,7 +553,9 @@ public class BIOHMM{
 						maxState = i;
 					}
 				}
-				logdelta[t][j] = max + Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t)),bandwidth));
+				double outputLog = outputLogProbAtIDX(seq.get(t),j);
+				//logdelta[t][j] = max + Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t)),bandwidth));
+				logdelta[t][j] = max + outputLog;
 				psi[t][j] = maxState;
 			}
 		}

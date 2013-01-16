@@ -11,7 +11,9 @@ public class BIOHMMInputParser {
 	BTFData data;
 	protected String[] desiredVel, wallVec, avoidBool, antVec, nearBool, prevVec;
 	protected int numTrackPoints;
+	public static final int NUM_SENSORS = 4;
 	public static final int DIM = 7;
+	public static final int NUM_SWITCHES = 2;
 	public BIOHMMInputParser(BTFData data){
 		this.data = data;
 		try{
@@ -45,6 +47,17 @@ public class BIOHMMInputParser {
 		return datapoint;
 	}
 	
+	public double[] getSensorsAtIDX(int idx){
+		double[] datapoint = new double[NUM_SENSORS];
+		String[] tmp = wallVec[idx].split(" ");
+		datapoint[0] = Double.parseDouble(tmp[0]);
+		datapoint[1] = Double.parseDouble(tmp[1]);
+		tmp = antVec[idx].split(" ");
+		datapoint[2] = Double.parseDouble(tmp[0]);
+		datapoint[3] = Double.parseDouble(tmp[1]);
+		return datapoint;
+	}
+	
 	public int getSwitchAtIDX(int idx){
 		int k = 0;
 		if(Boolean.parseBoolean(avoidBool[idx])){
@@ -61,10 +74,13 @@ public class BIOHMMInputParser {
 		return numTrackPoints;
 	}
 	public int numSwitches(){
-		return 2;
+		return NUM_SWITCHES;
 	}
 	public int outputDim(){
-		return 7;
+		return DIM;
+	}
+	public int sensorDim(){
+		return NUM_SENSORS;
 	}
 	public ArrayList<ArrayList<Integer>> getSequences(){
 		try{
