@@ -64,8 +64,8 @@ public class AvoidAntLogger extends BTFLogger {
 		}
 	}
 	public void step(SimState simstate){
-		if(wallout == null) return;
 		super.step(simstate);
+		if(wallout == null) return;
 		if(simstate instanceof Simulation){
 			Simulation sim = (Simulation)simstate;
 			for(int i=0;i<sim.bodies.size();i++){

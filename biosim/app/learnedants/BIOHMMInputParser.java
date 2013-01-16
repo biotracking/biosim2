@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 public class BIOHMMInputParser {
 	BTFData data;
-	protected String[] desiredVel, wallVec, wallBool, antVec, antBool, prevVec;
+	protected String[] desiredVel, wallVec, avoidBool, antVec, nearBool, prevVec;
 	protected int numTrackPoints;
 	public static final int DIM = 7;
 	public BIOHMMInputParser(BTFData data){
@@ -17,9 +17,9 @@ public class BIOHMMInputParser {
 		try{
 			desiredVel = data.loadColumn("dvel");
 			wallVec = data.loadColumn("wallvec");
-			wallBool = data.loadColumn("wallbool");
+			avoidBool = data.loadColumn("avoid");
 			antVec = data.loadColumn("antvec");
-			antBool = data.loadColumn("antbool");
+			nearBool = data.loadColumn("near");
 			prevVec = data.loadColumn("pvel");
 			numTrackPoints = data.loadColumn("id").length;
 		} catch(IOException ioe){
@@ -47,11 +47,11 @@ public class BIOHMMInputParser {
 	
 	public int getSwitchAtIDX(int idx){
 		int k = 0;
-		if(Boolean.parseBoolean(wallBool[idx])){
+		if(Boolean.parseBoolean(avoidBool[idx])){
 			k += 1;
 		}
 		k = k<<1;
-		if(Boolean.parseBoolean(antBool[idx])){
+		if(Boolean.parseBoolean(nearBool[idx])){
 			k+=1;
 		}
 		return k;

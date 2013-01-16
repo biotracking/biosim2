@@ -7,6 +7,7 @@ import sim.engine.SimState;
 public abstract class Body implements Steppable{
 	protected Agent agent;
 	public void setAgent(Agent a){ agent = a; }
+	public Agent getAgent(){ return agent; }
 	public abstract void step(SimState simstate);
 	public abstract MersenneTwisterFast getRandom();
 	/**

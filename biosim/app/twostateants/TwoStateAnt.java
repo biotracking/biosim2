@@ -15,8 +15,8 @@ import biosim.app.tutorial.AvoidAntLogger;
 import sim.util.MutableDouble2D;
 public class TwoStateAnt implements Agent {
 	AbstractAnt antBody;
-	double timeNearAnt;
-	double timeAvoiding;
+	public double timeNearAnt;
+	public double timeAvoiding;
 	double lastTime;
 	public int state;
 	public static final int AVOID=1;
@@ -105,7 +105,7 @@ public class TwoStateAnt implements Agent {
 		}
 		//env.runSimulation(args);
 		Simulation sim = env.newSimulation();
-		sim.addLogger(new AvoidAntLogger());
+		sim.addLogger(new TwoStateLogger());
 		GUISimulation gui = new GUISimulation(sim);
 		gui.createController();
 	}
