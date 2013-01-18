@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 
 public class FastKNN{
 	private ArrayList<double[]> samples,classes;
+	private ArrayList<Double> weights;
 	private SimpleANN kdann;
 	private int sample_dim, class_dim;
 	private static boolean libLoaded = false;
@@ -22,15 +23,19 @@ public class FastKNN{
 		kdann = new SimpleANN(sample_dim);
 		samples = new ArrayList<double[]>();
 		classes = new ArrayList<double[]>();
+		weights = new ArrayList<Double>();
 	}
-	
 	public void add(double[] sample, double[] class_vec){
+		add(sample,class_vec,1.0);
+	}
+	public void add(double[] sample, double[] class_vec, double weight){
 		double[] tmp_s = new double[sample.length];
 		double[] tmp_c = new double[class_vec.length];
 		System.arraycopy(sample,0,tmp_s,0,tmp_s.length);
 		System.arraycopy(class_vec,0,tmp_c,0,tmp_c.length);
 		samples.add(tmp_s);
 		classes.add(tmp_c);
+		weights.add(weight);
 		kdann.add(tmp_s);
 		/*
 		System.out.print("added [");
@@ -73,6 +78,9 @@ public class FastKNN{
 	}
 	
 	public void query(double[] sample, double[][] neighbor_classes){
+		query(sample,neighbor_classes,null);
+	}
+	public void query(double[] sample, double[][] neighbor_classes, double[] weight_vec){
 		int k = neighbor_classes.length;
 		int[] neighborIdx = new int[k];
 		if(!kdann.query(sample,neighborIdx,k)) System.err.println("ANN query failed!");
@@ -81,6 +89,9 @@ public class FastKNN{
 			for(int j=0;j<class_dim;j++){
 				neighbor_classes[i][j] = classes.get(neighborIdx[i])[j];
 				//System.out.print(" "+samples.get(neighborIdx[i])[j]);
+			}
+			if(weight_vec != null){
+				weight_vec[i] = weights.get(neighborIdx[i]);
 			}
 			//System.out.println("]");
 		}

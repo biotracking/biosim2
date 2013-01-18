@@ -109,7 +109,7 @@ public class LearnedAnts implements Agent{
 		return rv;
 	}
 	
-	public void buildParameters(File parameterFile, BTFData btf) throws IOException{
+	public void buildParameters(File parameterFile) throws IOException{
 		BufferedReader fread = new BufferedReader(new FileReader(parameterFile));
 		int priorInt = Integer.parseInt(fread.readLine().trim());
 		prior = new double[priorInt];
@@ -148,10 +148,10 @@ public class LearnedAnts implements Agent{
 		for(int i=0;i<outputFunction.length;i++){
 			outputFunction[i] = new FastKNN(FEATURE_DIM,3);
 		}
-		String[] desiredVel = btf.loadColumn("dvel");
-		String[] wallVec = btf.loadColumn("wallvec");
-		String[] antVec = btf.loadColumn("antvec");
-		String[] prevVec = btf.loadColumn("pvel");
+		//String[] desiredVel = btf.loadColumn("dvel");
+		//String[] wallVec = btf.loadColumn("wallvec");
+		//String[] antVec = btf.loadColumn("antvec");
+		//String[] prevVec = btf.loadColumn("pvel");
 		int partitionLength = Integer.parseInt(fread.readLine().trim());
 		String[] partitionStr = fread.readLine().split(" ");
 		if(partitionLength != partitionStr.length){
@@ -160,6 +160,7 @@ public class LearnedAnts implements Agent{
 		double[] features = new double[FEATURE_DIM];
 		double[] velclass = new double[3];
 		String[] tmp;
+		/*
 		int partition;
 		for(int i=0;i<partitionLength;i++){
 			partition = Integer.parseInt(partitionStr[i].trim());
@@ -180,6 +181,29 @@ public class LearnedAnts implements Agent{
 			
 			outputFunction[partition].add(features,velclass);
 		}
+		*/
+		String line;
+		for(int i=0;i<outputFunction.length;i++){
+			String stateLine = fread.readLine(); //which output it was
+			int state = Integer.parseInt(stateLine);
+			if(state > outputFunction.length || state < 0){
+				throw new RuntimeException("Bad parameter file: state ("+state+") not in [0,"+outputFunction+"]");
+			}
+			while( !(line = fread.readLine()).isEmpty()){
+				String[] sampleLine = line.split(" ");
+				velclass[0] = Double.parseDouble(sampleLine[0]);
+				velclass[1] = Double.parseDouble(sampleLine[1]);
+				velclass[2] = Double.parseDouble(sampleLine[2]);
+				for(int j = 0; j<features.length;j++){
+					features[j] = Double.parseDouble(sampleLine[j+3]);
+				}
+				double weight = Double.parseDouble(sampleLine[features.length+3]);
+				outputFunction[state].add(features,velclass,weight);
+			}
+			//once line.isEmpty() == true, then we've allready grabbed the
+			//junk line, so just loop
+		}
+		
 	}
 
 	
@@ -190,8 +214,8 @@ public class LearnedAnts implements Agent{
 	public static void main(String[] args){
 		try{
 			File parameterFile = new File(args[0]);
-			BTFData btf = new BTFData();
-			btf.loadDir(new File(args[1]));
+			//BTFData btf = new BTFData();
+			//btf.loadDir(new File(args[1]));
 			int numAnts = 10;
 			Environment env = new Environment(WIDTH,HEIGHT,1.0/30.0);
 			env.addStaticPOI("nest",WIDTH/2,0.02);
@@ -207,7 +231,7 @@ public class LearnedAnts implements Agent{
 			}
 			Agent[] agents = new Agent[numAnts];
 			LearnedAnts la = new LearnedAnts(bodies[0],null,null,null);
-			la.buildParameters(parameterFile,btf);
+			la.buildParameters(parameterFile);
 			agents[0] = la;
 			bodies[0].setAgent(agents[0]);
 			for(int i=1;i<agents.length;i++){
