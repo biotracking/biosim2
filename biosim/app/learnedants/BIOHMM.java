@@ -15,6 +15,7 @@ public class BIOHMM{
 	Object[][][] transitionMonitors;
 	public double[] prior;
 	public int[] partition;
+	private double[][] completeLLGamma;
 	BTFData data;
 	int dim, numThreads = 4;
 	double kernelSigma = 1.0, bandwidth = 1.0;
@@ -63,6 +64,7 @@ public class BIOHMM{
 		}
 		prior = new double[numStates];
 		partition = new int[bip.partSize()];
+		completeLLGamma = new double[partition.length][numStates];
 		b = new KernelDensityEstimator[prior.length];
 		sensors = new KernelDensityEstimator(bip.sensorDim(), new KernelDensityEstimator.NormalKernel(kernelSigma));
 		for(int i=0;i<b.length;i++){
@@ -573,9 +575,20 @@ public class BIOHMM{
 			}
 		//}
 	}
+	
+	public void updateCompleteLLGamma(ArrayList<Integer> seq, double[][] gamma){
+		for(int t=0;t<seq.size();t++){
+			for(int i=0;i<prior.length;i++){
+				completeLLGamma[seq.get(t)][i] = gamma[t][i];
+			}
+		}
+	}
 	public void addToKDE(KernelDensityEstimator[] b, int[] newPartition){
 		for(int t=0;t<newPartition.length;t++){
 			b[partition[t]].add(bip.getDataAtIDX(t));
+			for(int i=0;i<prior.length;i++){
+				b[i].add(bip.getDataAtIDX(t),completeLLGamma[t][i]);
+			}
 		}
 	}
 
