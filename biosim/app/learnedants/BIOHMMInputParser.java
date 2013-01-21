@@ -150,10 +150,11 @@ public class BIOHMMInputParser {
 			}
 			prior[i] = 1.0/numStates;
 		}
+		ArrayList<ArrayList<Integer>> seqs = getSequences();
 		//So, our best guess at initializing the state sequence
 		//is to switch states whenever there's a change in switching
 		//variables.
-		ArrayList<ArrayList<Integer>> seqs = getSequences();
+		/* */
 		int initCurState = -1;
 		for(int i=0;i<seqs.size();i++){
 			ArrayList<Integer> seq = seqs.get(i);
@@ -166,14 +167,18 @@ public class BIOHMMInputParser {
 				partition[seq.get(j)] = initCurState;
 			}
 		}
+		/* */
 		//the old way (here) was to initialize our state sequence to give an
 		//equal partitioning to each state, and to give long sequences with
 		//the same state.
-		/*
-		for(int i=0;i<partition.length;i++){
-			partition[i] = (int)Math.floor((i/(partition.length/numStates)));
+		/* 
+		for(int i=0;i<seqs.size();i++){
+			ArrayList<Integer> seq = seqs.get(i);
+			for(int j=0;j<seq.size();j++){
+				partition[seq.get(i)] = (int)Math.floor((j/(seq.size()/numStates)));
+			}
 		}
-		*/
+		/* */
 		for(int i=0;i<b.length;i++){
 			for(int j=0;j<partition.length;j++){
 				if(partition[j] == i){

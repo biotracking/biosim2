@@ -576,18 +576,18 @@ public class BIOHMM{
 		//}
 	}
 	
-	public void updateCompleteLLGamma(ArrayList<Integer> seq, double[][] gamma){
+	public void updateCompleteLLGamma(ArrayList<Integer> seq, double[][] loggamma){
 		for(int t=0;t<seq.size();t++){
 			for(int i=0;i<prior.length;i++){
-				completeLLGamma[seq.get(t)][i] = gamma[t][i];
+				completeLLGamma[seq.get(t)][i] = loggamma[t][i];
 			}
 		}
 	}
 	public void addToKDE(KernelDensityEstimator[] b, int[] newPartition){
 		for(int t=0;t<newPartition.length;t++){
-			b[partition[t]].add(bip.getDataAtIDX(t));
+			//b[partition[t]].add(bip.getDataAtIDX(t));
 			for(int i=0;i<prior.length;i++){
-				b[i].add(bip.getDataAtIDX(t),completeLLGamma[t][i]);
+				b[i].add(bip.getDataAtIDX(t),Math.exp(completeLLGamma[t][i]));
 			}
 		}
 	}
@@ -719,7 +719,7 @@ public class BIOHMM{
 								//		}
 								//	}
 								//}
-								
+								updateCompleteLLGamma(seq, loggamma);
 								updatePriorLog(newPrior, loggamma, sequences.size());
 								updateTransitionsLog(seq, newTransitionNumerator, newTransitionDenominator, logxi, loggamma);
 								updatePartitionLog(seq, b, newPartition);
@@ -800,12 +800,16 @@ public class BIOHMM{
 			partition = newPartition;
 			addToKDE(b, newPartition);
 			if(PRINT_ITERATIONS){
-				writeParameters(new File("biohmm_parameters_Iteration_"+iter+".txt"));
+				writeParameters(new File("biohmm_parameters_Iteration_"+iter+".txt"),llsum);
 			}
 		} while(!converged);
 	}
 
 	public void writeParameters(File parameterFile) throws IOException{
+		writeParameters(parameterFile,null);
+	}
+	
+	public void writeParameters(File parameterFile, BigDecimal loglike) throws IOException{
 		FileWriter outf = new FileWriter(parameterFile);
 		//write prior
 		outf.write(prior.length+"\n");
@@ -845,6 +849,7 @@ public class BIOHMM{
 			}
 			outf.write("\n");
 		}
+		outf.write("#LogLike = "+loglike+"\n");
 		outf.close();
 	}
 	
