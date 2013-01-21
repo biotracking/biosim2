@@ -14,6 +14,7 @@ public class BIOHMMInputParser {
 	public static final int NUM_SENSORS = 4;
 	public static final int DIM = 7;
 	public static final int NUM_SWITCHES = 2;
+	protected ArrayList<ArrayList<Integer>> foundSequences = null;
 	public BIOHMMInputParser(BTFData data){
 		this.data = data;
 		try{
@@ -83,6 +84,7 @@ public class BIOHMMInputParser {
 		return NUM_SENSORS;
 	}
 	public ArrayList<ArrayList<Integer>> getSequences(){
+		if(foundSequences != null) return foundSequences;
 		try{
 			//parse file's into sequences
 			//a sequence is an arraylist of indecies into the BTFData
@@ -131,6 +133,7 @@ public class BIOHMMInputParser {
 			for(int j=0;j<currentSeqIDX.size();j++){
 				sequences.add(currentSeqIDX.get(j));
 			}
+			foundSequences = sequences;
 			return sequences;
 		} catch(IOException ioe){
 			throw new RuntimeException(ioe);
@@ -147,9 +150,30 @@ public class BIOHMMInputParser {
 			}
 			prior[i] = 1.0/numStates;
 		}
+		//So, our best guess at initializing the state sequence
+		//is to switch states whenever there's a change in switching
+		//variables.
+		ArrayList<ArrayList<Integer>> seqs = getSequences();
+		int initCurState = -1;
+		for(int i=0;i<seqs.size();i++){
+			ArrayList<Integer> seq = seqs.get(i);
+			initCurState = (initCurState+1) % prior.length;
+			int initPrevK = getSwitchAtIDX(seq.get(0));
+			for(int j=1;j<seq.size();j++){
+				if(initPrevK != getSwitchAtIDX(seq.get(j))){
+					initCurState = (initCurState+1) % prior.length;
+				}
+				partition[seq.get(j)] = initCurState;
+			}
+		}
+		//the old way (here) was to initialize our state sequence to give an
+		//equal partitioning to each state, and to give long sequences with
+		//the same state.
+		/*
 		for(int i=0;i<partition.length;i++){
 			partition[i] = (int)Math.floor((i/(partition.length/numStates)));
 		}
+		*/
 		for(int i=0;i<b.length;i++){
 			for(int j=0;j<partition.length;j++){
 				if(partition[j] == i){
