@@ -4,14 +4,14 @@ import java.io.IOException;
 import java.util.Random;
 
 public class TestGen{
-	public double[][] transitionFunction;
+	public double[][][] transitionFunction;
 	public double[] prior;
 	public double[] sigma;
 	public double[] mu;
 	public double switching;
 	public int curState;
 	Random random;
-	public TestGen(double[][] transitionFunction, double[] prior, double[] sigma, double[] mu, double switching){
+	public TestGen(double[][][] transitionFunction, double[] prior, double[] sigma, double[] mu, double switching){
 		this.transitionFunction = transitionFunction;
 		this.prior = prior;
 		this.sigma = sigma;
@@ -44,19 +44,22 @@ public class TestGen{
 		randNum = random.nextDouble();
 		if(randNum <= switching){
 			switched = 1.0;
-			randNum = random.nextDouble();
-			double sum = 0.0;
-			for(int i=0;i<transitionFunction[curState].length;i++){
-				if(randNum > transitionFunction[curState][i]+sum){
-					sum += transitionFunction[curState][i];
-				} else {
-					curState = i;
-					break;
-				}
-			}
 		} else {
 			switched = 0.0;
 		}
+		
+		randNum = random.nextDouble();
+		double sum = 0.0;
+		for(int i=0;i<transitionFunction[(int)switched][curState].length;i++){
+			if(randNum > transitionFunction[(int)switched][curState][i]+sum){
+				sum += transitionFunction[(int)switched][curState][i];
+			} else {
+				curState = i;
+				break;
+			}
+		}
+		
+		
 		rv[0] = output;
 		rv[1] = switched;
 		rv[2] = lastState;
@@ -65,7 +68,7 @@ public class TestGen{
 	
 	public static void main(String[] args){
 		try{
-			double[][] tf = { {0.1, 0.9}, {0.9, 0.1} };
+			double[][][] tf = {{ {0.9, 0.1}, {0.1, 0.9} }, { {0.1, 0.9}, {0.9, 0.1} }};
 			double[] pr = {0.5, 0.5};
 			double[] sigma = {1.0, 2.0};
 			double[] mu = {2.0, 5.0};

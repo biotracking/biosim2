@@ -28,6 +28,10 @@ public class SimpleInputParser extends BIOHMMInputParser {
 		rv[0] = Double.parseDouble(output[idx].trim());
 		return rv;
 	}
+	public double[] getSensorsAtIDX(int idx){
+		double[] rv = {0.0};
+		return rv;
+	}
 	public int getSwitchAtIDX(int idx){
 		int k;
 		k = Integer.parseInt(switching[idx].trim());
@@ -36,8 +40,10 @@ public class SimpleInputParser extends BIOHMMInputParser {
 	public int partSize(){ return output.length; }
 	public int numSwitches(){ return 1; }
 	public int outputDim(){ return 1; }
+	public int sensorDim(){ return 1; }
 	
 	public ArrayList<ArrayList<Integer>> getSequences(){
+		if(foundSequences != null) return foundSequences;
 		ArrayList<ArrayList<Integer>> sequences = new ArrayList<ArrayList<Integer>>();
 		for(int j=0;j<partSize();j+=SEQMAX){
 			ArrayList<Integer> tmp = new ArrayList<Integer>();
@@ -46,20 +52,19 @@ public class SimpleInputParser extends BIOHMMInputParser {
 			}
 			sequences.add(tmp);
 		}
+		foundSequences = sequences;
 		return sequences;
 	}
 	
-	/*
+	/* 
 	public void initParameters(double[][][] transitionFunction, double[] prior, int[] partition, KernelDensityEstimator[] b){
-		//from TestGen. If we don't see the switching variable, we stay in our current
-		//state. If we do see it, we switch to the other state 90% of the time
-		transitionFunction[0][0][0] = 0.5;//1.0;
+		transitionFunction[0][0][0] = 0.5;//0.9;
 		transitionFunction[0][0][1] = 0.5;//0.1;
-		transitionFunction[0][1][0] = 0.5;//0.0;
+		transitionFunction[0][1][0] = 0.5;//0.1;
 		transitionFunction[0][1][1] = 0.5;//0.9;
-		transitionFunction[1][0][0] = 0.5;//0.0;
+		transitionFunction[1][0][0] = 0.5;//0.1;
 		transitionFunction[1][0][1] = 0.5;//0.9;
-		transitionFunction[1][1][0] = 0.5;//1.0;
+		transitionFunction[1][1][0] = 0.5;//0.9;
 		transitionFunction[1][1][1] = 0.5;//0.1;
 		prior[0] = prior[1] = 0.5;
 		for(int i=0;i<b.length;i++){
@@ -70,5 +75,5 @@ public class SimpleInputParser extends BIOHMMInputParser {
 			b[partition[i]].add(getDataAtIDX(i));
 		}
 	}
-	*/
+	/* */
 }

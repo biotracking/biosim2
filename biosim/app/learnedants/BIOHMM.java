@@ -98,7 +98,10 @@ public class BIOHMM{
 	
 	public double outputLogProbAtIDX(int idx, int state){
 		double jp = b[state].estimate(bip.getDataAtIDX(idx),bandwidth);
-		double sp = sensors.estimate(bip.getSensorsAtIDX(idx),bandwidth);
+		//System.out.println("jp:"+jp);
+		//double sp = sensors.estimate(bip.getSensorsAtIDX(idx),bandwidth);
+		double sp = 1.0;
+		//System.out.println("sp:"+sp);
 		return Math.log(jp) - Math.log(sp);
 	}
 	
@@ -585,10 +588,12 @@ public class BIOHMM{
 	}
 	public void addToKDE(KernelDensityEstimator[] b, int[] newPartition){
 		for(int t=0;t<newPartition.length;t++){
-			//b[partition[t]].add(bip.getDataAtIDX(t));
+			b[partition[t]].add(bip.getDataAtIDX(t));
+			/* 
 			for(int i=0;i<prior.length;i++){
 				b[i].add(bip.getDataAtIDX(t),Math.exp(completeLLGamma[t][i]));
 			}
+			/* */
 		}
 	}
 
@@ -757,11 +762,13 @@ public class BIOHMM{
 				for(int j=0;j<prior.length;j++){
 					for(int k=0;k<newTransition[i][j].length;k++){
 						if(newTransitionNumerator[i][j][k] == newTransitionDenominator[i][j][k]){
-							newTransition[i][j][k] = 1.0/((double)prior.length*prior.length);//continue;
+						//if(newTransitionNumerator[i][j][k] == 0.0){
+							newTransition[i][j][k] = 1.0/((double)prior.length);//continue;
 							//System.out.println("whaaaat.");
 							//System.out.println("Num:"+newTransitionNumerator[i][j][k]);
 						}else{
 							newTransition[i][j][k] = Math.exp(newTransitionNumerator[i][j][k]-newTransitionDenominator[i][j][k]);// transitionFunction[i][j][k];//
+							//newTransition[i][j][k] = newTransitionNumerator[i][j][k]/newTransitionDenominator[i][j][k];// transitionFunction[i][j][k];//
 						}
 					}
 				}
@@ -869,7 +876,7 @@ public class BIOHMM{
 				BTFData btf = new BTFData();
 				btf.loadDir(new File(args[0]));
 				ArrayList<ArrayList<Integer>> sequences;
-				BIOHMMInputParser bip = new BIOHMMInputParser(btf);//SimpleInputParser(btf);//
+				BIOHMMInputParser bip = new SimpleInputParser(btf);//BIOHMMInputParser(btf);//
 				BIOHMM biohmm = new BIOHMM(2,bip);
 				sequences = bip.getSequences();
 				System.out.println("Num sequences:"+sequences.size());

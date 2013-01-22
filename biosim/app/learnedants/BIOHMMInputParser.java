@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class BIOHMMInputParser {
 	BTFData data;
@@ -15,6 +16,7 @@ public class BIOHMMInputParser {
 	public static final int DIM = 7;
 	public static final int NUM_SWITCHES = 2;
 	protected ArrayList<ArrayList<Integer>> foundSequences = null;
+	public Random random = null;
 	public BIOHMMInputParser(BTFData data){
 		this.data = data;
 		try{
@@ -28,6 +30,7 @@ public class BIOHMMInputParser {
 		} catch(IOException ioe){
 			throw new RuntimeException(ioe);
 		}
+		random = new Random();
 	}
 	public double[] getDataAtIDX(int idx){
 		double[] datapoint = new double[DIM];
@@ -145,7 +148,7 @@ public class BIOHMMInputParser {
 		for(int i=0;i<numStates;i++){
 			for(int j=0;j<numStates;j++){
 				for(int k=0;k<(int)Math.pow(2,numSwitches());k++){
-					transitionFunction[i][j][k] = 1.0/(numStates*numStates);
+					transitionFunction[i][j][k] = 1.0/(numStates);
 				}
 			}
 			prior[i] = 1.0/numStates;
@@ -177,6 +180,13 @@ public class BIOHMMInputParser {
 			for(int j=0;j<seq.size();j++){
 				partition[seq.get(i)] = (int)Math.floor((j/(seq.size()/numStates)));
 			}
+		}
+		/* */
+		//random state initialization.  This is least likely to produce long chains
+		//of sequences. 
+		/* 
+		for(int i=0;i<partition.length;i++){
+			partition[i] = random.nextInt(prior.length);
 		}
 		/* */
 		for(int i=0;i<b.length;i++){
