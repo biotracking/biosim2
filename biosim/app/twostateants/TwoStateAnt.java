@@ -54,7 +54,7 @@ public class TwoStateAnt implements Agent {
 				else rv[2] = Math.toRadians(40.0);
 			}
 			if(timeAvoiding > AVOID_TIME){
-				timeAvoiding = 0.0;
+				timeNearAnt = 0.0;
 				state = APPROACH;
 			}
 		} else if(state == APPROACH){
@@ -69,11 +69,11 @@ public class TwoStateAnt implements Agent {
 				rv[2] = Math.toRadians(40.0)*Math.signum(ant.angle())*((Math.PI/2)-Math.abs(ant.angle()))/(Math.PI/2);
 				//switch to avoid if we've visited long enough
 				if(timeNearAnt > VISIT_TIME){
-					timeNearAnt = 0.0;
+					timeAvoiding = 0.0;
 					state = AVOID;
 				}
 			} else if(sawWall){
-				timeNearAnt = 0.0;
+				timeAvoiding = 0.0;
 				rv[2] = Math.toRadians(-40.0)*Math.signum(wall.angle());
 			}
 		}

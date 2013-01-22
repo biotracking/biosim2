@@ -611,8 +611,10 @@ public class BIOHMM{
 			for(int i=0;i<newPrior.length;i++){
 				for(int j=0;j<newPrior.length;j++){
 					for(int k=0;k<newTransitionNumerator[i][j].length;k++){
-						newTransitionNumerator[i][j][k] = 0.0;
-						newTransitionDenominator[i][j][k] = 0.0;
+						//newTransitionNumerator[i][j][k] = 0.0;
+						//newTransitionDenominator[i][j][k] = 0.0;
+						newTransitionNumerator[i][j][k] = Double.NEGATIVE_INFINITY;
+						newTransitionDenominator[i][j][k] =Double.NEGATIVE_INFINITY;
 						newTransition[i][j][k] = 0.0;
 					}
 				}
@@ -754,7 +756,13 @@ public class BIOHMM{
 			for(int i=0;i<prior.length;i++){
 				for(int j=0;j<prior.length;j++){
 					for(int k=0;k<newTransition[i][j].length;k++){
-						newTransition[i][j][k] = Math.exp(newTransitionNumerator[i][j][k]-newTransitionDenominator[i][j][k]);// transitionFunction[i][j][k];//
+						if(newTransitionNumerator[i][j][k] == newTransitionDenominator[i][j][k]){
+							newTransition[i][j][k] = 1.0/((double)prior.length*prior.length);//continue;
+							//System.out.println("whaaaat.");
+							//System.out.println("Num:"+newTransitionNumerator[i][j][k]);
+						}else{
+							newTransition[i][j][k] = Math.exp(newTransitionNumerator[i][j][k]-newTransitionDenominator[i][j][k]);// transitionFunction[i][j][k];//
+						}
 					}
 				}
 			}
