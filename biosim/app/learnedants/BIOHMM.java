@@ -91,7 +91,7 @@ public class BIOHMM{
 		}
 		*/
 		for(int i=0;i<bip.partSize();i++){
-			sensors.add(bip.getDataAtIDX(i));
+			sensors.add(bip.getSensorsAtIDX(i));
 		}
 		bip.initParameters(transitionFunction,prior,partition,b);
 	}
@@ -99,10 +99,12 @@ public class BIOHMM{
 	public double outputLogProbAtIDX(int idx, int state){
 		double jp = b[state].estimate(bip.getDataAtIDX(idx),bandwidth);
 		//System.out.println("jp:"+jp);
-		//double sp = sensors.estimate(bip.getSensorsAtIDX(idx),bandwidth);
-		double sp = 1.0;
+		double sp = sensors.estimate(bip.getSensorsAtIDX(idx),bandwidth);
+		//double sp = 1.0;
 		//System.out.println("sp:"+sp);
-		return Math.log(jp) - Math.log(sp);
+		double rv = Math.log(jp) - Math.log(sp);
+		//if(rv > 0) System.out.println("rv:"+rv);
+		return rv;
 	}
 	
 	public void calculateAlpha(	ArrayList<Integer> seq,

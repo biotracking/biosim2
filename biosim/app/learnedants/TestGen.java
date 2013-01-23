@@ -23,7 +23,7 @@ public class TestGen{
 		
 	public double[] genOutput(){
 		double randNum;
-		double[] rv = new double[3];
+		double[] rv = new double[4];
 		double switched, output, lastState = curState;
 		if(curState == -1){
 			double sum = 0.0;
@@ -39,6 +39,8 @@ public class TestGen{
 			if(curState == -1) curState = prior.length-1;
 			lastState = curState;
 		}
+		//generate input
+		double input = (random.nextInt(5)+1)*10;
 		output = (sigma[curState]*random.nextGaussian())+mu[curState];
 		//figure out if we're switching
 		randNum = random.nextDouble();
