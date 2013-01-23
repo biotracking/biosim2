@@ -41,7 +41,7 @@ public class TestGen{
 		}
 		//generate input
 		double input = (random.nextInt(5)+1)*10;
-		output = (sigma[curState]*random.nextGaussian())+mu[curState];
+		output = input+(sigma[curState]*random.nextGaussian())+mu[curState];
 		//figure out if we're switching
 		randNum = random.nextDouble();
 		if(randNum <= switching){
@@ -65,6 +65,7 @@ public class TestGen{
 		rv[0] = output;
 		rv[1] = switched;
 		rv[2] = lastState;
+		rv[3] = input;
 		return rv;
 	}
 	
@@ -73,18 +74,21 @@ public class TestGen{
 			double[][][] tf = {{ {0.9, 0.1}, {0.1, 0.9} }, { {0.1, 0.9}, {0.9, 0.1} }};
 			double[] pr = {0.5, 0.5};
 			double[] sigma = {1.0, 2.0};
-			double[] mu = {2.0, 5.0};
+			double[] mu = {-2.0, 2.0};
 			double switching = 0.25;
 			TestGen tg = new TestGen(tf,pr,sigma,mu,switching);
+			FileWriter inf = new FileWriter(new File("input.btf"));
 			FileWriter outf = new FileWriter(new File("output.btf"));
 			FileWriter switchf = new FileWriter(new File("switching.btf"));
 			FileWriter statef = new FileWriter(new File("state.btf"));
 			for(int i=0;i<10000;i++){
 				double[] rv = tg.genOutput();
+				inf.write(rv[3]+"\n");
 				outf.write(rv[0]+"\n");
 				switchf.write((int)rv[1]+"\n");
 				statef.write((int)rv[2]+"\n");
 			}
+			inf.close();
 			outf.close();
 			switchf.close();
 			statef.close();

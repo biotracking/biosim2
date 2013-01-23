@@ -9,12 +9,13 @@ import java.util.ArrayList;
 
 public class SimpleInputParser extends BIOHMMInputParser {
 
-	protected String[] output, switching,state;
+	protected String[] output, switching,state, input;
 	public static final int SEQMAX=1000;
 	public SimpleInputParser(BTFData data){
 		super(data);
 		this.data = data;
 		try{
+			input = data.loadColumn("input");
 			output = data.loadColumn("output");
 			switching = data.loadColumn("switching");
 			state = data.loadColumn("state");
@@ -29,7 +30,8 @@ public class SimpleInputParser extends BIOHMMInputParser {
 		return rv;
 	}
 	public double[] getSensorsAtIDX(int idx){
-		double[] rv = {0.0};
+		double[] rv = new double[1];
+		rv[0] = Double.parseDouble(input[idx].trim());
 		return rv;
 	}
 	public int getSwitchAtIDX(int idx){
