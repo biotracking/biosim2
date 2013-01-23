@@ -158,16 +158,21 @@ public class BIOHMMInputParser {
 		//is to switch states whenever there's a change in switching
 		//variables.
 		/* */
+		boolean justChanged = false;
 		int initCurState = -1;
 		for(int i=0;i<seqs.size();i++){
 			ArrayList<Integer> seq = seqs.get(i);
 			initCurState = (initCurState+1) % prior.length;
 			int initPrevK = getSwitchAtIDX(seq.get(0));
 			for(int j=1;j<seq.size();j++){
-				if(initPrevK != getSwitchAtIDX(seq.get(j))){
+				if(initPrevK != getSwitchAtIDX(seq.get(j)) &&!justChanged){
 					initCurState = (initCurState+1) % prior.length;
+					justChanged = true;
+				} else {
+					justChanged = false;
 				}
 				partition[seq.get(j)] = initCurState;
+				initPrevK = getSwitchAtIDX(seq.get(j));
 			}
 		}
 		/* */
@@ -189,13 +194,19 @@ public class BIOHMMInputParser {
 			partition[i] = random.nextInt(prior.length);
 		}
 		/* */
-		for(int i=0;i<b.length;i++){
-			for(int j=0;j<partition.length;j++){
-				if(partition[j] == i){
-					b[i].add(getDataAtIDX(j));
-				}
-			}
+		//System.out.print("Initial partition:\n[");
+		for(int x=0;x<partition.length;x++){
+			//System.out.print(partition[x]);
+			b[partition[x]].add(getDataAtIDX(x));
 		}
+		//System.out.println("]");
+		//for(int i=0;i<b.length;i++){
+		//	for(int j=0;j<partition.length;j++){
+		//		if(partition[j] == i){
+		//			b[i].add(getDataAtIDX(j));
+		//		}
+		//	}
+		//}
 		
 	}
 }

@@ -3,8 +3,10 @@ package biosim.app.learnedants;
 import biosim.core.util.BTFData;
 import biosim.core.util.KernelDensityEstimator;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -18,7 +20,7 @@ public class BIOHMM{
 	private double[][] completeLLGamma;
 	BTFData data;
 	int dim, numThreads = 4;
-	double kernelSigma = 1.0, bandwidth = 1.0;
+	double kernelSigma = 1.0, bandwidth = 1.0, inputSigma = 1.0;
 	public static final boolean PRINT_ITERATIONS = true;
 	public final KernelDensityEstimator[] b;
 	public final KernelDensityEstimator sensors;
@@ -66,7 +68,7 @@ public class BIOHMM{
 		partition = new int[bip.partSize()];
 		completeLLGamma = new double[partition.length][numStates];
 		b = new KernelDensityEstimator[prior.length];
-		sensors = new KernelDensityEstimator(bip.sensorDim(), new KernelDensityEstimator.NormalKernel(kernelSigma));
+		sensors = new KernelDensityEstimator(bip.sensorDim(), new KernelDensityEstimator.NormalKernel(inputSigma));
 		for(int i=0;i<b.length;i++){
 			b[i] = new KernelDensityEstimator(dim, new KernelDensityEstimator.NormalKernel(kernelSigma));
 		}
@@ -589,9 +591,15 @@ public class BIOHMM{
 		}
 	}
 	public void addToKDE(KernelDensityEstimator[] b, int[] newPartition){
+		/*
+		for(int i=0;i<prior.length;i++){
+			b[i].weights.clear();
+			b[i].samples.clear();
+		}
+		*/
 		for(int t=0;t<newPartition.length;t++){
 			b[partition[t]].add(bip.getDataAtIDX(t));
-			/* 
+			/*  
 			for(int i=0;i<prior.length;i++){
 				b[i].add(bip.getDataAtIDX(t),Math.exp(completeLLGamma[t][i]));
 			}
@@ -810,7 +818,9 @@ public class BIOHMM{
 			
 			//if(priorDifference < epsilon && transitionDiff < epsilon && percentPartChanged < epsilon) converged = true;
 			if(prevLL!= null && eps.compareTo(llsum.subtract(prevLL).abs()) > 0) converged = true;
-			if(prevLL!=null && prevLL.compareTo(llsum) > 0) System.out.println("Log-likelihood DECREASING!");
+			if(prevLL!=null && prevLL.compareTo(llsum) > 0){ 
+				System.out.println("Log-likelihood DECREASING: "+Math.exp(prevLL.minus(llsum).doubleValue()));
+			}
 			prevLL = llsum;
 			prior = newPrior;
 			transitionFunction = newTransition;
@@ -868,6 +878,51 @@ public class BIOHMM{
 		}
 		outf.write("#LogLike = "+loglike+"\n");
 		outf.close();
+	}
+	
+	public void readParameters(File parameterFile) throws IOException{
+		BufferedReader inf = new BufferedReader(new FileReader(parameterFile));
+		//read prior
+		int prLength = Integer.parseInt(inf.readLine().trim());
+		prior = new double[prLength];
+		String[] prStr = inf.readLine().split(" ");
+		for(int i=0;i<prior.length;i++){
+			prior[i] = Double.parseDouble(prStr[i].trim());
+		}
+		//read transition function
+		String[] trLenStr = inf.readLine().split(" ");
+		transitionFunction = new double[Integer.parseInt(trLenStr[0].trim())][Integer.parseInt(trLenStr[1].trim())][Integer.parseInt(trLenStr[2].trim())];
+		String[] trStr = inf.readLine().split(" ");
+		for(int x=0;x<trStr.length;x++){
+			int k = x % transitionFunction[0][0].length;
+			int j = (x/transitionFunction[0][0].length) % transitionFunction[0].length;
+			int i = (x/transitionFunction[0][0].length)/transitionFunction.length;
+			transitionFunction[i][j][k] = Double.parseDouble(trStr[x].trim());
+		}
+		//read partition
+		int partLength = Integer.parseInt(inf.readLine().trim());
+		String[] partStr = inf.readLine().split(" ");
+		for(int x=0;x<partStr.length;x++){
+			partition[x] = Integer.parseInt(partStr[x].trim());
+		}
+		//read KDE samples/weights
+		//b = new KernelDensityEstimator[prLength];
+		String line;
+		for(int i=0;i<b.length;i++){
+			int tmpState = Integer.parseInt(inf.readLine().trim());
+			//b[i] = new KernelDensityEstimator(bip.sensorDim(), new KernelDensityEstimator.NormalKernel(kernelSigma));
+			b[i].weights.clear();
+			b[i].samples.clear();
+			while( !(line = inf.readLine()).isEmpty()){
+				String[] sampleLine = line.split(" ");
+				double[] sample = new double[bip.outputDim()];
+				for(int s=0;s<sample.length;s++){
+					sample[s] = Double.parseDouble(sampleLine[s].trim());
+				}
+				double weight = Double.parseDouble(sampleLine[sampleLine.length-1].trim());
+				b[i].add(sample,weight);
+			}
+		}
 	}
 	
 	public static void main(String[] args){
