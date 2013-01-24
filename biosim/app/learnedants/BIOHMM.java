@@ -590,18 +590,29 @@ public class BIOHMM{
 			}
 		}
 	}
-	public void addToKDE(KernelDensityEstimator[] b, int[] newPartition){
-		/*
+	public synchronized void addToKDE(KernelDensityEstimator[] b, int[] newPartition){
+		/* 
 		for(int i=0;i<prior.length;i++){
 			b[i].weights.clear();
 			b[i].samples.clear();
 		}
-		*/
+		/* */
+		double[] log_expected_times_statei = new double[prior.length];
+		for(int i=0;i<log_expected_times_statei.length;i++){
+			log_expected_times_statei[i] = Double.NEGATIVE_INFINITY;
+		}
 		for(int t=0;t<newPartition.length;t++){
-			b[partition[t]].add(bip.getDataAtIDX(t));
-			/*  
+			for(int i=0;i<log_expected_times_statei.length;i++){
+				log_expected_times_statei[i] = elnsum(completeLLGamma[t][i],log_expected_times_statei[i]);
+			}
+		}
+		for(int t=0;t<newPartition.length;t++){
+			//b[partition[t]].add(bip.getDataAtIDX(t));
+			/* */   
 			for(int i=0;i<prior.length;i++){
-				b[i].add(bip.getDataAtIDX(t),Math.exp(completeLLGamma[t][i]));
+				double log_probability_statei_at_t = completeLLGamma[t][i];
+				double logNewWeight = log_probability_statei_at_t - log_expected_times_statei[i];
+				b[i].setWeight(bip.getDataAtIDX(t),Math.exp(logNewWeight));
 			}
 			/* */
 		}
@@ -819,7 +830,7 @@ public class BIOHMM{
 			//if(priorDifference < epsilon && transitionDiff < epsilon && percentPartChanged < epsilon) converged = true;
 			if(prevLL!= null && eps.compareTo(llsum.subtract(prevLL).abs()) > 0) converged = true;
 			if(prevLL!=null && prevLL.compareTo(llsum) > 0){ 
-				System.out.println("Log-likelihood DECREASING: "+ (Math.exp(prevLL.doubleValue())-Math.exp(llsum.doubleValue())));
+				System.out.println("Log-likelihood DECREASING: "+ Math.exp(elnsum(prevLL.doubleValue(), llsum.doubleValue())));//(Math.exp(prevLL.doubleValue())-Math.exp(llsum.doubleValue())));
 			}
 			prevLL = llsum;
 			prior = newPrior;

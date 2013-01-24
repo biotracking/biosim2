@@ -44,6 +44,27 @@ public class KernelDensityEstimator{
 		samples.add(tmp_s);
 		weights.add(weight);
 	}
+	
+	public void setWeight(double[] sample, double weight){
+		for(int i=0;i<samples.size();i++){
+			double[] doop = samples.get(i);
+			boolean diff = false;
+			for(int d=0;d<dimensionality;d++){
+				if(sample[d] != doop[d]){
+					diff = true;
+					break;
+				}
+			}
+			if(!diff){
+				weights.set(i,weight);
+				return;
+			}
+		}
+		double[] tmp_s = new double[sample.length];
+		System.arraycopy(sample,0,tmp_s,0,tmp_s.length);
+		samples.add(tmp_s);
+		weights.add(weight);
+	}
 		
 	public double estimate(double[] target, double bandwidth){
 		double sum=0.0, weightSum=0.0;

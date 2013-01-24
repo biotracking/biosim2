@@ -40,7 +40,7 @@ public class TestGen{
 			lastState = curState;
 		}
 		//generate input
-		double input = (random.nextInt(5)+1)*10;
+		double input = (random.nextInt(2)+1)*10;
 		output = input+(sigma[curState]*random.nextGaussian())+mu[curState];
 		//figure out if we're switching
 		randNum = random.nextDouble();
