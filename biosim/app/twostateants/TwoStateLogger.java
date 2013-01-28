@@ -17,8 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class TwoStateLogger extends AvoidAntLogger{
-	public ArrayList<String> avoidTimeThresh, nearTimeThresh;
-	public BufferedWriter avoidout, nearout;
+	public BufferedWriter avoidout, nearout, stateout;
 	
 	public TwoStateLogger(){
 		this(new File(System.getProperties().getProperty("user.dir")));
@@ -29,9 +28,10 @@ public class TwoStateLogger extends AvoidAntLogger{
 		try{
 			avoidout = new BufferedWriter(new FileWriter(new File(parentDirectory,"avoid.btf")));
 			nearout = new BufferedWriter(new FileWriter(new File(parentDirectory, "near.btf")));
+			stateout = new BufferedWriter(new FileWriter(new File(parentDirectory,"state.btf")));
 		} catch(IOException ioe){
 			System.err.println("[TwoStateLogger] Could not open "+dir+" for logging: "+ioe);
-			avoidout = nearout = null;
+			avoidout = nearout = stateout = null;
 		}
 	}
 	
@@ -46,9 +46,11 @@ public class TwoStateLogger extends AvoidAntLogger{
 					TwoStateAnt tsant = (TwoStateAnt)agent;
 					boolean doneAvoiding = (tsant.timeAvoiding > TwoStateAnt.AVOID_TIME);
 					boolean doneApproaching = (tsant.timeNearAnt > TwoStateAnt.VISIT_TIME);
+					int curState = (tsant.state - 1);
 					try{
 						avoidout.write(doneAvoiding+"\n");
 						nearout.write(doneApproaching+"\n");
+						stateout.write(curState+"\n");
 					} catch(IOException ioe){
 						System.err.println("[TwoStateLogger] Error writing to log files: "+ioe);
 					}
@@ -62,6 +64,7 @@ public class TwoStateLogger extends AvoidAntLogger{
 			super.finish();
 			avoidout.close();
 			nearout.close();
+			stateout.close();
 		} catch(IOException ioe){
 			System.err.println("[TwoStateLogger] Error closing log files: "+ioe);
 		}

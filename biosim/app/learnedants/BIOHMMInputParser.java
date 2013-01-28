@@ -10,7 +10,7 @@ import java.util.Random;
 
 public class BIOHMMInputParser {
 	BTFData data;
-	protected String[] desiredVel, wallVec, avoidBool, antVec, nearBool, prevVec;
+	protected String[] desiredVel, wallVec, avoidBool, antVec, nearBool, prevVec, stateVec;
 	protected int numTrackPoints;
 	public static final int NUM_SENSORS = 4;
 	public static final int DIM = 7;
@@ -26,6 +26,7 @@ public class BIOHMMInputParser {
 			antVec = data.loadColumn("antvec");
 			nearBool = data.loadColumn("near");
 			prevVec = data.loadColumn("pvel");
+			stateVec = data.loadColumn("state");
 			numTrackPoints = data.loadColumn("id").length;
 		} catch(IOException ioe){
 			throw new RuntimeException(ioe);
@@ -194,12 +195,23 @@ public class BIOHMMInputParser {
 			partition[i] = random.nextInt(prior.length);
 		}
 		/* */
+		//For debugging, if we had the correct state sequence
+		/* */
+		for(int i=0;i<partition.length;i++){
+			partition[i] = Integer.parseInt(stateVec[i].trim());
+		}
+		/* */
 		//System.out.print("Initial partition:\n[");
+		int errorCount = 0;
 		for(int x=0;x<partition.length;x++){
 			//System.out.print(partition[x]);
 			b[partition[x]].add(getDataAtIDX(x));
+			int ste = Integer.parseInt(stateVec[x].trim());
+			if(ste != partition[x]) errorCount++;
 		}
 		//System.out.println("]");
+		System.out.println("Error rate:"+errorCount+"/"+partition.length+" = "+( (double)errorCount/(double)partition.length));
+		//throw new RuntimeException("Break");
 		//for(int i=0;i<b.length;i++){
 		//	for(int j=0;j<partition.length;j++){
 		//		if(partition[j] == i){
