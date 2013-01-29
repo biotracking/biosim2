@@ -14,33 +14,65 @@ import biosim.app.tutorial.AvoidAntLogger;
 
 import sim.util.MutableDouble2D;
 public class TwoStateAnt implements Agent {
-	AbstractAnt antBody;
+	public AbstractAnt antBody;
 	public double timeNearAnt;
 	public double timeAvoiding;
 	double lastTime;
 	public int state;
-	public static final int AVOID=1;
-	public static final int APPROACH=2;
+	public static final int RETURN=1;
+	public static final int FORAGE=2;
 	public static final double VISIT_TIME=5.0; //seconds
 	public static final double VISIT_RANGE=AphaenogasterCockerelli.SIZE*2; //meters
 	public static final double AVOID_TIME=10.0;
 	public TwoStateAnt(AbstractAnt b){
 		antBody = b;
 		timeAvoiding = timeNearAnt = 0.0;
-		state = APPROACH;
+		state = FORAGE;
 		lastTime = 0.0;
 	}
 	public double[] act(double time){
-		double[] rv = new double[3];
+		//double[] rv = new double[3];
+		double[] rv = {0.0,0.0,0.0};
 		//our default is to move forward in a straight line
-		rv[0] = 0.024; 	//24mm per second straight ahead
-		rv[1] = 0.0;	//Ants *can* move laterally, but ours won't for now
-		rv[2] = 0.0;	//no rotational velocity by default
+		//rv[0] = 0.024; 	//24mm per second straight ahead
+		//rv[1] = 0.0;	//Ants *can* move laterally, but ours won't for now
+		//rv[2] = 0.0;	//no rotational velocity by default
 		//get a vector towards the nearest thing so we can avoid/approach it
 		MutableDouble2D ant = new MutableDouble2D();
 		boolean sawAnt = antBody.getNearestSameAgentVec(ant);
 		MutableDouble2D wall = new MutableDouble2D();
 		boolean sawWall = antBody.getNearestObstacleVec(wall);
+		MutableDouble2D nest = new MutableDouble2D();
+		boolean sawNest = antBody.getPoiDir(nest,"nest");
+		MutableDouble2D food = new MutableDouble2D();
+		boolean sawFood = antBody.getPoiDir(food,"food");
+		MutableDouble2D desiredVec = new MutableDouble2D();
+		if(sawWall){
+			desiredVec.addIn(wall.normalize().negate().multiplyIn(1.0/(Math.pow(wall.length(),2))));
+		}
+		if(sawAnt){
+			desiredVec.addIn(ant.normalize().negate().multiplyIn(1.0/Math.pow(ant.length(),2)));
+		}
+			
+		if(state  == FORAGE){
+			desiredVec.addIn(food);
+			rv[0] = Math.min(0.024,desiredVec.length());
+			rv[2] = Math.acos(desiredVec.normalize().dot(new MutableDouble2D(1,0)))*Math.signum(desiredVec.angle());
+			//rv[2] = Math.toRadians(40.0)*Math.signum(desiredVec.angle())*((Math.PI/2)-Math.abs(desiredVec.angle()))/(Math.PI/2);
+			if(antBody.nearPOI("food")){
+				state = RETURN;
+			}
+		}
+		else if(state == RETURN){
+			desiredVec.addIn(nest);
+			rv[0] = Math.min(0.024,desiredVec.length());
+			rv[2] = Math.acos(desiredVec.normalize().dot(new MutableDouble2D(1,0)))*Math.signum(desiredVec.angle());
+			//rv[2] = Math.toRadians(40.0)*Math.signum(desiredVec.angle())*((Math.PI/2)-Math.abs(desiredVec.angle()))/(Math.PI/2);			
+			if(antBody.nearPOI("nest")){
+				state = FORAGE;
+			}
+		}
+		/*
 		if(state == AVOID){
 			timeAvoiding += time - lastTime;
 			MutableDouble2D avoidPoint = null;
@@ -77,6 +109,7 @@ public class TwoStateAnt implements Agent {
 				rv[2] = Math.toRadians(-40.0)*Math.signum(wall.angle());
 			}
 		}
+		*/
 		lastTime = time;
 		return rv;
 	}
@@ -88,6 +121,7 @@ public class TwoStateAnt implements Agent {
 		int numAnts = 10;
 		Environment env = new Environment(WIDTH,HEIGHT,1.0/30.0);
 		env.addStaticPOI("nest",WIDTH/2,0.02);
+		env.addStaticPOI("food",WIDTH/2,HEIGHT-0.02);
 		env.addObstacle(new RectObstacle(0.01,0.2), 0.19,  0.0);//east wall
 		env.addObstacle(new RectObstacle(0.01,0.2),  0.0,  0.0);//west
 		env.addObstacle(new RectObstacle(0.2,0.01),  0.0,  0.0);//north

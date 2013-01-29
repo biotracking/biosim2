@@ -58,6 +58,35 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 		} 
 		return false;
 	}
+	public boolean getPoiDir(MutableDouble2D rv, String name){
+		Double2D loc = sim.field2D.getObjectLocation(this);
+		MutableDouble2D dir = new MutableDouble2D();
+		if(sim.getBodyOrientation(this,dir)){
+			for(int i=0;i<sim.poi.size();i++){
+				if(sim.poi.get(i).equalsIgnoreCase(name)){
+					Double2D nestLoc = sim.field2D.getObjectLocation(sim.poi.get(i));
+					rv.setTo(nestLoc);
+					rv.subtractIn(loc);
+					rv.rotate(-dir.angle());
+					rv.normalize();
+					return true;
+				}
+			}
+		} 
+		return false;
+	}
+	
+	public boolean nearPOI(String name){
+		Double2D loc = sim.field2D.getObjectLocation(this);
+		for(int i=0;i<sim.poi.size();i++){
+			if(sim.poi.get(i).equalsIgnoreCase(name)){
+				MutableDouble2D poiLoc = new MutableDouble2D(sim.field2D.getObjectLocation(sim.poi.get(i)));
+				return (poiLoc.subtractIn(loc).length() < this.getSize());
+			}
+		}
+		return false;
+	}
+
 	public boolean getNearestObstacleVec(MutableDouble2D rv){
 		Double2D loc = sim.field2D.getObjectLocation(this);
 		MutableDouble2D dir = new MutableDouble2D();

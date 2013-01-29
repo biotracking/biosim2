@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class TwoStateLogger extends AvoidAntLogger{
-	public BufferedWriter avoidout, nearout, stateout;
+	public BufferedWriter foodVecOut, nearFoodOut, nearNestOut, stateout;
 	
 	public TwoStateLogger(){
 		this(new File(System.getProperties().getProperty("user.dir")));
@@ -26,30 +26,34 @@ public class TwoStateLogger extends AvoidAntLogger{
 	public TwoStateLogger(File dir){
 		super(dir);
 		try{
-			avoidout = new BufferedWriter(new FileWriter(new File(parentDirectory,"avoid.btf")));
-			nearout = new BufferedWriter(new FileWriter(new File(parentDirectory, "near.btf")));
+			foodVecOut = new BufferedWriter(new FileWriter(new File(parentDirectory, "foodvec.btf")));
+			nearFoodOut = new BufferedWriter(new FileWriter(new File(parentDirectory,"nfood.btf")));
+			nearNestOut = new BufferedWriter(new FileWriter(new File(parentDirectory, "nnest.btf")));
 			stateout = new BufferedWriter(new FileWriter(new File(parentDirectory,"state.btf")));
 		} catch(IOException ioe){
 			System.err.println("[TwoStateLogger] Could not open "+dir+" for logging: "+ioe);
-			avoidout = nearout = stateout = null;
+			foodVecOut = nearFoodOut = nearNestOut = stateout = null;
 		}
 	}
 	
 	public void step(SimState simstate){
 		super.step(simstate);
-		if(avoidout == null) return;
+		if(nearFoodOut == null) return;
 		if(simstate instanceof Simulation){
 			Simulation sim = (Simulation)simstate;
 			for(int i=0;i<sim.bodies.size();i++){
 				Agent agent = sim.bodies.get(i).getAgent();
 				if(agent instanceof TwoStateAnt){
 					TwoStateAnt tsant = (TwoStateAnt)agent;
-					boolean doneAvoiding = (tsant.timeAvoiding > TwoStateAnt.AVOID_TIME);
-					boolean doneApproaching = (tsant.timeNearAnt > TwoStateAnt.VISIT_TIME);
+					boolean nearFood = tsant.antBody.nearPOI("food");
+					boolean nearNest = tsant.antBody.nearPOI("nest");
+					MutableDouble2D foodVec = new MutableDouble2D();
+					tsant.antBody.getPoiDir(foodVec,"food");
 					int curState = (tsant.state - 1);
 					try{
-						avoidout.write(doneAvoiding+"\n");
-						nearout.write(doneApproaching+"\n");
+						foodVecOut.write(foodVec.x+" "+foodVec.y+"\n");
+						nearFoodOut.write(nearFood+"\n");
+						nearNestOut.write(nearNest+"\n");
 						stateout.write(curState+"\n");
 					} catch(IOException ioe){
 						System.err.println("[TwoStateLogger] Error writing to log files: "+ioe);
@@ -62,8 +66,9 @@ public class TwoStateLogger extends AvoidAntLogger{
 	public void finish(){
 		try{
 			super.finish();
-			avoidout.close();
-			nearout.close();
+			foodVecOut.close();
+			nearFoodOut.close();
+			nearNestOut.close();
 			stateout.close();
 		} catch(IOException ioe){
 			System.err.println("[TwoStateLogger] Error closing log files: "+ioe);

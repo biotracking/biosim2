@@ -771,12 +771,24 @@ public class BIOHMM{
 			}catch(InterruptedException ie){
 				throw new RuntimeException(ie);
 			}
-			/* */
+			/* 
 			System.out.print("New Partition: [");
 			for(int i=0;i<newPartition.length;i++) System.out.print(newPartition[i]);
 			System.out.println("]");
 			/* */
-			
+			int errorCount = 0;
+			int[] stateCount = {0,0};
+			int[] turnCount = {0,0};
+			for(int x=0;x<newPartition.length;x++){
+				if(newPartition[x] != bip.getStateAtIDX(x)){ errorCount++; }
+				stateCount[newPartition[x]]++;
+				if(bip.getDataAtIDX(x)[2] != 0.0){ turnCount[newPartition[x]]++; }
+			}
+			System.out.println("Error rate:"+((double)errorCount/(double)newPartition.length));
+			System.out.println("State ratio:"+((double)stateCount[0]/(double)newPartition.length));
+			System.out.print("Turn ratio:"+((double)turnCount[0]/(double)stateCount[0])+" ");
+			System.out.println(((double)turnCount[1]/(double)stateCount[1]));
+			//if(errorCount > 0) throw new RuntimeException("Break");
 			
 			System.out.println("ASSUMING NUM/DENOM ARE LOG!!!!");
 			for(int i=0;i<prior.length;i++){

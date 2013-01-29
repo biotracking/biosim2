@@ -10,10 +10,10 @@ import java.util.Random;
 
 public class BIOHMMInputParser {
 	BTFData data;
-	protected String[] desiredVel, wallVec, avoidBool, antVec, nearBool, prevVec, stateVec;
+	protected String[] desiredVel, wallVec, foodVec, nearFoodBool, antVec, nestVec, nearNestBool, prevVec, stateVec;
 	protected int numTrackPoints;
-	public static final int NUM_SENSORS = 4;
-	public static final int DIM = 7;
+	public static final int NUM_SENSORS = 8;
+	public static final int DIM = 11;
 	public static final int NUM_SWITCHES = 2;
 	protected ArrayList<ArrayList<Integer>> foundSequences = null;
 	public Random random = null;
@@ -22,9 +22,11 @@ public class BIOHMMInputParser {
 		try{
 			desiredVel = data.loadColumn("dvel");
 			wallVec = data.loadColumn("wallvec");
-			avoidBool = data.loadColumn("avoid");
+			foodVec = data.loadColumn("foodvec");
+			nearFoodBool = data.loadColumn("nfood");
 			antVec = data.loadColumn("antvec");
-			nearBool = data.loadColumn("near");
+			nestVec = data.loadColumn("homevec");
+			nearNestBool = data.loadColumn("nnest");
 			prevVec = data.loadColumn("pvel");
 			stateVec = data.loadColumn("state");
 			numTrackPoints = data.loadColumn("id").length;
@@ -45,6 +47,12 @@ public class BIOHMMInputParser {
 		tmp = antVec[idx].split(" ");
 		datapoint[5] = Double.parseDouble(tmp[0]);
 		datapoint[6] = Double.parseDouble(tmp[1]);
+		tmp = nestVec[idx].split(" ");
+		datapoint[7] = Double.parseDouble(tmp[0]);
+		datapoint[8] = Double.parseDouble(tmp[1]);
+		tmp = foodVec[idx].split(" ");
+		datapoint[9] = Double.parseDouble(tmp[0]);
+		datapoint[10] = Double.parseDouble(tmp[1]);
 		//tmp = prevVec[idx].split(" ");
 		//datapoint[7] = Double.parseDouble(tmp[0]);
 		//datapoint[8] = Double.parseDouble(tmp[1]);
@@ -60,16 +68,27 @@ public class BIOHMMInputParser {
 		tmp = antVec[idx].split(" ");
 		datapoint[2] = Double.parseDouble(tmp[0]);
 		datapoint[3] = Double.parseDouble(tmp[1]);
+		tmp = nestVec[idx].split(" ");
+		datapoint[4] = Double.parseDouble(tmp[0]);
+		datapoint[5] = Double.parseDouble(tmp[1]);
+		tmp = foodVec[idx].split(" ");
+		datapoint[6] = Double.parseDouble(tmp[0]);
+		datapoint[7] = Double.parseDouble(tmp[1]);
 		return datapoint;
+	}
+	
+	public int getStateAtIDX(int idx){
+		int ste = Integer.parseInt(stateVec[idx].trim());
+		return ste;
 	}
 	
 	public int getSwitchAtIDX(int idx){
 		int k = 0;
-		if(Boolean.parseBoolean(avoidBool[idx])){
+		if(Boolean.parseBoolean(nearFoodBool[idx])){
 			k += 1;
 		}
 		k = k<<1;
-		if(Boolean.parseBoolean(nearBool[idx])){
+		if(Boolean.parseBoolean(nearNestBool[idx])){
 			k+=1;
 		}
 		return k;
@@ -202,15 +221,24 @@ public class BIOHMMInputParser {
 		}
 		/* */
 		//System.out.print("Initial partition:\n[");
-		int errorCount = 0;
+		//int errorCount = 0;
+		//int[] stateCount = {0,0};
+		//int[] turnCount = {0,0};
 		for(int x=0;x<partition.length;x++){
 			//System.out.print(partition[x]);
 			b[partition[x]].add(getDataAtIDX(x));
-			int ste = Integer.parseInt(stateVec[x].trim());
-			if(ste != partition[x]) errorCount++;
+			//int ste = Integer.parseInt(stateVec[x].trim());
+			//if(ste != partition[x]) errorCount++;
+			//stateCount[partition[x]]++;
+			//if(Double.parseDouble(desiredVel[x].split(" ")[2]) != 0.0){
+			//	turnCount[partition[x]]++;
+			//}
 		}
 		//System.out.println("]");
-		System.out.println("Error rate:"+errorCount+"/"+partition.length+" = "+( (double)errorCount/(double)partition.length));
+		//System.out.println("Error rate:"+errorCount+"/"+partition.length+" = "+( (double)errorCount/(double)partition.length));
+		//System.out.println("State ratio = "+stateCount[0]+"/"+partition.length+" = "+( (double)stateCount[0]/(double)partition.length));
+		//System.out.println("Ratio turn/non-turn[i] "+turnCount[0]+" "+turnCount[1]);
+		//System.out.println("\t = "+((double)turnCount[0]/(double)stateCount[0])+" "+((double)turnCount[1]/(double)stateCount[1]));
 		//throw new RuntimeException("Break");
 		//for(int i=0;i<b.length;i++){
 		//	for(int j=0;j<partition.length;j++){
