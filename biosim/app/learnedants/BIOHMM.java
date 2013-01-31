@@ -620,12 +620,15 @@ public class BIOHMM{
 
 	
 	public void learn(double epsilon) throws IOException{ learn(bip.getSequences(), epsilon); }
-	
 	public void learn(final ArrayList<ArrayList<Integer>> sequences, double epsilon) throws IOException{
+		learn(sequences,epsilon,null);
+	}
+	public void learn(final ArrayList<ArrayList<Integer>> sequences, double epsilon, File parameters) throws IOException{
 		boolean converged = false;
 		int iter = 0;
 		BigDecimal prevLL = null;
 		BigDecimal eps = new BigDecimal(epsilon);
+		if(parameters != null) readParameters(parameters);
 		//until transitionFunction/prior/partition has converged:
 		do{
 			System.out.println("Iteration "+(iter+1));
@@ -950,18 +953,20 @@ public class BIOHMM{
 	}
 	
 	public static void main(String[] args){
-		if(args.length != 1){
+		if(args.length < 1 || args.length > 2){
 			System.out.println("Usage: java BIOHMM <btfDirectory>");
 		} else {
 			try{
 				BTFData btf = new BTFData();
 				btf.loadDir(new File(args[0]));
+				File parameters = null;
+				if(args.length ==2) parameters = new File(args[1]);
 				ArrayList<ArrayList<Integer>> sequences;
-				BIOHMMInputParser bip = new BIOHMMInputParser(btf);//SimpleInputParser(btf);//
+				BIOHMMInputParser bip = new RealAntInputParser(btf);//BIOHMMInputParser(btf);//SimpleInputParser(btf);//
 				BIOHMM biohmm = new BIOHMM(2,bip);
 				sequences = bip.getSequences();
 				System.out.println("Num sequences:"+sequences.size());
-				biohmm.learn(sequences,0.000);
+				biohmm.learn(sequences,0.000, parameters);
 				System.out.println("Prior:");
 				System.out.print("\t[ ");
 				for(int i =0;i<biohmm.prior.length;i++){

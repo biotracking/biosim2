@@ -18,9 +18,9 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class LearnedAnts implements Agent{
-	public static final int FEATURE_DIM = 4;
-	public static final int NUM_SWITCHES = 2;
-	public static final int NUM_NEIGHBORS = 5;
+	public static final int FEATURE_DIM = 6;
+	public static final int NUM_SWITCHES = 1;
+	public static final int NUM_NEIGHBORS = 300;
 	double[][][] transitionMatrix;
 	double[] prior;
 	FastKNN[] outputFunction;
@@ -42,19 +42,28 @@ public class LearnedAnts implements Agent{
 		MutableDouble2D wall = new MutableDouble2D();
 		boolean sawWall = antBody.getNearestObstacleVec(wall);
 		MutableDouble2D home = new MutableDouble2D();
-		boolean sawHome = antBody.getHomeDir(home);
+		boolean sawHome = antBody.getPoiDir(home,"nest");
+		//MutableDouble2D food = new MutableDouble2D();
+		//boolean sawFood = antBody.getPoiDir(food,"food");
+		//boolean nearNest = antBody.nearPOI("nest");
+		//boolean nearFood = antBody.nearPOI("food");
 		double[] sensorVec = new double[FEATURE_DIM];
 		double[][] nearestK = new double[NUM_NEIGHBORS][3];
+		double[] nearestKWeights = new double[NUM_NEIGHBORS];
 		boolean[] switches = new boolean[NUM_SWITCHES];
 		sensorVec[0] = ant.x;
 		sensorVec[1] = ant.y;
 		sensorVec[2] = wall.x;
 		sensorVec[3] = wall.y;
+		sensorVec[4] = home.x;
+		sensorVec[5] = home.y;
+		//sensorVec[6] = food.x;
+		//sensorVec[7] = food.y;
 		//sensorVec[4] = prevVel[0];
 		//sensorVec[5] = prevVel[1];
 		//sensorVec[6] = prevVel[2];
-		switches[0] = sawWall;
-		switches[1] = sawAnt;
+		switches[0] = (ant.length() > 0 && ant.length() < antBody.getSize());
+		//switches[1] = nearNest;
 		//figure out the initial state
 		if(currentState == -1){
 			double sum = 0.0;
@@ -70,16 +79,26 @@ public class LearnedAnts implements Agent{
 			//just in case prior doesn't sum to 1
 			if(currentState == -1) currentState = prior.length-1;
 		}
-		System.out.println("State: "+currentState);
+		//System.out.println("State: "+currentState);
 		//figure out the output for the current state
-		outputFunction[currentState].query(sensorVec,nearestK);
+		outputFunction[currentState].query(sensorVec,nearestK,nearestKWeights);
+		double weightSum = 0.0;
 		for(int i=0;i<rv.length;i++) rv[i] = 0.0;
 		for(int i=0;i<nearestK.length;i++){
 			for(int j=0;j<nearestK[i].length;j++){
-				rv[j] += nearestK[i][j];
+				rv[j] += nearestK[i][j]*nearestKWeights[i];
 			}
+			weightSum += nearestKWeights[i];
 		}
-		for(int i=0;i<rv.length;i++) rv[i] = rv[i]/(double)nearestK.length;
+		if(weightSum > 0){
+			for(int i=0;i<rv.length;i++){ 
+				rv[i] = rv[i]/weightSum;//(double)nearestK.length;
+			}
+		} else {
+			rv[0] = prevVel[0];
+			rv[1] = prevVel[1];
+			rv[2] = prevVel[2];
+		}
 		//System.out.println("rv[2] = "+rv[2]);
 		prevVel[0] = rv[0];
 		prevVel[1] = rv[1];
@@ -106,6 +125,7 @@ public class LearnedAnts implements Agent{
 		if(newState == -1) newState = transitionMatrix[currentState].length-1;
 		currentState = newState;
 		//currentState = 1;
+		//System.out.println("rv:"+rv[0]+" "+rv[1]+" "+rv[2]);
 		return rv;
 	}
 	
@@ -187,7 +207,7 @@ public class LearnedAnts implements Agent{
 			String stateLine = fread.readLine(); //which output it was
 			int state = Integer.parseInt(stateLine);
 			if(state > outputFunction.length || state < 0){
-				throw new RuntimeException("Bad parameter file: state ("+state+") not in [0,"+outputFunction+"]");
+				throw new RuntimeException("Bad parameter file: state ("+state+") not in [0,"+outputFunction.length+"]");
 			}
 			while( !(line = fread.readLine()).isEmpty()){
 				String[] sampleLine = line.split(" ");
@@ -219,6 +239,7 @@ public class LearnedAnts implements Agent{
 			int numAnts = 10;
 			Environment env = new Environment(WIDTH,HEIGHT,1.0/30.0);
 			env.addStaticPOI("nest",WIDTH/2,0.02);
+			env.addStaticPOI("food",WIDTH/2,HEIGHT-0.02);
 			env.addObstacle(new RectObstacle(0.01,0.2), 0.19,  0.0);//east wall
 			env.addObstacle(new RectObstacle(0.01,0.2),  0.0,  0.0);//west
 			env.addObstacle(new RectObstacle(0.2,0.01),  0.0,  0.0);//north

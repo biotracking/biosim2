@@ -139,7 +139,7 @@ public class TwoStateAnt implements Agent {
 		}
 		//env.runSimulation(args);
 		Simulation sim = env.newSimulation();
-		sim.addLogger(new TwoStateLogger());
+		//sim.addLogger(new TwoStateLogger());
 		GUISimulation gui = new GUISimulation(sim);
 		gui.createController();
 	}
