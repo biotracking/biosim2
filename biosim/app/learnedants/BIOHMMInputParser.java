@@ -2,6 +2,7 @@ package biosim.app.learnedants;
 
 import biosim.core.util.BTFData;
 import biosim.core.util.KernelDensityEstimator;
+import biosim.core.util.kdewrapper.SimpleKDE;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -163,7 +164,7 @@ public class BIOHMMInputParser {
 		}
 	}
 	
-	public void initParameters(double[][][] transitionFunction, double[] prior, int[] partition, KernelDensityEstimator[] b){
+	public void initParameters(double[][][] transitionFunction, double[] prior, int[] partition, SimpleKDE[] b){
 		/*
 		int numStates = prior.length;
 		for(int i=0;i<numStates;i++){

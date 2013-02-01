@@ -2,6 +2,7 @@ package biosim.app.learnedants;
 
 import biosim.core.util.BTFData;
 import biosim.core.util.KernelDensityEstimator;
+import biosim.core.util.kdewrapper.SimpleKDE;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,8 +23,10 @@ public class BIOHMM{
 	int dim, numThreads = 4;
 	double kernelSigma = 1.0, bandwidth = 1.0, inputSigma = 1.0;
 	public static final boolean PRINT_ITERATIONS = true;
-	public final KernelDensityEstimator[] b;
-	public final KernelDensityEstimator sensors;
+	public final SimpleKDE[] b;
+	public final SimpleKDE sensors;
+	//public final KernelDensityEstimator[] b;
+	//public final KernelDensityEstimator sensors;
 		
 	public static double elnsum(double logx, double logy){
 		//given log(x), and log(y), return log(x+y)
@@ -67,10 +70,10 @@ public class BIOHMM{
 		prior = new double[numStates];
 		partition = new int[bip.partSize()];
 		completeLLGamma = new double[partition.length][numStates];
-		b = new KernelDensityEstimator[prior.length];
-		sensors = new KernelDensityEstimator(bip.sensorDim(), new KernelDensityEstimator.NormalKernel(inputSigma));
+		b = new SimpleKDE[prior.length];
+		sensors = new SimpleKDE(bip.sensorDim(), inputSigma);
 		for(int i=0;i<b.length;i++){
-			b[i] = new KernelDensityEstimator(dim, new KernelDensityEstimator.NormalKernel(kernelSigma));
+			b[i] = new SimpleKDE(dim, kernelSigma);
 		}
 		/*
 		for(int i=0;i<numStates;i++){
@@ -110,7 +113,7 @@ public class BIOHMM{
 	}
 	
 	public void calculateAlpha(	ArrayList<Integer> seq,
-								KernelDensityEstimator[] b,
+								SimpleKDE[] b,
 								double[][] alpha){
 		for(int i=0;i<prior.length;i++){
 			alpha[0][i] = prior[i]*b[i].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth);
@@ -127,7 +130,7 @@ public class BIOHMM{
 	}
 	
 	public void calculateLogAlpha(	ArrayList<Integer> seq,
-									KernelDensityEstimator[] b,
+									SimpleKDE[] b,
 									double[][] logalpha){
 		for(int i=0;i<prior.length;i++){
 			double outputLog = outputLogProbAtIDX(seq.get(0),i);
@@ -148,7 +151,7 @@ public class BIOHMM{
 	}
 	
 	public void calculateScaledAlpha(	ArrayList<Integer> seq,
-										KernelDensityEstimator[] b,
+										SimpleKDE[] b,
 										double[][] hat_alpha,
 										double[] coeff_c){
 		double[] bar_alpha = new double[prior.length];
@@ -192,7 +195,7 @@ public class BIOHMM{
 	}
 	
 	public void calculateBeta(	ArrayList<Integer> seq,
-								KernelDensityEstimator[] b,
+								SimpleKDE[] b,
 								double[][] beta){
 		for(int i=0;i<prior.length;i++){
 			beta[seq.size()-1][i] = 1.0;
@@ -208,7 +211,7 @@ public class BIOHMM{
 	}
 
 	public void calculateLogBeta(	ArrayList<Integer> seq,
-									KernelDensityEstimator[] b,
+									SimpleKDE[] b,
 									double[][] logbeta){
 		for(int i=0;i<prior.length;i++){
 			logbeta[seq.size()-1][i] = 0.0;
@@ -229,7 +232,7 @@ public class BIOHMM{
 	}
 	
 	public void calculateScaledBeta(	ArrayList<Integer> seq,
-										KernelDensityEstimator[] b,
+										SimpleKDE[] b,
 										double[][] hat_beta,
 										double[] coeff_c){
 		double[] bar_beta = new double[prior.length];
@@ -254,7 +257,7 @@ public class BIOHMM{
 	}
 	
 	public void calculateXi(	ArrayList<Integer> seq,
-								KernelDensityEstimator[] b,
+								SimpleKDE[] b,
 								double[][] alpha,
 								double[][] beta,
 								double[][][] xi){
@@ -285,7 +288,7 @@ public class BIOHMM{
 	}
 
 	public void calculateLogXi(	ArrayList<Integer> seq,
-								KernelDensityEstimator[] b,
+								SimpleKDE[] b,
 								double[][] logalpha,
 								double[][] logbeta,
 								double[][][] logxi){
@@ -319,7 +322,7 @@ public class BIOHMM{
 	}
 		
 	public void calcXiFromScaled(	ArrayList<Integer> seq,
-									KernelDensityEstimator[] b,
+									SimpleKDE[] b,
 									double[][] hat_alpha,
 									double[][] hat_beta,
 									double[][][] xi){
@@ -503,7 +506,7 @@ public class BIOHMM{
 		}
 	}
 	
-	public void updatePartition(ArrayList<Integer> seq, KernelDensityEstimator[] b, int[] newPartition){
+	public void updatePartition(ArrayList<Integer> seq, SimpleKDE[] b, int[] newPartition){
 		double[][] delta = new double[seq.size()][prior.length];
 		int[][] psi = new int[seq.size()][prior.length];
 		for(int i=0;i<prior.length;i++){
@@ -541,7 +544,7 @@ public class BIOHMM{
 		//}
 	}
 
-	public void updatePartitionLog(ArrayList<Integer> seq, KernelDensityEstimator[] b, int[] newPartition){
+	public void updatePartitionLog(ArrayList<Integer> seq, SimpleKDE[] b, int[] newPartition){
 		double[][] logdelta = new double[seq.size()][prior.length];
 		int[][] psi = new int[seq.size()][prior.length];
 		for(int i=0;i<prior.length;i++){
@@ -590,7 +593,7 @@ public class BIOHMM{
 			}
 		}
 	}
-	public synchronized void addToKDE(KernelDensityEstimator[] b, int[] newPartition){
+	public synchronized void addToKDE(SimpleKDE[] b, int[] newPartition){
 		/* 
 		for(int i=0;i<prior.length;i++){
 			b[i].weights.clear();
@@ -894,12 +897,14 @@ public class BIOHMM{
 			//datapoint then weight
 			//x1 x2 x3 ... xD weight
 			outf.write(i+"\n");
-			for(int j=0;j<b[i].samples.size();j++){
-				double[] sample = b[i].samples.get(j);
+			for(int j=0;j<b[i].numSamples();j++){
+				//double[] sample = b[i].samples.get(j);
+				double[] sample = new double[bip.outputDim()];
+				b[i].getSample(sample,j);
 				for(int d=0;d<sample.length;d++){
 					outf.write(sample[d]+" ");
 				}
-				outf.write(b[i].weights.get(j)+"\n");
+				outf.write(b[i].getWeight(j)+"\n");
 			}
 			outf.write("\n");
 		}
@@ -938,8 +943,9 @@ public class BIOHMM{
 		for(int i=0;i<b.length;i++){
 			int tmpState = Integer.parseInt(inf.readLine().trim());
 			//b[i] = new KernelDensityEstimator(bip.sensorDim(), new KernelDensityEstimator.NormalKernel(kernelSigma));
-			b[i].weights.clear();
-			b[i].samples.clear();
+			//b[i].weights.clear();
+			//b[i].samples.clear();
+			b[i].clear();
 			while( !(line = inf.readLine()).isEmpty()){
 				String[] sampleLine = line.split(" ");
 				double[] sample = new double[bip.outputDim()];
@@ -957,6 +963,7 @@ public class BIOHMM{
 			System.out.println("Usage: java BIOHMM <btfDirectory>");
 		} else {
 			try{
+				System.loadLibrary("kdewrapper");
 				BTFData btf = new BTFData();
 				btf.loadDir(new File(args[0]));
 				File parameters = null;

@@ -3,6 +3,7 @@ package biosim.app.learnedants;
 import biosim.core.body.AphaenogasterCockerelli;
 import biosim.core.util.BTFData;
 import biosim.core.util.KernelDensityEstimator;
+import biosim.core.util.kdewrapper.SimpleKDE;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -173,7 +174,7 @@ public class RealAntInputParser extends BIOHMMInputParser{
 		}
 	}
 	
-	public void initParameters(double[][][] transitionFunction, double[] prior, int[] partition, KernelDensityEstimator[] b){
+	public void initParameters(double[][][] transitionFunction, double[] prior, int[] partition, SimpleKDE[] b){
 		/*
 		int numStates = prior.length;
 		for(int i=0;i<numStates;i++){
@@ -232,12 +233,12 @@ public class RealAntInputParser extends BIOHMMInputParser{
 			partition[i] = Integer.parseInt(stateVec[i].trim());
 		}
 		/* */
-		System.out.print("Initial partition:\n[");
+		//System.out.print("Initial partition:\n[");
 		//int errorCount = 0;
 		//int[] stateCount = {0,0};
 		//int[] turnCount = {0,0};
 		for(int x=0;x<partition.length;x++){
-			System.out.print(partition[x]);
+			//System.out.print(partition[x]);
 			b[partition[x]].add(getDataAtIDX(x));
 			//int ste = Integer.parseInt(stateVec[x].trim());
 			//if(ste != partition[x]) errorCount++;
@@ -246,7 +247,7 @@ public class RealAntInputParser extends BIOHMMInputParser{
 			//	turnCount[partition[x]]++;
 			//}
 		}
-		System.out.println("]");
+		//System.out.println("]");
 		//System.out.println("Error rate:"+errorCount+"/"+partition.length+" = "+( (double)errorCount/(double)partition.length));
 		//System.out.println("State ratio = "+stateCount[0]+"/"+partition.length+" = "+( (double)stateCount[0]/(double)partition.length));
 		//System.out.println("Ratio turn/non-turn[i] "+turnCount[0]+" "+turnCount[1]);
