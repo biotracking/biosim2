@@ -9,6 +9,7 @@ import biosim.core.sim.Simulation;
 import biosim.core.sim.RectObstacle;
 import biosim.core.util.BTFData;
 import biosim.core.util.FastKNN;
+import biosim.core.util.KernelDensityEstimator;
 
 import sim.util.MutableDouble2D;
 
@@ -20,13 +21,15 @@ import java.io.IOException;
 public class LearnedAnts implements Agent{
 	public static final int FEATURE_DIM = 6;
 	public static final int NUM_SWITCHES = 1;
-	public static final int NUM_NEIGHBORS = 300;
+	public static final int NUM_NEIGHBORS = 10;
+	public static final double KERN_BANDWIDTH = 1.0;
 	double[][][] transitionMatrix;
 	double[] prior;
 	FastKNN[] outputFunction;
 	AbstractAnt antBody;
 	double[] prevVel = {0.0, 0.0, 0.0};
 	int currentState = -1;
+	KernelDensityEstimator.NormalKernel kernel = new KernelDensityEstimator.NormalKernel(1.0);
 	public LearnedAnts(AbstractAnt b, double[] prior, double[][][] transitionMatrix, FastKNN[] knns){
 		antBody = b;
 		this.prior = prior;
@@ -49,6 +52,7 @@ public class LearnedAnts implements Agent{
 		//boolean nearFood = antBody.nearPOI("food");
 		double[] sensorVec = new double[FEATURE_DIM];
 		double[][] nearestK = new double[NUM_NEIGHBORS][3];
+		double[][] nearestKVals = new double[NUM_NEIGHBORS][FEATURE_DIM];
 		double[] nearestKWeights = new double[NUM_NEIGHBORS];
 		boolean[] switches = new boolean[NUM_SWITCHES];
 		sensorVec[0] = ant.x;
@@ -81,14 +85,20 @@ public class LearnedAnts implements Agent{
 		}
 		//System.out.println("State: "+currentState);
 		//figure out the output for the current state
-		outputFunction[currentState].query(sensorVec,nearestK,nearestKWeights);
+		outputFunction[currentState].query(sensorVec,nearestK,nearestKWeights,nearestKVals);
 		double weightSum = 0.0;
 		for(int i=0;i<rv.length;i++) rv[i] = 0.0;
 		for(int i=0;i<nearestK.length;i++){
-			for(int j=0;j<nearestK[i].length;j++){
-				rv[j] += nearestK[i][j]*nearestKWeights[i];
+			double[] tmpDVec = new double[FEATURE_DIM];
+			for(int j=0;j<tmpDVec.length;j++){
+				tmpDVec[j] = sensorVec[j] - nearestKVals[i][j];
 			}
-			weightSum += nearestKWeights[i];
+			double weight = nearestKWeights[i];
+			weight = weight*kernel.k(tmpDVec);
+			for(int j=0;j<nearestK[i].length;j++){
+				rv[j] += nearestK[i][j]*weight;
+			}
+			weightSum += weight;
 		}
 		if(weightSum > 0){
 			for(int i=0;i<rv.length;i++){ 

@@ -16,9 +16,9 @@ endif
 all: $(LIBNAME) kde
 
 simple_kde.o: simple_kde.h simple_kde.cpp 
-	g++ -c -O3 simple_kde.cpp 
+	g++ -c -fPIC -O3 simple_kde.cpp 
 kdewrapper_wrap.o: kdewrapper_wrap.cxx
-	g++ -c -O3 kdewrapper_wrap.cxx $(JNI_INC)
+	g++ -c -fPIC -O3 kdewrapper_wrap.cxx $(JNI_INC)
 kdewrapper_wrap.cxx: kdewrapper.i
 	swig -c++ -java -package biosim.core.util.kdewrapper kdewrapper.i
 clean:
