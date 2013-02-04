@@ -7,6 +7,7 @@ class SimpleKDE {
 		unsigned int numSamples(){ return samples.size(); };
 		void add(const double sample[], const double weight);
 		void add(const double sample[]);
+		void addNoCheck(const double sample[], const double weight);
 		bool setWeight(const double sample[], const double weight, bool addTo = false);
 		double estimate(const double x[], const double bandwidth);
 		void getSample(double sample[], int i);

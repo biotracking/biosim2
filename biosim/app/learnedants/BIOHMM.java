@@ -615,7 +615,9 @@ public class BIOHMM{
 			for(int i=0;i<prior.length;i++){
 				double log_probability_statei_at_t = completeLLGamma[t][i];
 				double logNewWeight = log_probability_statei_at_t - log_expected_times_statei[i];
-				b[i].setWeight(bip.getDataAtIDX(t),Math.exp(logNewWeight));
+				if(!b[i].setWeight(bip.getDataAtIDX(t),Math.exp(logNewWeight))){
+					b[i].addNoCheck(bip.getDataAtIDX(t),Math.exp(logNewWeight));
+				}
 			}
 			/* */
 		}
@@ -969,7 +971,7 @@ public class BIOHMM{
 				File parameters = null;
 				if(args.length ==2) parameters = new File(args[1]);
 				ArrayList<ArrayList<Integer>> sequences;
-				BIOHMMInputParser bip = new RealAntInputParser(btf);//BIOHMMInputParser(btf);//SimpleInputParser(btf);//
+				BIOHMMInputParser bip = new BIOHMMInputParser(btf);//RealAntInputParser(btf);//SimpleInputParser(btf);//
 				BIOHMM biohmm = new BIOHMM(2,bip);
 				sequences = bip.getSequences();
 				System.out.println("Num sequences:"+sequences.size());

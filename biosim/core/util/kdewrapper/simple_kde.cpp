@@ -27,6 +27,13 @@ void SimpleKDE::add(const double sample[], const double weight){
 	}
 }
 
+void SimpleKDE::addNoCheck(const double sample[], const double weight){
+	double *tmp = new double[dimensionality];
+	copy(sample,sample+dimensionality,tmp);
+	samples.push_back(tmp);
+	weights.push_back(weight);
+}
+
 bool SimpleKDE::setWeight(const double sample[], const double weight, bool addTo){
 	for(unsigned int i=0;i<samples.size();i++){
 		double* s = samples[i];
