@@ -26,6 +26,7 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 
 	public static final double SIZE=0.0086; //8.6mm long, meters
 	public static final double RANGE=SIZE*3; //3 times body length, meters
+	public static final double GRIP_RANGE=SIZE/2.0;
 	public static final double MAX_VELOCITY_XY=SIZE; //1 bodylength, meters/second
 	public static final double MAX_VELOCITY_THETA=2*Math.PI; //2pi , radians/second
 
@@ -35,6 +36,11 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 		previousVelXYT[0] = previousVelXYT[1] = previousVelXYT[2] = 0.0;
 	}
 
+	public void init(){
+		super.init();
+		previousVelXYT[0] = previousVelXYT[1] = previousVelXYT[2] = 0.0;
+	}
+	
 	public MersenneTwisterFast getRandom(){
 		return sim.random;
 	}
@@ -161,12 +167,84 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 		*/
 	}
 	public double getNearestSameAgentVecSensorRange(){ return RANGE; }
+
+	public boolean getNearestPreyVec(MutableDouble2D rv){
+		Double2D loc = sim.field2D.getObjectLocation(this);
+		MutableDouble2D dir = new MutableDouble2D();
+		if(sim.getBodyOrientation(this,dir)){
+			Bag nearest = sim.field2D.getAllObjects();//sim.field2D.getObjectsExactlyWithinDistance(loc,RANGE);
+			MutableDouble2D nearestLoc = null;
+			for(int i=0;i<nearest.numObjs;i++){
+				if(nearest.objs[i] instanceof AbstractFly){
+					AbstractFly tmpFly = (AbstractFly)nearest.objs[i];
+					if(!tmpFly.yummy) continue;
+					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFly);
+					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
+					mutTmp.subtractIn(loc);
+					mutTmp.rotate(-dir.angle());
+					if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
+					if(nearestLoc == null || nearestLoc.lengthSq() > mutTmp.lengthSq()){
+						nearestLoc = mutTmp;
+					}
+				}
+			}
+			if(nearestLoc != null && nearestLoc.length() <= RANGE){
+				rv.setTo(nearestLoc);
+				return true;
+			} 
+		}
+		return false;
+	}
+	public double getNearestPreyVecSensorRange(){ return RANGE; }
+
+	
 	public boolean getSelfVelXYT(double[] rv){
 		if(rv.length != 3) return false;
 		rv[0]=xVel;
 		rv[1]=yVel;
 		rv[2]=tVel;
 		return true;
+	}
+	
+	public boolean getGripped(){
+		return grabbing!=null;
+	}
+	
+	public void tryToGrab(){
+		Double2D loc = sim.field2D.getObjectLocation(this);
+		MutableDouble2D dir = new MutableDouble2D();
+		if(sim.getBodyOrientation(this,dir)){
+			Bag nearest = sim.field2D.getAllObjects();//sim.field2D.getObjectsExactlyWithinDistance(loc,RANGE);
+			MutableDouble2D nearestLoc = null;
+			AbstractFly nearestFly = null;
+			for(int i=0;i<nearest.numObjs;i++){
+				if(nearest.objs[i] instanceof AbstractFly){
+					AbstractFly tmpFly = (AbstractFly)nearest.objs[i];
+					if(!tmpFly.yummy) continue;
+					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFly);
+					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
+					mutTmp.subtractIn(loc);
+					mutTmp.rotate(-dir.angle());
+					if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
+					if(nearestLoc == null || nearestLoc.lengthSq() > mutTmp.lengthSq()){
+						nearestLoc = mutTmp;
+						nearestFly = tmpFly;
+					}
+				}
+			}
+			if(nearestLoc != null && nearestLoc.length() <= GRIP_RANGE){
+				grabbing = nearestFly;
+				nearestFly.grabbedBy = this;
+				nearestFly.yummy = false;
+			} 
+		}
+	}
+	
+	public void tryToDrop(){
+		if(grabbing != null){
+			grabbing.grabbedBy = null;
+			grabbing = null;
+		}
 	}
 
 	public void step(SimState simstate){

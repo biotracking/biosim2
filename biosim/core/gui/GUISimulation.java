@@ -41,7 +41,7 @@ public class GUISimulation extends GUIState {
 		final SimplePortrayal2D EMPTY_PORTRAYAL = new SimplePortrayal2D();
 		public Portrayal getDefaultPortrayal(){ return EMPTY_PORTRAYAL; }
 	};
-	public HashMap<Class,Class<Portrayal>> displayMap = new HashMap<Class,Class<Portrayal>>();
+	public HashMap<Class<?>,Class<? extends Portrayal>> displayMap = new HashMap<Class<?>,Class<? extends Portrayal>>();
 
 	public GUISimulation(Simulation sim){ super(sim); }
 	
@@ -49,7 +49,7 @@ public class GUISimulation extends GUIState {
 		return state instanceof Simulation;
 	}
 
-	public void setPortrayalClass(Class objClass, Class<Portrayal> portrayalClass){
+	public void setPortrayalClass(Class<?> objClass, Class<? extends Portrayal> portrayalClass){
 		displayMap.put(objClass,portrayalClass);
 	}
 
@@ -63,7 +63,7 @@ public class GUISimulation extends GUIState {
 
 			for(int i=0;i<sim.field2D.allObjects.numObjs;i++){
 				Object tmpObj = sim.field2D.allObjects.objs[i];
-				Class<Portrayal> portClass = displayMap.get(tmpObj.getClass());
+				Class<? extends Portrayal> portClass = displayMap.get(tmpObj.getClass());
 				Portrayal port = null;
 				if(portClass != null){
 					//user specified a portrayal, try to instantiate it

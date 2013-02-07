@@ -3,6 +3,7 @@ package biosim.app.twostateants;
 import biosim.core.agent.Agent;
 import biosim.core.body.Body;
 import biosim.core.body.AphaenogasterCockerelli;
+import biosim.core.body.DrosophilaMelanogaster;
 import biosim.core.body.AbstractAnt;
 import biosim.core.gui.GUISimulation;
 import biosim.core.sim.Simulation;
@@ -26,10 +27,15 @@ public class TwoStateAnt implements Agent {
 	public static final double AVOID_TIME=10.0;
 	public TwoStateAnt(AbstractAnt b){
 		antBody = b;
+		init();
+	}
+	
+	public void init(){
 		timeAvoiding = timeNearAnt = 0.0;
 		state = FORAGE;
 		lastTime = 0.0;
 	}
+	
 	public double[] act(double time){
 		//double[] rv = new double[3];
 		double[] rv = {0.0,0.0,0.0};
@@ -45,7 +51,7 @@ public class TwoStateAnt implements Agent {
 		MutableDouble2D nest = new MutableDouble2D();
 		boolean sawNest = antBody.getPoiDir(nest,"nest");
 		MutableDouble2D food = new MutableDouble2D();
-		boolean sawFood = antBody.getPoiDir(food,"food");
+		boolean sawFood = antBody.getNearestPreyVec(food);
 		MutableDouble2D desiredVec = new MutableDouble2D();
 		if(sawWall){
 			desiredVec.addIn(wall.normalize().negate().multiplyIn(1.0/(Math.pow(wall.length(),2))));
@@ -53,22 +59,35 @@ public class TwoStateAnt implements Agent {
 		if(sawAnt){
 			desiredVec.addIn(ant.normalize().negate().multiplyIn(1.0/Math.pow(ant.length(),2)));
 		}
-			
+		if(!sawFood){
+			food.x = 1.0;
+			food.y = 0.0;
+		}
 		if(state  == FORAGE){
 			desiredVec.addIn(food);
 			rv[0] = Math.min(0.024,desiredVec.length());
-			rv[2] = Math.acos(desiredVec.normalize().dot(new MutableDouble2D(1,0)))*Math.signum(desiredVec.angle());
+			if(desiredVec.lengthSq() > 0.0){
+				rv[2] = Math.acos(desiredVec.normalize().dot(new MutableDouble2D(1,0)))*Math.signum(desiredVec.angle());
+			} else {
+				rv[2] = 0.0;
+			}
+			antBody.tryToGrab();
 			//rv[2] = Math.toRadians(40.0)*Math.signum(desiredVec.angle())*((Math.PI/2)-Math.abs(desiredVec.angle()))/(Math.PI/2);
-			if(antBody.nearPOI("food")){
+			if(antBody.getGripped()){
 				state = RETURN;
 			}
 		}
 		else if(state == RETURN){
 			desiredVec.addIn(nest);
 			rv[0] = Math.min(0.024,desiredVec.length());
-			rv[2] = Math.acos(desiredVec.normalize().dot(new MutableDouble2D(1,0)))*Math.signum(desiredVec.angle());
+			if(desiredVec.lengthSq() > 0.0){
+				rv[2] = Math.acos(desiredVec.normalize().dot(new MutableDouble2D(1,0)))*Math.signum(desiredVec.angle());
+			} else {
+				rv[2] = 0.0;
+			}
 			//rv[2] = Math.toRadians(40.0)*Math.signum(desiredVec.angle())*((Math.PI/2)-Math.abs(desiredVec.angle()))/(Math.PI/2);			
 			if(antBody.nearPOI("nest")){
+				antBody.tryToDrop();
 				state = FORAGE;
 			}
 		}
@@ -119,9 +138,10 @@ public class TwoStateAnt implements Agent {
 	public static void main(String[] args){
 		//set up the environment
 		int numAnts = 10;
+		int numFlies = 10;
 		Environment env = new Environment(WIDTH,HEIGHT,1.0/30.0);
 		env.addStaticPOI("nest",WIDTH/2,0.02);
-		env.addStaticPOI("food",WIDTH/2,HEIGHT-0.02);
+		//env.addStaticPOI("food",WIDTH/2,HEIGHT-0.02);
 		env.addObstacle(new RectObstacle(0.01,0.2), 0.19,  0.0);//east wall
 		env.addObstacle(new RectObstacle(0.01,0.2),  0.0,  0.0);//west
 		env.addObstacle(new RectObstacle(0.2,0.01),  0.0,  0.0);//north
@@ -132,15 +152,26 @@ public class TwoStateAnt implements Agent {
 			bodies[i] = new AphaenogasterCockerelli();
 			env.addBody(bodies[i]);
 		}
+		DrosophilaMelanogaster[] flyBodies = new DrosophilaMelanogaster[numFlies];
+		for(int i=0;i<flyBodies.length;i++){
+			flyBodies[i] = new DrosophilaMelanogaster();
+			env.addBody(flyBodies[i]);
+		}
 		Agent[] agents = new Agent[numAnts];
 		for(int i=0;i<agents.length;i++){
 			agents[i] = new TwoStateAnt(bodies[i]);
 			bodies[i].setAgent(agents[i]);
 		}
+		Agent[] flyAgents = new Agent[numFlies];
+		for(int i=0;i<flyAgents.length;i++){
+			flyAgents[i] = new LazyFly();
+			flyBodies[i].setAgent(flyAgents[i]);
+		}
 		//env.runSimulation(args);
 		Simulation sim = env.newSimulation();
-		//sim.addLogger(new TwoStateLogger());
+		sim.addLogger(new TwoStateLogger());
 		GUISimulation gui = new GUISimulation(sim);
+		gui.setPortrayalClass(DrosophilaMelanogaster.class, FoodPortrayal.class);
 		gui.createController();
 	}
 

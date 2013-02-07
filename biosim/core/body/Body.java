@@ -18,4 +18,8 @@ public abstract class Body implements Steppable{
 	* you may need to write a custom configSim(...) method.
 	**/
 	public abstract double getSize();
+	
+	public void init(){
+		agent.init();
+	}
 }

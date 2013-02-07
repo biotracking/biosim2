@@ -3,6 +3,7 @@ package biosim.app.learnedants;
 import biosim.core.agent.Agent;
 import biosim.core.body.AbstractAnt;
 import biosim.core.body.AphaenogasterCockerelli;
+import biosim.core.body.DrosophilaMelanogaster;
 import biosim.core.gui.GUISimulation;
 import biosim.core.sim.Environment;
 import biosim.core.sim.Simulation;
@@ -19,8 +20,8 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class LearnedAnts implements Agent{
-	public static final int FEATURE_DIM = 6;
-	public static final int NUM_SWITCHES = 1;
+	public static final int FEATURE_DIM = 8;
+	public static final int NUM_SWITCHES = 2;
 	public static final int NUM_NEIGHBORS = 10;
 	public static final double KERN_BANDWIDTH = 1.0;
 	double[][][] transitionMatrix;
@@ -36,7 +37,12 @@ public class LearnedAnts implements Agent{
 		this.transitionMatrix = transitionMatrix;
 		outputFunction = knns;
 	}
-		
+	
+	public void init(){
+		currentState = -1;
+		prevVel[0] = prevVel[1] = prevVel[2] = 0.0;
+	}
+	
 	public double[] act(double time){
 		//get the sensors
 		double[] rv = new double[3];
@@ -46,9 +52,10 @@ public class LearnedAnts implements Agent{
 		boolean sawWall = antBody.getNearestObstacleVec(wall);
 		MutableDouble2D home = new MutableDouble2D();
 		boolean sawHome = antBody.getPoiDir(home,"nest");
-		//MutableDouble2D food = new MutableDouble2D();
-		//boolean sawFood = antBody.getPoiDir(food,"food");
-		//boolean nearNest = antBody.nearPOI("nest");
+		MutableDouble2D food = new MutableDouble2D();
+		boolean sawFood = antBody.getNearestPreyVec(food);
+		boolean nearNest = antBody.nearPOI("nest");
+		boolean gripper = antBody.getGripped();
 		//boolean nearFood = antBody.nearPOI("food");
 		double[] sensorVec = new double[FEATURE_DIM];
 		double[][] nearestK = new double[NUM_NEIGHBORS][3];
@@ -61,13 +68,13 @@ public class LearnedAnts implements Agent{
 		sensorVec[3] = wall.y;
 		sensorVec[4] = home.x;
 		sensorVec[5] = home.y;
-		//sensorVec[6] = food.x;
-		//sensorVec[7] = food.y;
+		sensorVec[6] = food.x;
+		sensorVec[7] = food.y;
 		//sensorVec[4] = prevVel[0];
 		//sensorVec[5] = prevVel[1];
 		//sensorVec[6] = prevVel[2];
-		switches[0] = (ant.length() > 0 && ant.length() < antBody.getSize());
-		//switches[1] = nearNest;
+		switches[0] = nearNest;//(ant.length() > 0 && ant.length() < antBody.getSize());
+		switches[1] = gripper;
 		//figure out the initial state
 		if(currentState == -1){
 			double sum = 0.0;
@@ -136,6 +143,12 @@ public class LearnedAnts implements Agent{
 		currentState = newState;
 		//currentState = 1;
 		//System.out.println("rv:"+rv[0]+" "+rv[1]+" "+rv[2]);
+		if(!gripper){
+			antBody.tryToGrab();
+		}
+		if(nearNest){
+			antBody.tryToDrop();
+		}
 		return rv;
 	}
 	
@@ -247,6 +260,7 @@ public class LearnedAnts implements Agent{
 			//BTFData btf = new BTFData();
 			//btf.loadDir(new File(args[1]));
 			int numAnts = 10;
+			int numFlies = 10;
 			Environment env = new Environment(WIDTH,HEIGHT,1.0/30.0);
 			env.addStaticPOI("nest",WIDTH/2,0.02);
 			env.addStaticPOI("food",WIDTH/2,HEIGHT-0.02);
@@ -260,6 +274,11 @@ public class LearnedAnts implements Agent{
 				bodies[i] = new AphaenogasterCockerelli();
 				env.addBody(bodies[i]);
 			}
+			DrosophilaMelanogaster[] flyBodies = new DrosophilaMelanogaster[numFlies];
+			for(int i=0;i<flyBodies.length;i++){
+				flyBodies[i] = new DrosophilaMelanogaster();
+				env.addBody(flyBodies[i]);
+			}
 			Agent[] agents = new Agent[numAnts];
 			LearnedAnts la = new LearnedAnts(bodies[0],null,null,null);
 			la.buildParameters(parameterFile);
@@ -269,9 +288,16 @@ public class LearnedAnts implements Agent{
 				agents[i] = new LearnedAnts(bodies[i],la.prior, la.transitionMatrix, la.outputFunction);
 				bodies[i].setAgent(agents[i]);
 			}
+			Agent[] flyAgents = new Agent[numFlies];
+			for(int i=0;i<flyAgents.length;i++){
+				flyAgents[i] = new biosim.app.twostateants.LazyFly();
+				flyBodies[i].setAgent(flyAgents[i]);
+			}
+
 			//env.runSimulation(args);
 			Simulation sim = env.newSimulation();
 			GUISimulation gui = new GUISimulation(sim);
+			gui.setPortrayalClass(DrosophilaMelanogaster.class, biosim.app.twostateants.FoodPortrayal.class);
 			gui.createController();
 		} catch(Exception e){
 			throw new RuntimeException(e);

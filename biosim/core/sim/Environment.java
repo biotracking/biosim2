@@ -79,6 +79,7 @@ public class Environment implements MakesSimState{
 		}
 		for(int i=0;i<initialBodies.size();i++){
 			sim.bodies.add(initialBodies.get(i));
+			initialBodies.get(i).init();
 		}
 	
 	}

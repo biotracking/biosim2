@@ -1,0 +1,19 @@
+package biosim.core.body;
+
+import biosim.core.body.sensors.*;
+
+import ec.util.MersenneTwisterFast;
+import sim.engine.Steppable;
+import sim.engine.SimState;
+
+public abstract class AbstractFly extends Body
+	implements 	NearestSameAgentVec,
+				NearestObstacleVec,
+				NearestPredatorVec,
+				SelfVelXYT {
+	public AbstractAnt grabbedBy;
+	public boolean yummy = true;
+	public void init(){
+		yummy = true;
+	}
+}

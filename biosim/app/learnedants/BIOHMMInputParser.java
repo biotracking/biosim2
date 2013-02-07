@@ -11,7 +11,7 @@ import java.util.Random;
 
 public class BIOHMMInputParser {
 	BTFData data;
-	protected String[] desiredVel, wallVec, foodVec, nearFoodBool, antVec, nestVec, nearNestBool, prevVec, stateVec;
+	protected String[] desiredVel, wallVec, foodVec, nearFoodBool, antVec, nestVec, nearNestBool, prevVec, gripperBool, stateVec;
 	protected int numTrackPoints;
 	public static final int NUM_SENSORS = 8;
 	public static final int DIM = 11;
@@ -24,7 +24,8 @@ public class BIOHMMInputParser {
 			desiredVel = data.loadColumn("dvel");
 			wallVec = data.loadColumn("wallvec");
 			foodVec = data.loadColumn("foodvec");
-			nearFoodBool = data.loadColumn("nfood");
+			//nearFoodBool = data.loadColumn("nfood");
+			gripperBool = data.loadColumn("gripper");
 			antVec = data.loadColumn("antvec");
 			nestVec = data.loadColumn("homevec");
 			nearNestBool = data.loadColumn("nnest");
@@ -85,7 +86,7 @@ public class BIOHMMInputParser {
 	
 	public int getSwitchAtIDX(int idx){
 		int k = 0;
-		if(Boolean.parseBoolean(nearFoodBool[idx])){
+		if(Boolean.parseBoolean(gripperBool[idx])){
 			k += 1;
 		}
 		k = k<<1;

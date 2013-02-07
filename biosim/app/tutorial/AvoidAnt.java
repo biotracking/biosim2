@@ -8,6 +8,8 @@ public class AvoidAnt implements Agent {
 	public AvoidAnt(AbstractAnt b){
 		antBody = b;
 	}
+	public void init(){
+	}
 	public double[] act(double time){
 		double[] rv = new double[3];
 		//our default is to move forward in a straight line
