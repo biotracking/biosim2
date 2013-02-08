@@ -62,10 +62,10 @@ public class LearnedAnts implements Agent{
 		double[][] nearestKVals = new double[NUM_NEIGHBORS][FEATURE_DIM];
 		double[] nearestKWeights = new double[NUM_NEIGHBORS];
 		boolean[] switches = new boolean[NUM_SWITCHES];
-		sensorVec[0] = ant.x;
-		sensorVec[1] = ant.y;
-		sensorVec[2] = wall.x;
-		sensorVec[3] = wall.y;
+		sensorVec[0] = wall.x;
+		sensorVec[1] = wall.y;
+		sensorVec[2] = ant.x;
+		sensorVec[3] = ant.y;
 		sensorVec[4] = home.x;
 		sensorVec[5] = home.y;
 		sensorVec[6] = food.x;
@@ -73,8 +73,8 @@ public class LearnedAnts implements Agent{
 		//sensorVec[4] = prevVel[0];
 		//sensorVec[5] = prevVel[1];
 		//sensorVec[6] = prevVel[2];
-		switches[0] = nearNest;//(ant.length() > 0 && ant.length() < antBody.getSize());
-		switches[1] = gripper;
+		switches[0] = gripper;//(ant.length() > 0 && ant.length() < antBody.getSize());
+		switches[1] = nearNest;
 		//figure out the initial state
 		if(currentState == -1){
 			double sum = 0.0;
@@ -92,19 +92,26 @@ public class LearnedAnts implements Agent{
 		}
 		//System.out.println("State: "+currentState);
 		//figure out the output for the current state
+		//System.out.println("STATE"+currentState+" ("+wall.x+", "+wall.y+")->");
 		outputFunction[currentState].query(sensorVec,nearestK,nearestKWeights,nearestKVals);
 		double weightSum = 0.0;
 		for(int i=0;i<rv.length;i++) rv[i] = 0.0;
 		for(int i=0;i<nearestK.length;i++){
 			double[] tmpDVec = new double[FEATURE_DIM];
+			//System.out.print("{");
 			for(int j=0;j<tmpDVec.length;j++){
+				//System.out.print(" "+nearestKVals[i][j]);
 				tmpDVec[j] = sensorVec[j] - nearestKVals[i][j];
 			}
+			//System.out.println(" }");
 			double weight = nearestKWeights[i];
 			weight = weight*kernel.k(tmpDVec);
+			//System.out.print("[");
 			for(int j=0;j<nearestK[i].length;j++){
+				//System.out.print(" "+nearestK[i][j]);
 				rv[j] += nearestK[i][j]*weight;
 			}
+			//System.out.println(" ] * "+weight);
 			weightSum += weight;
 		}
 		if(weightSum > 0){
@@ -245,6 +252,8 @@ public class LearnedAnts implements Agent{
 			}
 			//once line.isEmpty() == true, then we've allready grabbed the
 			//junk line, so just loop
+			System.out.println("output "+i+" :"+outputFunction[i].numSamples()+" samples");
+			//outputFunction[i].sigmaNormalize();
 		}
 		
 	}

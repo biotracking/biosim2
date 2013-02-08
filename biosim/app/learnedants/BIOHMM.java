@@ -802,7 +802,7 @@ public class BIOHMM{
 			for(int i=0;i<prior.length;i++){
 				for(int j=0;j<prior.length;j++){
 					for(int k=0;k<newTransition[i][j].length;k++){
-						if(newTransitionNumerator[i][j][k] == newTransitionDenominator[i][j][k]){
+						if(false){ //what the FUCK was I thinking?!?
 						//if(newTransitionNumerator[i][j][k] == 0.0){
 							newTransition[i][j][k] = 1.0/((double)prior.length);//continue;
 							//System.out.println("whaaaat.");
@@ -813,6 +813,17 @@ public class BIOHMM{
 						}
 					}
 				}
+			}
+			for(int k=0; k<newTransition[0][0].length;k++){
+				System.out.println("k: "+k);
+				for(int i=0;i<prior.length;i++){
+					System.out.print("i: "+i+" ");
+					for(int j=0;j<prior.length;j++){
+						System.out.print(newTransition[i][j][k]+" ");
+					}
+					System.out.println();
+				}
+				System.out.println();
 			}
 			
 			//now. Compute the difference between this new model and the old one

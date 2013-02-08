@@ -12,6 +12,7 @@ public class FastKNN{
 	private SimpleANN kdann;
 	private int sample_dim, class_dim;
 	private static boolean libLoaded = false;
+	private double[] sigma;
 	
 	public FastKNN(int sample_dim,int class_dim){
 		if(!libLoaded){
@@ -24,6 +25,8 @@ public class FastKNN{
 		samples = new ArrayList<double[]>();
 		classes = new ArrayList<double[]>();
 		weights = new ArrayList<Double>();
+		sigma = new double[sample_dim];
+		for(int i=0;i<sigma.length;i++) sigma[i] = 1.0;
 	}
 	public void add(double[] sample, double[] class_vec){
 		add(sample,class_vec,1.0);
@@ -45,12 +48,14 @@ public class FastKNN{
 		*/
 	}
 	
+	public int numSamples(){ return samples.size(); }
+	
 	public void sigmaNormalize(){
 		double[] sampleAvg = new double[sample_dim];
-		double[] sampleStdDev = new double[sample_dim];
+		//double[] sampleStdDev = new double[sample_dim];
 		for(int i=0;i<sample_dim;i++){ 
 			sampleAvg[i] = 0.0;
-			sampleStdDev[i] = 0.0;
+			sigma[i] = 0.0;
 		}
 		for(int i=0;i<samples.size();i++){
 			for(int j=0;j<sample_dim;j++){
@@ -60,18 +65,18 @@ public class FastKNN{
 		for(int i=0;i<sample_dim;i++) sampleAvg[i] =sampleAvg[i]/samples.size();
 		for(int i=0;i<samples.size();i++){
 			for(int j=0;j<sample_dim;j++){
-				sampleStdDev[j] += Math.pow(samples.get(i)[j]-sampleAvg[j],2);
+				sigma[j] += Math.pow(samples.get(i)[j]-sampleAvg[j],2);
 			}
 		}
-		for(int i=0;i<sample_dim;i++) sampleStdDev[i] = Math.sqrt(sampleStdDev[i]/samples.size());
-		//System.out.print("Sample sigma: [");
-		for(int i=0;i<sample_dim;i++) System.out.print(" "+sampleStdDev[i]);
-		//System.out.println(" ]");
+		for(int i=0;i<sample_dim;i++) sigma[i] = Math.sqrt(sigma[i]/samples.size());
+		System.out.print("Sample sigma: [");
+		for(int i=0;i<sample_dim;i++) System.out.print(" "+sigma[i]);
+		System.out.println(" ]");
 		kdann = new SimpleANN(sample_dim);
 		for(int i=0;i<samples.size();i++){
 			double[] tmp_s = new double[sample_dim];
 			for(int j=0;j<sample_dim;j++){
-				tmp_s[j] = samples.get(i)[j]/sampleStdDev[j];
+				tmp_s[j] = samples.get(i)[j]/sigma[j];
 			}
 			kdann.add(tmp_s);
 		}
@@ -81,8 +86,11 @@ public class FastKNN{
 		query(sample,neighbor_classes,null,null);
 	}
 	public void query(double[] sample, double[][] neighbor_classes, double[] weight_vec, double[][] neighbor_values){
+		double[] tmp_s = new double[sample.length];
+		for(int i=0;i<sigma.length;i++) tmp_s[i] = sample[i]/sigma[i];
 		int k = neighbor_classes.length;
 		int[] neighborIdx = new int[k];
+		
 		if(!kdann.query(sample,neighborIdx,k)) System.err.println("ANN query failed!");
 		for(int i=0;i<k;i++){ 
 			//System.out.print("IDX: "+neighborIdx[i]+":[");

@@ -76,7 +76,7 @@ public class TwoStateLogger implements biosim.core.sim.Logger{
 
 					wallSensorRv = tsant.antBody.getNearestObstacleVec(wallSensorVec);
 					antSensorRv = tsant.antBody.getNearestSameAgentVec(antSensorVec);
-					tsant.antBody.getHomeDir(homeSensorVec);
+					tsant.antBody.getPoiDir(homeSensorVec,"nest");
 					System.arraycopy(aphaeno.desiredVelXYT,0,foo,0,3);
 					bar = true;
 					System.arraycopy(aphaeno.previousVelXYT,0,qux,0,3);

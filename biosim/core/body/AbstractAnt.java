@@ -14,5 +14,9 @@ public abstract class AbstractAnt extends Body
 				GripperSensor,
 				SelfVelXYT {
 	public AbstractFly grabbing;
+	public void init(){
+		super.init();
+		grabbing = null;
+	}
 	
 }

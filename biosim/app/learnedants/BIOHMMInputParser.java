@@ -181,7 +181,7 @@ public class BIOHMMInputParser {
 		//So, our best guess at initializing the state sequence
 		//is to switch states whenever there's a change in switching
 		//variables.
-		/* */
+		/* 
 		boolean justChanged = false;
 		int initCurState = -1;
 		for(int i=0;i<seqs.size();i++){
@@ -219,7 +219,7 @@ public class BIOHMMInputParser {
 		}
 		/* */
 		//For debugging, if we had the correct state sequence
-		/* 
+		/*  */
 		for(int i=0;i<partition.length;i++){
 			partition[i] = Integer.parseInt(stateVec[i].trim());
 		}
@@ -276,6 +276,17 @@ public class BIOHMMInputParser {
 				}
 			}
 			prior[i] = prior[i]/seqs.size();
+		}
+		for(int k=0; k<maxSwitchVar; k++){
+			System.out.println("k="+k);
+			for(int i=0;i<numStates;i++){
+				System.out.print("i="+i+" ");
+				for(int j=0;j<numStates;j++){
+					System.out.print(transitionFunction[i][j][k]+" ");
+				}
+				System.out.println();
+			}
+			System.out.println();
 		}
 	}
 }
