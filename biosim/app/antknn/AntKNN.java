@@ -3,6 +3,7 @@ package biosim.app.antknn;
 import biosim.core.agent.Agent;
 import biosim.core.body.AbstractAnt;
 import biosim.core.body.AphaenogasterCockerelli;
+import biosim.core.body.DrosophilaMelanogaster;
 import biosim.core.gui.GUISimulation;
 import biosim.core.sim.Environment;
 import biosim.core.sim.Simulation;
@@ -17,7 +18,7 @@ import java.io.IOException;
 
 
 public class AntKNN implements Agent{
-	public static final int FEATURE_DIM = 7;
+	public static final int FEATURE_DIM = 6;
 	AbstractAnt antBody;
 	FastKNN knn;
 	double[] prevVel ={0.0, 0.0, 0.0};
@@ -37,7 +38,9 @@ public class AntKNN implements Agent{
 		MutableDouble2D wall = new MutableDouble2D();
 		boolean sawWall = antBody.getNearestObstacleVec(wall);
 		MutableDouble2D home = new MutableDouble2D();
-		boolean sawHome = antBody.getHomeDir(home);
+		boolean sawHome = antBody.getPoiDir(home,"nest");
+		MutableDouble2D food = new MutableDouble2D();
+		boolean sawFood = antBody.getNearestPreyVec(food);
 		double[] sensorVec = new double[FEATURE_DIM];
 		double[][] nearestK = new double[5][3];
 		sensorVec[0] = ant.x;
@@ -45,9 +48,13 @@ public class AntKNN implements Agent{
 		sensorVec[2] = wall.x;
 		sensorVec[3] = wall.y;
 		//System.out.println("Sensor vec: ["+sensorVec[0]+", "+sensorVec[1]+", "+sensorVec[2]+", "+sensorVec[3]+"]");
-		sensorVec[4] = prevVel[0];
-		sensorVec[5] = prevVel[1];
-		sensorVec[6] = prevVel[2];
+		sensorVec[4] = home.x;
+		sensorVec[5] = home.y;
+		//sensorVec[6] = food.x;
+		//sensorVec[7] = food.y;
+		//sensorVec[4] = prevVel[0];
+		//sensorVec[5] = prevVel[1];
+		//sensorVec[6] = prevVel[2];
 		//sensorVec[7] = home.x;
 		//sensorVec[8] = home.y;
 		knn.query(sensorVec,nearestK);
@@ -78,6 +85,7 @@ public class AntKNN implements Agent{
 		String[] antVec = btf.loadColumn("antvec");
 		String[] antBool = btf.loadColumn("antbool");
 		String[] homeVec = btf.loadColumn("homevec");
+		String[] foodVec = btf.loadColumn("foodvec");
 		String[] prevVec = btf.loadColumn("pvel");
 		String[] prevBoolVec = btf.loadColumn("pbool");
 		int numRows = desiredVel.length;
@@ -96,6 +104,12 @@ public class AntKNN implements Agent{
 				tmp = wallVec[i].split(" ");
 				sample[2] = Double.parseDouble(tmp[0]);
 				sample[3] = Double.parseDouble(tmp[1]);
+				tmp = homeVec[i].split(" ");
+				sample[4] = Double.parseDouble(tmp[0]);
+				sample[5] = Double.parseDouble(tmp[1]);
+				//tmp = foodVec[i].split(" ");
+				//sample[6] = Double.parseDouble(tmp[0]);
+				//sample[7] = Double.parseDouble(tmp[1]);
 				//tmp = prevVec[i].split(" ");
 				//sample[4] = Double.parseDouble(tmp[0]);
 				//sample[5] = Double.parseDouble(tmp[1]);
@@ -123,6 +137,7 @@ public class AntKNN implements Agent{
 			FastKNN knn = loadKNN(btf);
 			//set up the environment
 			int numAnts = 10;
+			int numFlies = 10;
 			Environment env = new Environment(WIDTH,HEIGHT,1.0/30.0);
 			env.addStaticPOI("nest",WIDTH/2,0.02);
 			env.addObstacle(new RectObstacle(0.01,0.2), 0.19,  0.0);//east wall
@@ -135,14 +150,28 @@ public class AntKNN implements Agent{
 				bodies[i] = new AphaenogasterCockerelli();
 				env.addBody(bodies[i]);
 			}
+			DrosophilaMelanogaster[] flyBodies = new DrosophilaMelanogaster[numFlies];
+			for(int i=0;i<flyBodies.length;i++){
+				flyBodies[i] = new DrosophilaMelanogaster();
+				env.addBody(flyBodies[i]);
+			}
+
 			Agent[] agents = new Agent[numAnts];
 			for(int i=0;i<agents.length;i++){
 				agents[i] = new AntKNN(bodies[i],knn);
 				bodies[i].setAgent(agents[i]);
 			}
+			
+			Agent[] flyAgents = new Agent[numFlies];
+			for(int i=0;i<flyAgents.length;i++){
+				flyAgents[i] = new biosim.app.twostateants.LazyFly();
+				flyBodies[i].setAgent(flyAgents[i]);
+			}
+			
 			//env.runSimulation(args);
 			Simulation sim = env.newSimulation();
 			GUISimulation gui = new GUISimulation(sim);
+			gui.setPortrayalClass(DrosophilaMelanogaster.class, biosim.app.twostateants.FoodPortrayal.class);
 			gui.createController();
 		} catch(IOException ioe){
 			throw new RuntimeException(ioe);

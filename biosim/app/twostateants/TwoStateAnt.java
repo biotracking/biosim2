@@ -60,8 +60,8 @@ public class TwoStateAnt implements Agent {
 			desiredVec.addIn(ant.normalize().negate().multiplyIn(1.0/Math.pow(ant.length(),2)));
 		}
 		if(!sawFood){
-			food.x = 1.0;
-			food.y = 0.0;
+			food.x = (antBody.getRandom().nextDouble()-0.5)*2;//1.0;
+			food.y = (antBody.getRandom().nextDouble()-0.5)*2;//0.0;
 		}
 		if(state  == FORAGE){
 			desiredVec.addIn(food);
@@ -169,7 +169,7 @@ public class TwoStateAnt implements Agent {
 		}
 		//env.runSimulation(args);
 		Simulation sim = env.newSimulation();
-		//sim.addLogger(new TwoStateLogger());
+		sim.addLogger(new TwoStateLogger());
 		GUISimulation gui = new GUISimulation(sim);
 		gui.setPortrayalClass(DrosophilaMelanogaster.class, FoodPortrayal.class);
 		gui.createController();

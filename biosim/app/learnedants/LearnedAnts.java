@@ -95,6 +95,25 @@ public class LearnedAnts implements Agent{
 		//System.out.println("STATE"+currentState+" ("+wall.x+", "+wall.y+")->");
 		outputFunction[currentState].query(sensorVec,nearestK,nearestKWeights,nearestKVals);
 		double weightSum = 0.0;
+		for(int i=0;i<nearestK.length;i++){
+			weightSum += 1;//nearestKWeights[i];
+		}
+		double tmpSum = 0.0;
+		double kRandNum = antBody.getRandom().nextDouble();
+		int neighIdx = nearestK.length-1;
+		for(int i=0;i<nearestK.length;i++){
+			if(kRandNum > (1/weightSum)+tmpSum){//(nearestKWeights[i]/weightSum)+tmpSum){
+				tmpSum += (1/weightSum);//nearestKWeights[i]/weightSum;
+			} else {
+				neighIdx = i;
+				break;
+			}
+		}
+		rv[0] = nearestK[neighIdx][0];
+		rv[1] = nearestK[neighIdx][1];
+		rv[2] = nearestK[neighIdx][2];
+		/*
+		double weightSum = 0.0;
 		for(int i=0;i<rv.length;i++) rv[i] = 0.0;
 		for(int i=0;i<nearestK.length;i++){
 			double[] tmpDVec = new double[FEATURE_DIM];
@@ -107,6 +126,7 @@ public class LearnedAnts implements Agent{
 			double weight = nearestKWeights[i];
 			weight = weight*kernel.k(tmpDVec);
 			//System.out.print("[");
+			//double weight = 1.0;
 			for(int j=0;j<nearestK[i].length;j++){
 				//System.out.print(" "+nearestK[i][j]);
 				rv[j] += nearestK[i][j]*weight;
@@ -123,6 +143,7 @@ public class LearnedAnts implements Agent{
 			rv[1] = prevVel[1];
 			rv[2] = prevVel[2];
 		}
+		*/
 		//System.out.println("rv[2] = "+rv[2]);
 		prevVel[0] = rv[0];
 		prevVel[1] = rv[1];

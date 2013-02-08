@@ -99,6 +99,7 @@ public class BIOHMM{
 			sensors.add(bip.getSensorsAtIDX(i));
 		}
 		bip.initParameters(transitionFunction,prior,partition,b);
+		writeParameters(new File("biohmm_parameters_initial.txt"));
 	}
 	
 	public double outputLogProbAtIDX(int idx, int state){
@@ -594,12 +595,15 @@ public class BIOHMM{
 		}
 	}
 	public synchronized void addToKDE(SimpleKDE[] b, int[] newPartition){
-		/* 
+		/*  */
 		for(int i=0;i<prior.length;i++){
-			b[i].weights.clear();
-			b[i].samples.clear();
+			b[i].clear();
 		}
 		/* */
+		for(int t=0;t<newPartition.length;t++){
+			b[newPartition[t]].add(bip.getDataAtIDX(t));
+		}
+		/* 
 		double[] log_expected_times_statei = new double[prior.length];
 		for(int i=0;i<log_expected_times_statei.length;i++){
 			log_expected_times_statei[i] = Double.NEGATIVE_INFINITY;
@@ -611,7 +615,6 @@ public class BIOHMM{
 		}
 		for(int t=0;t<newPartition.length;t++){
 			//b[partition[t]].add(bip.getDataAtIDX(t));
-			/* */   
 			for(int i=0;i<prior.length;i++){
 				double log_probability_statei_at_t = completeLLGamma[t][i];
 				double logNewWeight = log_probability_statei_at_t - log_expected_times_statei[i];
@@ -619,8 +622,8 @@ public class BIOHMM{
 					b[i].addNoCheck(bip.getDataAtIDX(t),Math.exp(logNewWeight));
 				}
 			}
-			/* */
 		}
+		/* */
 	}
 
 	

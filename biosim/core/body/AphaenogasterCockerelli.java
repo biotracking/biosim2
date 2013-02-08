@@ -293,7 +293,7 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 			boolean collides = false;
 			for(int i=0;i<sim.obstacles.size();i++){
 				Obstacle o = sim.obstacles.get(i);
-				if(newLoc.distance(o.closestPoint(newLoc,sim.field2D.getObjectLocation(o)))<SIZE){
+				if(newLoc.distance(o.closestPoint(newLoc,sim.field2D.getObjectLocation(o)))<(SIZE/2)){
 					collides = true;
 					//System.out.println("Collision!");
 					break;
