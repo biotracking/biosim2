@@ -19,11 +19,11 @@ void SimpleKDE::add(const double sample[]){
 }
 
 void SimpleKDE::add(const double sample[], const double weight){
-	if(!setWeight(sample,weight,true)){
-		double *tmp = new double[dimensionality];
-		copy(sample,sample+dimensionality,tmp);
-		samples.push_back(tmp);
-		weights.push_back(weight);
+	int idx = getIdx(sample);
+	if(idx == -1){
+		addNoCheck(sample,weight);
+	} else {
+		weights[idx] += weight;
 	}
 }
 
@@ -34,22 +34,13 @@ void SimpleKDE::addNoCheck(const double sample[], const double weight){
 	weights.push_back(weight);
 }
 
-bool SimpleKDE::setWeight(const double sample[], const double weight, bool addTo){
-	for(unsigned int i=0;i<samples.size();i++){
-		double* s = samples[i];
-		bool diff = false;
-		for(int d=0;d<dimensionality;d++){
-			if(sample[d] != s[d]){
-				diff = true;
-				break;
-			}
-		}
-		if(!diff){
-			weights[i] = ((addTo)?weights[i]:0)+weight;
-			return true;
-		}
+bool SimpleKDE::setWeight(const int idx, const double weight){
+	if(idx > 0 && idx < weights.size()){
+		weights[idx] = weight;
+		return true;
+	} else {
+		return false;
 	}
-	return false;
 }
 
 double kernel(const double x[], const int dim, double sigma){
@@ -78,13 +69,35 @@ double SimpleKDE::estimate(const double x[], const double bandwidth){
 	return (1.0/(weightSum*bandwidth)) * sum;
 }
 
-void SimpleKDE::getSample(double sample[], int i){
-	for(int j=0; j<dimensionality; j++){
-		sample[j] = samples[i][j];
+int SimpleKDE::getIdx(const double sample[]){
+	for(unsigned int i=0;i<samples.size();i++){
+		double* s = samples[i];
+		bool diff = false;
+		for(int d=0;d<dimensionality;d++){
+			if(sample[d] != s[d]){
+				diff = true;
+				break;
+			}
+		}
+		if(!diff){
+			return i;
+		}
+	}
+	return -1;
+}
+
+bool SimpleKDE::getSample(double sample[], const int i){
+	if(i > 0 && i < samples.size()){
+		for(int j=0; j<dimensionality; j++){
+			sample[j] = samples[i][j];
+		}
+		return true;
+	} else {
+		return false;
 	}
 }
 
-double SimpleKDE::getWeight(int i){
+double SimpleKDE::getWeight(const int i){
 	return weights[i];
 }
 

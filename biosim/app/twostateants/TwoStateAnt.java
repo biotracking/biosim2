@@ -14,6 +14,8 @@ import biosim.core.sim.RectObstacle;
 import biosim.app.tutorial.AvoidAntLogger;
 
 import sim.util.MutableDouble2D;
+
+import java.util.ArrayList;
 public class TwoStateAnt implements Agent {
 	public AbstractAnt antBody;
 	public double timeNearAnt;
@@ -25,8 +27,12 @@ public class TwoStateAnt implements Agent {
 	public static final double VISIT_TIME=5.0; //seconds
 	public static final double VISIT_RANGE=AphaenogasterCockerelli.SIZE*2; //meters
 	public static final double AVOID_TIME=10.0;
+	public ArrayList<Double> collectTimes, antDists;
+	double prevTime = -1.0;
 	public TwoStateAnt(AbstractAnt b){
 		antBody = b;
+		collectTimes = new ArrayList<Double>();
+		antDists = new ArrayList<Double>();
 		init();
 	}
 	
@@ -34,6 +40,7 @@ public class TwoStateAnt implements Agent {
 		timeAvoiding = timeNearAnt = 0.0;
 		state = FORAGE;
 		lastTime = 0.0;
+		prevTime = -1.0;
 	}
 	
 	public double[] act(double time){
@@ -57,6 +64,7 @@ public class TwoStateAnt implements Agent {
 			desiredVec.addIn(wall.normalize().negate().multiplyIn(1.0/(Math.pow(wall.length(),2))));
 		}
 		if(sawAnt){
+			antDists.add(ant.length());
 			desiredVec.addIn(ant.normalize().negate().multiplyIn(1.0/Math.pow(ant.length(),2)));
 		}
 		if(!sawFood){
@@ -74,6 +82,7 @@ public class TwoStateAnt implements Agent {
 			antBody.tryToGrab();
 			//rv[2] = Math.toRadians(40.0)*Math.signum(desiredVec.angle())*((Math.PI/2)-Math.abs(desiredVec.angle()))/(Math.PI/2);
 			if(antBody.getGripped()){
+				prevTime = time;
 				state = RETURN;
 			}
 		}
@@ -87,6 +96,10 @@ public class TwoStateAnt implements Agent {
 			}
 			//rv[2] = Math.toRadians(40.0)*Math.signum(desiredVec.angle())*((Math.PI/2)-Math.abs(desiredVec.angle()))/(Math.PI/2);			
 			if(antBody.nearPOI("nest")){
+				if(prevTime >= 0){
+					collectTimes.add(time-prevTime);
+				}
+				prevTime = -1.0;
 				antBody.tryToDrop();
 				state = FORAGE;
 			}
@@ -157,7 +170,7 @@ public class TwoStateAnt implements Agent {
 			flyBodies[i] = new DrosophilaMelanogaster();
 			env.addBody(flyBodies[i]);
 		}
-		Agent[] agents = new Agent[numAnts];
+		TwoStateAnt[] agents = new TwoStateAnt[numAnts];
 		for(int i=0;i<agents.length;i++){
 			agents[i] = new TwoStateAnt(bodies[i]);
 			bodies[i].setAgent(agents[i]);
@@ -167,12 +180,46 @@ public class TwoStateAnt implements Agent {
 			flyAgents[i] = new LazyFly();
 			flyBodies[i].setAgent(flyAgents[i]);
 		}
-		//env.runSimulation(args);
-		Simulation sim = env.newSimulation();
-		sim.addLogger(new TwoStateLogger());
-		GUISimulation gui = new GUISimulation(sim);
-		gui.setPortrayalClass(DrosophilaMelanogaster.class, FoodPortrayal.class);
-		gui.createController();
+		env.runSimulation(args);
+		//Simulation sim = env.newSimulation();
+		//sim.addLogger(new TwoStateLogger());
+		//GUISimulation gui = new GUISimulation(sim);
+		//gui.setPortrayalClass(DrosophilaMelanogaster.class, FoodPortrayal.class);
+		//gui.createController();
+		int numTimes = 0;
+		double cTimeAvg = 0.0;
+		double cTimeStdDev = 0.0;
+		for(int i=0;i<agents.length;i++){
+			for(int j=0;j<agents[i].collectTimes.size();j++){
+				cTimeAvg += agents[i].collectTimes.get(j);
+				numTimes++;
+			}
+		}
+		cTimeAvg = cTimeAvg/numTimes;
+		for(int i=0;i<agents.length;i++){
+			for(int j=0;j<agents[i].collectTimes.size();j++){
+				cTimeStdDev += Math.pow(agents[i].collectTimes.get(j)-cTimeAvg,2);
+			}
+		}
+		cTimeStdDev = Math.sqrt(cTimeStdDev/numTimes);
+		int numDists = 0;
+		double adAvg = 0.0;
+		double adStdDev = 0.0;
+		for(int i=0;i<agents.length;i++){
+			for(int j=0;j<agents[i].antDists.size();j++){
+				adAvg += agents[i].antDists.get(j);
+				numDists++;
+			}
+		}
+		adAvg = adAvg/numDists;
+		for(int i=0;i<agents.length;i++){
+			for(int j=0;j<agents[i].antDists.size();j++){
+				adStdDev += Math.pow(agents[i].antDists.get(j)-adAvg,2);
+			}
+		}
+		adStdDev = Math.sqrt(adStdDev/numDists);
+		System.out.println("Collect Time avg: "+cTimeAvg+" "+cTimeStdDev+" "+numTimes);
+		System.out.println("Ant dist avg: "+adAvg+" "+adStdDev+" "+numDists);		
 	}
 
 }

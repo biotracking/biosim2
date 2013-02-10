@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import java.util.ArrayList;
+
 public class LearnedAnts implements Agent{
 	public static final int FEATURE_DIM = 8;
 	public static final int NUM_SWITCHES = 2;
@@ -31,11 +33,15 @@ public class LearnedAnts implements Agent{
 	double[] prevVel = {0.0, 0.0, 0.0};
 	int currentState = -1;
 	KernelDensityEstimator.NormalKernel kernel = new KernelDensityEstimator.NormalKernel(1.0);
+	public ArrayList<Double> collectTimes, antDists;
+	double prevTime = -1.0;
 	public LearnedAnts(AbstractAnt b, double[] prior, double[][][] transitionMatrix, FastKNN[] knns){
 		antBody = b;
 		this.prior = prior;
 		this.transitionMatrix = transitionMatrix;
 		outputFunction = knns;
+		collectTimes = new ArrayList<Double>();
+		antDists = new ArrayList<Double>();
 	}
 	
 	public void init(){
@@ -48,6 +54,9 @@ public class LearnedAnts implements Agent{
 		double[] rv = new double[3];
 		MutableDouble2D ant = new MutableDouble2D();
 		boolean sawAnt = antBody.getNearestSameAgentVec(ant);
+		if(sawAnt){
+			antDists.add(ant.length());
+		}
 		MutableDouble2D wall = new MutableDouble2D();
 		boolean sawWall = antBody.getNearestObstacleVec(wall);
 		MutableDouble2D home = new MutableDouble2D();
@@ -92,7 +101,7 @@ public class LearnedAnts implements Agent{
 		}
 		//System.out.println("State: "+currentState);
 		//figure out the output for the current state
-		//System.out.println("STATE"+currentState+" ("+wall.x+", "+wall.y+")->");
+		//System.out.println("STATE"+currentState+" ("+food.x+", "+food.y+")->");
 		outputFunction[currentState].query(sensorVec,nearestK,nearestKWeights,nearestKVals);
 		double weightSum = 0.0;
 		for(int i=0;i<nearestK.length;i++){
@@ -173,9 +182,17 @@ public class LearnedAnts implements Agent{
 		//System.out.println("rv:"+rv[0]+" "+rv[1]+" "+rv[2]);
 		if(!gripper){
 			antBody.tryToGrab();
+			if(antBody.getGripped()){
+				prevTime =time;
+			} else {
+				prevTime = -1.0;
+			}
 		}
 		if(nearNest){
 			antBody.tryToDrop();
+			if(prevTime >= 0){
+				collectTimes.add(time - prevTime);
+			}
 		}
 		return rv;
 	}
@@ -309,7 +326,7 @@ public class LearnedAnts implements Agent{
 				flyBodies[i] = new DrosophilaMelanogaster();
 				env.addBody(flyBodies[i]);
 			}
-			Agent[] agents = new Agent[numAnts];
+			LearnedAnts[] agents = new LearnedAnts[numAnts];
 			LearnedAnts la = new LearnedAnts(bodies[0],null,null,null);
 			la.buildParameters(parameterFile);
 			agents[0] = la;
@@ -324,11 +341,45 @@ public class LearnedAnts implements Agent{
 				flyBodies[i].setAgent(flyAgents[i]);
 			}
 
-			//env.runSimulation(args);
-			Simulation sim = env.newSimulation();
-			GUISimulation gui = new GUISimulation(sim);
-			gui.setPortrayalClass(DrosophilaMelanogaster.class, biosim.app.twostateants.FoodPortrayal.class);
-			gui.createController();
+			env.runSimulation(args);
+			//Simulation sim = env.newSimulation();
+			//GUISimulation gui = new GUISimulation(sim);
+			//gui.setPortrayalClass(DrosophilaMelanogaster.class, biosim.app.twostateants.FoodPortrayal.class);
+			//gui.createController();
+			int numTimes = 0;
+			double cTimeAvg = 0.0;
+			double cTimeStdDev = 0.0;
+			for(int i=0;i<agents.length;i++){
+				for(int j=0;j<agents[i].collectTimes.size();j++){
+					cTimeAvg += agents[i].collectTimes.get(j);
+					numTimes++;
+				}
+			}
+			cTimeAvg = cTimeAvg/numTimes;
+			for(int i=0;i<agents.length;i++){
+				for(int j=0;j<agents[i].collectTimes.size();j++){
+					cTimeStdDev += Math.pow(agents[i].collectTimes.get(j)-cTimeAvg,2);
+				}
+			}
+			cTimeStdDev = Math.sqrt(cTimeStdDev/numTimes);
+			int numDists = 0;
+			double adAvg = 0.0;
+			double adStdDev = 0.0;
+			for(int i=0;i<agents.length;i++){
+				for(int j=0;j<agents[i].antDists.size();j++){
+					adAvg += agents[i].antDists.get(j);
+					numDists++;
+				}
+			}
+			adAvg = adAvg/numDists;
+			for(int i=0;i<agents.length;i++){
+				for(int j=0;j<agents[i].antDists.size();j++){
+					adStdDev += Math.pow(agents[i].antDists.get(j)-adAvg,2);
+				}
+			}
+			adStdDev = Math.sqrt(adStdDev/numDists);
+			System.out.println("Collect Time avg: "+cTimeAvg+" "+cTimeStdDev+" "+numTimes);
+			System.out.println("Ant dist avg: "+adAvg+" "+adStdDev+" "+numDists);		
 		} catch(Exception e){
 			throw new RuntimeException(e);
 		}

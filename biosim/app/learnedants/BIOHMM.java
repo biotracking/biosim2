@@ -22,6 +22,7 @@ public class BIOHMM{
 	BTFData data;
 	int dim, numThreads = 4;
 	double kernelSigma = 1.0, bandwidth = 1.0, inputSigma = 1.0;
+	double weightAlpha = 0.5;
 	public static final boolean PRINT_ITERATIONS = true;
 	public final SimpleKDE[] b;
 	public final SimpleKDE sensors;
@@ -595,15 +596,15 @@ public class BIOHMM{
 		}
 	}
 	public synchronized void addToKDE(SimpleKDE[] b, int[] newPartition){
-		/*  */
+		/*  
 		for(int i=0;i<prior.length;i++){
 			b[i].clear();
 		}
-		/* */
 		for(int t=0;t<newPartition.length;t++){
 			b[newPartition[t]].add(bip.getDataAtIDX(t));
 		}
-		/* 
+		/* */
+		/* */
 		double[] log_expected_times_statei = new double[prior.length];
 		for(int i=0;i<log_expected_times_statei.length;i++){
 			log_expected_times_statei[i] = Double.NEGATIVE_INFINITY;
@@ -614,12 +615,15 @@ public class BIOHMM{
 			}
 		}
 		for(int t=0;t<newPartition.length;t++){
-			//b[partition[t]].add(bip.getDataAtIDX(t));
 			for(int i=0;i<prior.length;i++){
 				double log_probability_statei_at_t = completeLLGamma[t][i];
-				double logNewWeight = log_probability_statei_at_t - log_expected_times_statei[i];
-				if(!b[i].setWeight(bip.getDataAtIDX(t),Math.exp(logNewWeight))){
-					b[i].addNoCheck(bip.getDataAtIDX(t),Math.exp(logNewWeight));
+				double newWeight = Math.exp(log_probability_statei_at_t - log_expected_times_statei[i]);
+				int sIdx = b[i].getIdx(bip.getDataAtIDX(t));
+				if(sIdx == -1){
+					b[i].addNoCheck(bip.getDataAtIDX(t),newWeight);
+				} else {
+					double oldWeight = b[i].getWeight(sIdx);
+					b[i].setWeight(sIdx,(weightAlpha*newWeight)+((1-weightAlpha)*oldWeight));
 				}
 			}
 		}
