@@ -213,13 +213,13 @@ public class BIOHMMInputParser {
 		/* */
 		//random state initialization.  This is least likely to produce long chains
 		//of sequences. 
-		/* 
+		/*  */
 		for(int i=0;i<partition.length;i++){
 			partition[i] = random.nextInt(prior.length);
 		}
 		/* */
 		//For debugging, if we had the correct state sequence
-		/*  */
+		/*  
 		for(int i=0;i<partition.length;i++){
 			partition[i] = Integer.parseInt(stateVec[i].trim());
 		}
@@ -268,6 +268,7 @@ public class BIOHMMInputParser {
 		for(int i=0;i<numStates;i++){
 			for(int j=0;j<numStates;j++){
 				for(int k=0;k<maxSwitchVar;k++){
+					System.out.println("FromCount["+k+"]["+i+"] = "+fromCount[k][i]);
 					if(fromCount[k][i] > 0){
 						transitionFunction[i][j][k] = transitionFunction[i][j][k]/fromCount[k][i];
 					} else {

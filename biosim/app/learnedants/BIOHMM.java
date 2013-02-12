@@ -20,7 +20,7 @@ public class BIOHMM{
 	public int[] partition;
 	private double[][] completeLLGamma;
 	BTFData data;
-	int dim, numThreads = 4;
+	int dim, numThreads = 8;
 	double kernelSigma = 1.0, bandwidth = 1.0, inputSigma = 1.0;
 	double weightAlpha = 0.5;
 	public static final boolean PRINT_ITERATIONS = true;
@@ -597,9 +597,9 @@ public class BIOHMM{
 	}
 	public synchronized void addToKDE(SimpleKDE[] b, int[] newPartition){
 		/*  
-		for(int i=0;i<prior.length;i++){
-			b[i].clear();
-		}
+		//for(int i=0;i<prior.length;i++){
+		//	b[i].clear();
+		//}
 		for(int t=0;t<newPartition.length;t++){
 			b[newPartition[t]].add(bip.getDataAtIDX(t));
 		}
