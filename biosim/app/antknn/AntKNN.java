@@ -30,6 +30,8 @@ public class AntKNN implements Agent{
 	public void init(){
 		prevVel[0] = prevVel[1] = prevVel[2] = 0.0;
 	}
+	public void finish(){
+	}
 	public double[] act(double time){
 		//System.out.println("Ant body:"+antBody);
 		double[] rv = new double[3];

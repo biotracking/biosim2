@@ -6,6 +6,7 @@ import sim.engine.SimState;
 
 public abstract class Body implements Steppable{
 	protected Agent agent;
+	public boolean notFinished = false;
 	public void setAgent(Agent a){ agent = a; }
 	public Agent getAgent(){ return agent; }
 	public abstract void step(SimState simstate);
@@ -21,5 +22,12 @@ public abstract class Body implements Steppable{
 	
 	public void init(){
 		agent.init();
+		notFinished = true;
+	}
+	public void finish(){
+		if(notFinished){
+			agent.finish();
+			notFinished = false;
+		}
 	}
 }

@@ -16,7 +16,10 @@ public abstract class AbstractAnt extends Body
 	public AbstractFly grabbing;
 	public void init(){
 		super.init();
-		grabbing = null;
+		if(grabbing != null){
+			grabbing.grabbedBy = null;
+			grabbing = null;
+		}
 	}
 	
 }

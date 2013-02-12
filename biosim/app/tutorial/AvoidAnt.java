@@ -10,6 +10,8 @@ public class AvoidAnt implements Agent {
 	}
 	public void init(){
 	}
+	public void finish(){
+	}
 	public double[] act(double time){
 		double[] rv = new double[3];
 		//our default is to move forward in a straight line

@@ -20,6 +20,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class LearnedAnts implements Agent{
 	public static final int FEATURE_DIM = 8;
@@ -33,20 +34,43 @@ public class LearnedAnts implements Agent{
 	double[] prevVel = {0.0, 0.0, 0.0};
 	int currentState = -1;
 	KernelDensityEstimator.NormalKernel kernel = new KernelDensityEstimator.NormalKernel(1.0);
-	public ArrayList<Double> collectTimes, antDists;
-	double prevTime = -1.0;
+	public static ArrayList<Double> collectTimes = new ArrayList<Double>();
+	public static ArrayList<Double> acqTimes = new ArrayList<Double>();
+	public static ArrayList<Double> antDists = new ArrayList<Double>();
+	public static ArrayList<Double> wallDists = new ArrayList<Double>();
+	public static ArrayList<Double> foodCounts = new ArrayList<Double>();
+	public int foodCounter;
+	double prevTime = -1.0, lastTime = 0.0, firstSawFood = -1.0;
+	LearnedAnts[] antArray = null;
+	
 	public LearnedAnts(AbstractAnt b, double[] prior, double[][][] transitionMatrix, FastKNN[] knns){
 		antBody = b;
 		this.prior = prior;
 		this.transitionMatrix = transitionMatrix;
 		outputFunction = knns;
-		collectTimes = new ArrayList<Double>();
-		antDists = new ArrayList<Double>();
+		//collectTimes = new ArrayList<Double>();
+		//antDists = new ArrayList<Double>();
 	}
 	
 	public void init(){
 		currentState = -1;
 		prevVel[0] = prevVel[1] = prevVel[2] = 0.0;
+		prevTime = -1.0;
+	}
+	
+	public void finish(){
+		if(prevTime >=0){
+			collectTimes.add(lastTime-prevTime);
+		}
+		if(antArray != null){
+			double foodSum = 0.0;
+			for(int i=0;i<antArray.length;i++){
+				foodSum += antArray[i].foodCounter;
+				antArray[i].foodCounter = 0;
+			}
+			foodCounts.add(foodSum);
+		}
+		
 	}
 	
 	public double[] act(double time){
@@ -59,10 +83,18 @@ public class LearnedAnts implements Agent{
 		}
 		MutableDouble2D wall = new MutableDouble2D();
 		boolean sawWall = antBody.getNearestObstacleVec(wall);
+		if(sawWall){
+			wallDists.add(wall.length());
+		}
 		MutableDouble2D home = new MutableDouble2D();
 		boolean sawHome = antBody.getPoiDir(home,"nest");
 		MutableDouble2D food = new MutableDouble2D();
 		boolean sawFood = antBody.getNearestPreyVec(food);
+		if(!sawFood){
+			firstSawFood = -1.0;
+		} else if(firstSawFood == -1.0){
+			firstSawFood = time;
+		}
 		boolean nearNest = antBody.nearPOI("nest");
 		boolean gripper = antBody.getGripped();
 		//boolean nearFood = antBody.nearPOI("food");
@@ -184,6 +216,9 @@ public class LearnedAnts implements Agent{
 			antBody.tryToGrab();
 			if(antBody.getGripped()){
 				prevTime =time;
+				if(firstSawFood >= 0 && firstSawFood <= time){
+					acqTimes.add(time-firstSawFood);
+				}
 			} else {
 				prevTime = -1.0;
 			}
@@ -192,8 +227,11 @@ public class LearnedAnts implements Agent{
 			antBody.tryToDrop();
 			if(prevTime >= 0){
 				collectTimes.add(time - prevTime);
+				foodCounter++;
 			}
+			prevTime = -1.0;
 		}
+		lastTime = time;
 		return rv;
 	}
 	
@@ -335,6 +373,7 @@ public class LearnedAnts implements Agent{
 				agents[i] = new LearnedAnts(bodies[i],la.prior, la.transitionMatrix, la.outputFunction);
 				bodies[i].setAgent(agents[i]);
 			}
+			agents[0].antArray = agents;
 			Agent[] flyAgents = new Agent[numFlies];
 			for(int i=0;i<flyAgents.length;i++){
 				flyAgents[i] = new biosim.app.twostateants.LazyFly();
@@ -346,40 +385,90 @@ public class LearnedAnts implements Agent{
 			//GUISimulation gui = new GUISimulation(sim);
 			//gui.setPortrayalClass(DrosophilaMelanogaster.class, biosim.app.twostateants.FoodPortrayal.class);
 			//gui.createController();
+			
 			int numTimes = 0;
 			double cTimeAvg = 0.0;
 			double cTimeStdDev = 0.0;
-			for(int i=0;i<agents.length;i++){
-				for(int j=0;j<agents[i].collectTimes.size();j++){
-					cTimeAvg += agents[i].collectTimes.get(j);
-					numTimes++;
-				}
+			for(int j=0;j<collectTimes.size();j++){
+				cTimeAvg += collectTimes.get(j);
+				numTimes++;
 			}
 			cTimeAvg = cTimeAvg/numTimes;
-			for(int i=0;i<agents.length;i++){
-				for(int j=0;j<agents[i].collectTimes.size();j++){
-					cTimeStdDev += Math.pow(agents[i].collectTimes.get(j)-cTimeAvg,2);
-				}
+			for(int j=0;j<collectTimes.size();j++){
+				cTimeStdDev += Math.pow(collectTimes.get(j)-cTimeAvg,2);
 			}
 			cTimeStdDev = Math.sqrt(cTimeStdDev/numTimes);
+			
+			int numTimesAcq = 0;
+			double acqTimesAvg = 0.0;
+			double acqTimesStdDev = 0.0;
+			for(int i=0;i<agents.length;i++){
+				for(int j=0;j<agents[i].acqTimes.size();j++){
+					acqTimesAvg += agents[i].collectTimes.get(j);
+					numTimesAcq++;
+				}
+			}
+			acqTimesAvg = acqTimesAvg/numTimesAcq;
+			for(int i=0;i<agents.length;i++){
+				for(int j=0;j<agents[i].acqTimes.size();j++){
+					acqTimesStdDev += Math.pow(agents[i].acqTimes.get(j)-acqTimesAvg,2);
+				}
+			}
+			acqTimesStdDev = Math.sqrt(acqTimesStdDev/numTimesAcq);
+			
+			
 			int numDists = 0;
 			double adAvg = 0.0;
 			double adStdDev = 0.0;
-			for(int i=0;i<agents.length;i++){
-				for(int j=0;j<agents[i].antDists.size();j++){
-					adAvg += agents[i].antDists.get(j);
-					numDists++;
-				}
+			for(int j=0;j<antDists.size();j++){
+				adAvg += antDists.get(j);
+				numDists++;
 			}
 			adAvg = adAvg/numDists;
-			for(int i=0;i<agents.length;i++){
-				for(int j=0;j<agents[i].antDists.size();j++){
-					adStdDev += Math.pow(agents[i].antDists.get(j)-adAvg,2);
-				}
+			for(int j=0;j<antDists.size();j++){
+				adStdDev += Math.pow(antDists.get(j)-adAvg,2);
 			}
 			adStdDev = Math.sqrt(adStdDev/numDists);
+			
+			int numDistsWall = 0;
+			double wdAvg = 0.0;
+			double wdStdDev = 0.0;
+			for(int i=0;i<agents.length;i++){
+				for(int j=0;j<agents[i].wallDists.size(); j++){
+					wdAvg += agents[i].wallDists.get(j);
+					numDistsWall++;
+				}
+			}
+			wdAvg = wdAvg/numDistsWall;
+			for(int i=0;i<agents.length;i++){
+				for(int j=0;j<agents[i].wallDists.size(); j++){
+					wdStdDev += Math.pow(agents[i].wallDists.get(j)-wdAvg,2);
+				}
+			}
+			wdStdDev = Math.sqrt(wdStdDev/numDistsWall);
+			
+			
+			double foodAvgPerRun = 0.0;
+			double foodStdDevPerRun = 0.0;
+			for(int j=0;j<foodCounts.size();j++){
+				foodAvgPerRun += foodCounts.get(j);
+			}
+			foodAvgPerRun = foodAvgPerRun/foodCounts.size();
+			for(int j=0;j<foodCounts.size();j++){
+				foodStdDevPerRun += Math.pow(foodCounts.get(j)-foodAvgPerRun,2);
+			}
+			foodStdDevPerRun = Math.sqrt(foodStdDevPerRun/foodCounts.size());
+			
+			Collections.sort(collectTimes);
+			Collections.sort(antDists);
+			
 			System.out.println("Collect Time avg: "+cTimeAvg+" "+cTimeStdDev+" "+numTimes);
-			System.out.println("Ant dist avg: "+adAvg+" "+adStdDev+" "+numDists);		
+			System.out.println("Ant dist avg: "+adAvg+" "+adStdDev+" "+numDists);
+			System.out.println("Collect time median: "+collectTimes.get(collectTimes.size()/2));
+			System.out.println("Ant dist median: "+antDists.get(antDists.size()/2));
+			System.out.println("Avg food collected per run: "+foodAvgPerRun+" "+foodStdDevPerRun+" "+foodCounts.size());
+			System.out.println("Wall dist avg: "+wdAvg+" "+wdStdDev+" "+numDistsWall);
+			System.out.println("Acquire Time avg: "+acqTimesAvg+" "+acqTimesStdDev+" "+numTimesAcq);
 		} catch(Exception e){
 			throw new RuntimeException(e);
 		}

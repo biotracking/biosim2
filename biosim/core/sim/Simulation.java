@@ -54,6 +54,9 @@ public class Simulation extends SimState{
 
 	public void finish(){
 		super.finish();
+		for(int i=0;i<bodies.size();i++){
+			bodies.get(i).finish();
+		}
 		/*
 		System.out.println("Finished!");
 		for(int i=0;i<bodies.size();i++){

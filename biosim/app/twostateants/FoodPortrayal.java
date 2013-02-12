@@ -15,7 +15,7 @@ public class FoodPortrayal extends OvalPortrayal2D implements Oriented2D{
 	public Simulation sim;
 	public Body body;
 	public FoodPortrayal(Simulation sim, Object body){
-		super(Color.yellow,0.0025,true);
+		super(Color.blue,0.0025,true);
 		this.sim = sim;
 		if(body instanceof Body){
 			this.body = (Body)body;

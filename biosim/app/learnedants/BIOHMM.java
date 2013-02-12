@@ -989,7 +989,7 @@ public class BIOHMM{
 				File parameters = null;
 				if(args.length ==2) parameters = new File(args[1]);
 				ArrayList<ArrayList<Integer>> sequences;
-				BIOHMMInputParser bip = new BIOHMMInputParser(btf);//RealAntInputParser(btf);//SimpleInputParser(btf);//
+				BIOHMMInputParser bip = new RealAntInputParser(btf);//BIOHMMInputParser(btf);//SimpleInputParser(btf);//
 				BIOHMM biohmm = new BIOHMM(2,bip);
 				sequences = bip.getSequences();
 				System.out.println("Num sequences:"+sequences.size());
