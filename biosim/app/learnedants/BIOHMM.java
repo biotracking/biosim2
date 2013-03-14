@@ -6,11 +6,14 @@ import biosim.core.util.kdewrapper.SimpleKDE;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.prefs.Preferences;
 
 public class BIOHMM{
 	BIOHMMInputParser bip;
@@ -20,15 +23,41 @@ public class BIOHMM{
 	public int[] partition;
 	private double[][] completeLLGamma;
 	BTFData data;
-	int dim, numThreads = 8;
-	double kernelSigma = 1.0, bandwidth = 1.0, inputSigma = 1.0;
-	double weightAlpha = 0.5;
-	public static final boolean PRINT_ITERATIONS = true;
+	int dim;
+	static int numThreads;// = 8;
+	//double kernelSigma = 1.0, bandwidth = 1.0, inputSigma = 1.0;
+	static double kernelSigma, bandwidth, inputSigma;
+	static double weightAlpha;// = 1.0;
+	static Preferences prefs = Preferences.userNodeForPackage(BIOHMM.class);
+	static public boolean PRINT_ITERATIONS;// = true;
+	static Class<? extends BIOHMMInputParser> bipClass = BIOHMMInputParser.class;
 	public final SimpleKDE[] b;
 	public final SimpleKDE sensors;
 	//public final KernelDensityEstimator[] b;
 	//public final KernelDensityEstimator sensors;
-		
+	public static void savePrefs(File inFile) throws java.io.FileNotFoundException, java.io.IOException, java.util.prefs.BackingStoreException{
+		prefs.putInt("numThreads",numThreads);
+		prefs.putDouble("kernelSigma",kernelSigma);
+		prefs.putDouble("bandwidth",bandwidth);
+		prefs.putDouble("inputSigma",inputSigma);
+		prefs.putDouble("weightAlpha",weightAlpha);
+		prefs.putBoolean("PRINT_ITERATIONS",PRINT_ITERATIONS);
+		prefs.put("bipClass",bipClass.getCanonicalName());
+		prefs.exportSubtree(new FileOutputStream(inFile));
+	}
+	public static void readPrefFile(File outFile) throws java.io.FileNotFoundException, java.io.IOException, java.util.prefs.InvalidPreferencesFormatException{
+		prefs.importPreferences(new FileInputStream(outFile));
+	}
+	public static void loadPrefs() throws ClassNotFoundException{
+		numThreads = prefs.getInt("numThreads",1);
+		kernelSigma = prefs.getDouble("kernelSigma",1.0);
+		bandwidth = prefs.getDouble("bandwidth",1.0);
+		inputSigma = prefs.getDouble("inputSigma",1.0);
+		weightAlpha = prefs.getDouble("weightAlpha",1.0);
+		PRINT_ITERATIONS = prefs.getBoolean("PRINT_ITERATIONS",false);
+		bipClass = Class.forName(prefs.get("bipClass",BIOHMMInputParser.class.getCanonicalName())).asSubclass(BIOHMMInputParser.class);
+		System.out.println(bipClass);
+	}
 	public static double elnsum(double logx, double logy){
 		//given log(x), and log(y), return log(x+y)
 		if(logx == Double.NEGATIVE_INFINITY || logy == Double.NEGATIVE_INFINITY){
@@ -617,7 +646,12 @@ public class BIOHMM{
 		for(int t=0;t<newPartition.length;t++){
 			for(int i=0;i<prior.length;i++){
 				double log_probability_statei_at_t = completeLLGamma[t][i];
-				double newWeight = Math.exp(log_probability_statei_at_t - log_expected_times_statei[i]);
+				double newWeight;
+				if(log_expected_times_statei[i] == Double.NEGATIVE_INFINITY){
+					newWeight = 0.0;
+				} else {
+					newWeight = Math.exp(log_probability_statei_at_t - log_expected_times_statei[i]);
+				}
 				int sIdx = b[i].getIdx(bip.getDataAtIDX(t));
 				if(sIdx == -1){
 					b[i].addNoCheck(bip.getDataAtIDX(t),newWeight);
@@ -809,6 +843,8 @@ public class BIOHMM{
 			for(int i=0;i<prior.length;i++){
 				for(int j=0;j<prior.length;j++){
 					for(int k=0;k<newTransition[i][j].length;k++){
+						System.out.println("NUM: "+newTransitionNumerator[i][j][k]);
+						System.out.println("DEN: "+newTransitionDenominator[i][j][k]+"\n");
 						if(false){ //what the FUCK was I thinking?!?
 						//if(newTransitionNumerator[i][j][k] == 0.0){
 							newTransition[i][j][k] = 1.0/((double)prior.length);//continue;
@@ -979,17 +1015,29 @@ public class BIOHMM{
 	}
 	
 	public static void main(String[] args){
-		if(args.length < 1 || args.length > 2){
-			System.out.println("Usage: java BIOHMM <btfDirectory>");
+		if(args.length < 1 || args.length > 3){
+			System.out.println("Usage: java BIOHMM <btfDirectory> [parameters.txt] [prefs.xml]");
 		} else {
 			try{
+				prefs.clear();
 				System.loadLibrary("kdewrapper");
 				BTFData btf = new BTFData();
 				btf.loadDir(new File(args[0]));
 				File parameters = null;
-				if(args.length ==2) parameters = new File(args[1]);
+				if(args.length >=2) parameters = new File(args[1]);
 				ArrayList<ArrayList<Integer>> sequences;
-				BIOHMMInputParser bip = new RealAntInputParser(btf);//BIOHMMInputParser(btf);//SimpleInputParser(btf);//
+				File prefsFile;
+				if(args.length >=3){
+					prefsFile = new File(args[2]);
+				} else {
+					prefsFile = new File(new File(System.getProperties().getProperty("user.dir")), "prefs.xml");
+				} if(prefsFile.exists()){
+					readPrefFile(prefsFile);
+				}
+				loadPrefs();
+				savePrefs(prefsFile);
+				//BIOHMMInputParser bip = new RealAntInputParser(btf);//BIOHMMInputParser(btf);//SimpleInputParser(btf);//
+				BIOHMMInputParser bip = bipClass.getConstructor(btf.getClass()).newInstance(btf);
 				BIOHMM biohmm = new BIOHMM(2,bip);
 				sequences = bip.getSequences();
 				System.out.println("Num sequences:"+sequences.size());

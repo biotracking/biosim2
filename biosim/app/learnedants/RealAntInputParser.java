@@ -1,6 +1,7 @@
 package biosim.app.learnedants;
 
 import biosim.core.body.AphaenogasterCockerelli;
+import biosim.core.body.AbstractAnt;
 import biosim.core.util.BTFData;
 import biosim.core.util.KernelDensityEstimator;
 import biosim.core.util.kdewrapper.SimpleKDE;
@@ -64,6 +65,21 @@ public class RealAntInputParser extends BIOHMMInputParser{
 		//datapoint[9] = Double.parseDouble(tmp[2]);
 		return datapoint;
 	}
+
+	public static double[] getSensors(AbstractAnt antBody){
+		double[] sensorVec = new double[NUM_SENSORS];
+		MutableDouble2D tmp = new MutableDouble2D();
+		antBody.getNearestObstacleVec(tmp.zero());
+		sensorVec[0] = tmp.x;
+		sensorVec[1] = tmp.y;
+		antBody.getNearestSameAgentVec(tmp.zero());
+		sensorVec[2] = tmp.x;
+		sensorVec[3] = tmp.y;
+		antBody.getPoiDir(tmp,"nest");
+		sensorVec[4] = tmp.x;
+		sensorVec[5] = tmp.y;
+		return sensorVec;
+	}
 	
 	public double[] getSensorsAtIDX(int idx){
 		double[] datapoint = new double[NUM_SENSORS];
@@ -88,6 +104,12 @@ public class RealAntInputParser extends BIOHMMInputParser{
 		return ste;
 	}
 	
+	public static int getSwitch(AbstractAnt antBody){
+		MutableDouble2D antVec = new MutableDouble2D();
+		boolean sawAnt = antBody.getNearestSameAgentVec(antVec.zero());
+		return (sawAnt && antVec.length() < NEAR_THRESH)?1:0;
+	}
+	
 	public int getSwitchAtIDX(int idx){
 		/*
 		int k = 0;
@@ -108,13 +130,13 @@ public class RealAntInputParser extends BIOHMMInputParser{
 	public int partSize(){
 		return numTrackPoints;
 	}
-	public int numSwitches(){
+	public static int numSwitches(){
 		return NUM_SWITCHES;
 	}
-	public int outputDim(){
+	public static int outputDim(){
 		return DIM;
 	}
-	public int sensorDim(){
+	public static int sensorDim(){
 		return NUM_SENSORS;
 	}
 	public ArrayList<ArrayList<Integer>> getSequences(){

@@ -1,5 +1,7 @@
 package biosim.app.twostateants;
 
+import biosim.app.learnedants.LearnedAnts;
+
 import biosim.core.agent.Agent;
 import biosim.core.body.Body;
 import biosim.core.body.AphaenogasterCockerelli;
@@ -176,6 +178,14 @@ public class TwoStateAnt implements Agent {
 		}
 		*/
 		lastTime = time;
+		/*
+		if(!sawAnt && !sawWall && !sawFood){
+			if(Math.abs(nest.angle()) < Math.PI/Math.pow(10,5)){
+				//System.out.println(Math.abs(nest.angle()) < Math.PI/16);
+				System.out.println(rv[2]);
+			}
+		}
+		*/
 		return rv;
 	}
 	
@@ -214,90 +224,31 @@ public class TwoStateAnt implements Agent {
 			flyAgents[i] = new LazyFly();
 			flyBodies[i].setAgent(flyAgents[i]);
 		}
-		env.runSimulation(args);
-		//Simulation sim = env.newSimulation();
+		//env.runSimulation(args);
+		Simulation sim = env.newSimulation();
 		//sim.addLogger(new TwoStateLogger());
-		//GUISimulation gui = new GUISimulation(sim);
-		//gui.setPortrayalClass(DrosophilaMelanogaster.class, FoodPortrayal.class);
-		//gui.createController();
-		int numTimes = 0;
-		double cTimeAvg = 0.0;
-		double cTimeStdDev = 0.0;
-		for(int i=0;i<agents.length;i++){
-			for(int j=0;j<agents[i].collectTimes.size();j++){
-				cTimeAvg += agents[i].collectTimes.get(j);
-				numTimes++;
-			}
-		}
-		cTimeAvg = cTimeAvg/numTimes;
-		for(int i=0;i<agents.length;i++){
-			for(int j=0;j<agents[i].collectTimes.size();j++){
-				cTimeStdDev += Math.pow(agents[i].collectTimes.get(j)-cTimeAvg,2);
-			}
-		}
-		cTimeStdDev = Math.sqrt(cTimeStdDev/numTimes);
+		GUISimulation gui = new GUISimulation(sim);
+		gui.setPortrayalClass(DrosophilaMelanogaster.class, FoodPortrayal.class);
+		gui.createController();
+		int numTimes = collectTimes.size();//0;
+		double cTimeAvg = LearnedAnts.timeAvg(collectTimes); //0.0;
+		double cTimeStdDev = LearnedAnts.timeStdDev(collectTimes,cTimeAvg);//0.0;
 
-		int numTimesAcq = 0;
-		double acqTimesAvg = 0.0;
-		double acqTimesStdDev = 0.0;
-		for(int i=0;i<agents.length;i++){
-			for(int j=0;j<agents[i].acqTimes.size();j++){
-				acqTimesAvg += agents[i].collectTimes.get(j);
-				numTimesAcq++;
-			}
-		}
-		acqTimesAvg = acqTimesAvg/numTimesAcq;
-		for(int i=0;i<agents.length;i++){
-			for(int j=0;j<agents[i].acqTimes.size();j++){
-				acqTimesStdDev += Math.pow(agents[i].acqTimes.get(j)-acqTimesAvg,2);
-			}
-		}
-		acqTimesStdDev = Math.sqrt(acqTimesStdDev/numTimesAcq);
+		int numTimesAcq = acqTimes.size();//0;
+		double acqTimesAvg = LearnedAnts.timeAvg(acqTimes);//0.0;
+		double acqTimesStdDev = LearnedAnts.timeStdDev(acqTimes,acqTimesAvg);//0.0;
+
+		int numDists = antDists.size();//0;
+		double adAvg = LearnedAnts.timeAvg(antDists);//0.0;
+		double adStdDev = LearnedAnts.timeStdDev(antDists,adAvg);//0.0;
+
+		int numDistsWall = wallDists.size();
+		double wdAvg = LearnedAnts.timeAvg(wallDists);
+		double wdStdDev = LearnedAnts.timeStdDev(wallDists,wdAvg);
 		
-		int numDists = 0;
-		double adAvg = 0.0;
-		double adStdDev = 0.0;
-		for(int i=0;i<agents.length;i++){
-			for(int j=0;j<agents[i].antDists.size();j++){
-				adAvg += agents[i].antDists.get(j);
-				numDists++;
-			}
-		}
-		adAvg = adAvg/numDists;
-		for(int i=0;i<agents.length;i++){
-			for(int j=0;j<agents[i].antDists.size();j++){
-				adStdDev += Math.pow(agents[i].antDists.get(j)-adAvg,2);
-			}
-		}
-		adStdDev = Math.sqrt(adStdDev/numDists);
-		
-		int numDistsWall = 0;
-		double wdAvg = 0.0;
-		double wdStdDev = 0.0;
-		for(int i=0;i<agents.length;i++){
-			for(int j=0;j<agents[i].wallDists.size(); j++){
-				wdAvg += agents[i].wallDists.get(j);
-				numDistsWall++;
-			}
-		}
-		wdAvg = wdAvg/numDistsWall;
-		for(int i=0;i<agents.length;i++){
-			for(int j=0;j<agents[i].wallDists.size(); j++){
-				wdStdDev += Math.pow(agents[i].wallDists.get(j)-wdAvg,2);
-			}
-		}
-		wdStdDev = Math.sqrt(wdStdDev/numDistsWall);
-		
-		double foodAvgPerRun = 0.0;
-		double foodStdDevPerRun = 0.0;
-		for(int j=0;j<foodCounts.size();j++){
-			foodAvgPerRun += foodCounts.get(j);
-		}
-		foodAvgPerRun = foodAvgPerRun/foodCounts.size();
-		for(int j=0;j<foodCounts.size();j++){
-			foodStdDevPerRun += Math.pow(foodCounts.get(j)-foodAvgPerRun,2);
-		}
-		foodStdDevPerRun = Math.sqrt(foodStdDevPerRun/foodCounts.size());
+		double foodAvgPerRun = LearnedAnts.timeAvg(foodCounts);//0.0;
+		double foodStdDevPerRun = LearnedAnts.timeStdDev(foodCounts,foodAvgPerRun);//0.0;
+
 		System.out.println("Collect Time avg: "+cTimeAvg+" "+cTimeStdDev+" "+numTimes);
 		System.out.println("Ant dist avg: "+adAvg+" "+adStdDev+" "+numDists);		
 		System.out.println("Wall dist avg: "+wdAvg+" "+wdStdDev+" "+numDistsWall);

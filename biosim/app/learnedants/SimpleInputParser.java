@@ -41,9 +41,9 @@ public class SimpleInputParser extends BIOHMMInputParser {
 		return k;
 	}
 	public int partSize(){ return output.length; }
-	public int numSwitches(){ return 1; }
-	public int outputDim(){ return 2; }
-	public int sensorDim(){ return 1; }
+	public static int numSwitches(){ return 1; }
+	public static int outputDim(){ return 2; }
+	public static int sensorDim(){ return 1; }
 	
 	public ArrayList<ArrayList<Integer>> getSequences(){
 		if(foundSequences != null) return foundSequences;
