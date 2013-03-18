@@ -37,10 +37,14 @@ class BIOHMM{
 			else input[state].setWeight(idx,weight);
 		};
 		
-		void calculateLogAlpha(const std::vector<double*> sensorSeq, const std::vector<int> triggerSeq, double** logAlpha) const;
-		void calculateLogBeta(const std::vector<double*> sensorSeq, const std::vector<int> triggerSeq, double** logBeta) const;
-		void calculateLogXi(const std::vector<double*> sensorSeq, const std::vector<int> triggerSeq, const double** logAlpha, const double** logBeta, double** logXi) const;
-		void calculateLogGamma(const std::vector<double*> sensorSeq, const std::vector<int> triggerSeq, const double** logAlpha, const double** logBeta, double** logGamma) const;
+		void calculateLogAlpha(const std::vector<double*> sensorSeq, const std::vector<int> triggerSeq, double* const* const logAlpha) const;
+		void calculateLogBeta(const std::vector<double*> sensorSeq, const std::vector<int> triggerSeq, double* const* const logBeta) const;
+		void calculateLogXi(const std::vector<double*> sensorSeq, const std::vector<int> triggerSeq, const double* const* const logAlpha, const double* const* const logBeta, double* const* const* const logXi) const;
+		void calculateLogGamma(const unsigned int seqLength, const double* const* const logAlpha, const double* const* const logBeta, double* const* const logGamma) const;
+		double loglikeForSeq(const unsigned int seqLength, const double* const* const logAlpha) const;
+		double loglikeForSeq(const std::vector<double*> sensorSeq, const std::vector<int> triggerSeq) const;
+		std::vector<int> viterbiSequence(const std::vector<double*> sensorSeq, const std::vector<int> triggerSeq) const;
+		void train(const std::vector<std::vector<double*> > sensorSeqs, const std::vector<std::vector<int> > triggerSeqs, const double epsilon = 0.0, const int numIterations = -1);
 
 	private:
 		unsigned int numStates, numSwitches;
