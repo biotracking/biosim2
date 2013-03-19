@@ -189,7 +189,7 @@ void BIOHMM::train(
 	const double epsilon,
 	const int numIterations){
 	
-	double previousLL = NEG_INF;
+	double previousLL = NEG_INF, curLL;
 	int iter = 0;
 	bool outOfIters = false;
 	bool converged = false;
@@ -205,6 +205,13 @@ void BIOHMM::train(
 			newTransitions[i][j] = new double[numSwitches];
 			newTransitionsNum[i][j] = new double[numSwitches];
 			newTransitionsDen[i][j] = new double[numSwitches];
+		}
+	}
+	double*** newWeights = new double**[sensorSeqs.size()];
+	for(int seq=0;seq<sensorSeqs.size();seq++){
+		newWeights[seq] = new double*[sensorSeqs[seq].size()];
+		for(int t=0;t<sensorSeqs[seq].size();t++){
+			newWeights[seq][t] = new double[numStates];
 		}
 	}
 		
@@ -238,9 +245,11 @@ void BIOHMM::train(
 			}
 			//calculate intermediate variables
 			calculateLogAlpha(sensorSeqs[seq], triggerSeqs[seq], logAlpha);
+			if(seq==0) curLL = NEG_INF;
+			curLL = elnsum(curLL,loglikeForSeq(seqSize,logAlpha));
 			calculateLogBeta(sensorSeqs[seq], triggerSeqs[seq], logBeta);
 			calculateLogXi(sensorSeqs[seq], triggerSeqs[seq], logAlpha, logBeta, logXi);
-			calculateLogGamma(seqSize, logAlpha, logBeta, logGamma);
+			calculateLogGamma(seqSize, logAlpha, logBeta, logGamma);					
 			
 			//update parameters
 			//prior
@@ -264,6 +273,21 @@ void BIOHMM::train(
 				}
 			}
 			//weights - hmmm
+			double* lgSum = new double[numStates]; 
+			for(int t=0;t<seqSize;t++){
+				for(int i=0;i<numStates;i++){
+					if(t==0){
+						lgSum[i] = NEG_INF;
+					}
+					lgSum[i] = elnsum(lgSum[i],logGamma[t][i]);
+				}
+			}
+			for(int t=0;t<seqSize;t++){
+				for(int i=0;i<numStates;i++){
+					newWeights[seq][t][i] = exp(logGamma[t][i] - lgSum[i]);
+				}
+			}
+			delete[] lgSum;
 			
 			
 			
@@ -282,15 +306,43 @@ void BIOHMM::train(
 			delete[] logGamma;
 			delete[] logXi;
 		}
-		//combine numerator and denominator for transition
-		for(int i=0;i<numStates;i++){
-			for(int j=0;j<numStates;j++){
-				for(int k=0;k<numSwitches;k++){
-					newTransitions[i][j][k] = exp(newTransitionsNum[i][j][k]-newTransitionsDen[i][j][k]);
+		//now check for convergence
+		converged = (abs(curLL - previousLL) > epsilon);
+		if(!converged){
+			//prior
+			double* prior_swap_ptr = prior;
+			prior = newPrior;
+			newPrior = prior_swap_ptr;
+			//combine numerator and denominator for transition
+			for(int i=0;i<numStates;i++){
+				for(int j=0;j<numStates;j++){
+					for(int k=0;k<numSwitches;k++){
+						newTransitions[i][j][k] = exp(newTransitionsNum[i][j][k]-newTransitionsDen[i][j][k]);
+					}
+				}
+			}
+			//transitions
+			double*** trans_swap_ptr = transitions;
+			transitions = newTransitions;
+			newTransitions = transitions;
+			//use newWeights to update weights in the KDE
+			for(int seq=0;seq<sensorSeqs.size();seq++){
+				for(int t=0;t<sensorSeqs[seq].size();t++){
+					for(int i=0;i<numStates;i++){
+						int idx = input[i].getIdx(sensorSeqs[seq][t]);
+						if(seq==0 && idx >= 0){
+							input[i].setWeight(idx,0);
+						}
+						if(idx >=0){
+							input[i].setWeight(idx,input[i].getWeight(idx)+newWeights[seq][t][i]);
+						} else {
+							input[i].addNoCheck(sensorSeqs[seq][t],newWeights[seq][t][i]);
+						}
+					}
 				}
 			}
 		}
-		
+		if(numIterations > 0) outOfIters = (iter >= numIterations);
 		
 	} while(!converged && !outOfIters);
 	for(int i=0;i<numStates;i++){
@@ -307,6 +359,13 @@ void BIOHMM::train(
 	delete[] newTransitionsNum;
 	delete[] newTransitionsDen;
 	delete[] newPrior;
+	for(int seq=0;seq<sensorSeqs.size();seq++){
+		for(int t=0;t<sensorSeqs[seq].size();t++){
+			delete[] newWeights[seq][t];
+		}
+		delete[] newWeights[seq];
+	}
+	delete[] newWeights;
 }
 
 int main(int argc, char* argv[]){
