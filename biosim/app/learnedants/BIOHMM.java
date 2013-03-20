@@ -25,6 +25,7 @@ public class BIOHMM{
 	BTFData data;
 	int dim;
 	static int numThreads;// = 8;
+	static int maxIters;// = -1;
 	//double kernelSigma = 1.0, bandwidth = 1.0, inputSigma = 1.0;
 	static double kernelSigma, bandwidth, inputSigma;
 	static double weightAlpha;// = 1.0;
@@ -43,6 +44,7 @@ public class BIOHMM{
 		prefs.putDouble("weightAlpha",weightAlpha);
 		prefs.putBoolean("PRINT_ITERATIONS",PRINT_ITERATIONS);
 		prefs.put("bipClass",bipClass.getCanonicalName());
+		prefs.putInt("maxIters",maxIters);
 		prefs.exportSubtree(new FileOutputStream(inFile));
 	}
 	public static void readPrefFile(File outFile) throws java.io.FileNotFoundException, java.io.IOException, java.util.prefs.InvalidPreferencesFormatException{
@@ -56,7 +58,7 @@ public class BIOHMM{
 		weightAlpha = prefs.getDouble("weightAlpha",1.0);
 		PRINT_ITERATIONS = prefs.getBoolean("PRINT_ITERATIONS",false);
 		bipClass = Class.forName(prefs.get("bipClass",BIOHMMInputParser.class.getCanonicalName())).asSubclass(BIOHMMInputParser.class);
-		System.out.println(bipClass);
+		maxIters = prefs.getInt("maxIters",-1);
 	}
 	public static double elnsum(double logx, double logy){
 		//given log(x), and log(y), return log(x+y)
@@ -125,10 +127,10 @@ public class BIOHMM{
 			}
 		}
 		*/
+		bip.initParameters(transitionFunction,prior,partition,b);
 		for(int i=0;i<bip.partSize();i++){
 			sensors.add(bip.getSensorsAtIDX(i));
 		}
-		bip.initParameters(transitionFunction,prior,partition,b);
 		writeParameters(new File("biohmm_parameters_initial.txt"));
 	}
 	
@@ -139,6 +141,28 @@ public class BIOHMM{
 		//double sp = 1.0;
 		//System.out.println("sp:"+sp);
 		double rv = Math.log(jp) - Math.log(sp);
+		if(sp == 0.0){
+			
+			double[] floop = bip.getSensorsAtIDX(idx);
+			double almostFloopD = -1;
+			int almostIdx = -1;
+			for(int i=0;i<sensors.numSamples();i++){
+				double tmpD = sensors.getDist(floop,i);
+				if(tmpD < almostFloopD || almostFloopD == -1){
+					almostFloopD = tmpD;
+					almostIdx = i;
+				}
+			}
+			double[] almostFloop = new double[floop.length];
+			sensors.getSample(almostFloop,almostIdx);
+			String floop_str = "[ ";
+			for(int i=0;i<floop.length;i++) floop_str +=floop[i]+" ";
+			floop_str +="]";
+			System.out.println("sensors:"+floop_str);
+			System.out.println("sensorIdx: "+sensors.getIdx(bip.getSensorsAtIDX(idx)));
+			System.out.println("almostFloopD: "+almostFloopD);
+			throw new RuntimeException("Uh oh: sp==0.0");
+		}
 		//if(rv > 0) System.out.println("rv:"+rv);
 		return rv;
 	}
@@ -163,10 +187,12 @@ public class BIOHMM{
 	public void calculateLogAlpha(	ArrayList<Integer> seq,
 									SimpleKDE[] b,
 									double[][] logalpha){
+		String fnoodle = "";
 		for(int i=0;i<prior.length;i++){
 			double outputLog = outputLogProbAtIDX(seq.get(0),i);
 			//logalpha[0][i] = Math.log(prior[i])+Math.log(b[i].estimate(bip.getDataAtIDX(seq.get(0)),bandwidth));
 			logalpha[0][i] = Math.log(prior[i])+outputLog;
+			//fnoodle+= outputLog+" ";
 		}
 		for(int t=1;t<seq.size();t++){
 			for(int j=0;j<prior.length;j++){
@@ -177,8 +203,10 @@ public class BIOHMM{
 				double outputLog = outputLogProbAtIDX(seq.get(t),j);
 				//logalpha[t][j] += Math.log(b[j].estimate(bip.getDataAtIDX(seq.get(t)),bandwidth));
 				logalpha[t][j] += outputLog;
+				//if(j==0) fnoodle+= outputLog+" ";
 			}
 		}
+		//System.out.println(fnoodle);
 	}
 	
 	public void calculateScaledAlpha(	ArrayList<Integer> seq,
@@ -675,6 +703,7 @@ public class BIOHMM{
 		BigDecimal prevLL = null;
 		BigDecimal eps = new BigDecimal(epsilon);
 		if(parameters != null) readParameters(parameters);
+		boolean outOfIters = false;
 		//until transitionFunction/prior/partition has converged:
 		do{
 			System.out.println("Iteration "+(iter+1));
@@ -915,7 +944,8 @@ public class BIOHMM{
 				String fname = String.format("biohmm_parameters_Iteration_%04d.txt",iter);
 				writeParameters(new File(fname),llsum);
 			}
-		} while(!converged);
+			if(maxIters > 0) outOfIters = (iter >= maxIters);
+		} while(!converged && !outOfIters);
 	}
 
 	public void writeParameters(File parameterFile) throws IOException{

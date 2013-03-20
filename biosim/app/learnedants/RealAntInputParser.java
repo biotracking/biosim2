@@ -308,5 +308,16 @@ public class RealAntInputParser extends BIOHMMInputParser{
 			}
 			prior[i] = prior[i]/seqs.size();
 		}
+		for(int k=0; k<maxSwitchVar; k++){
+			System.out.println("k="+k);
+			for(int i=0;i<numStates;i++){
+				System.out.print("i="+i+" ");
+				for(int j=0;j<numStates;j++){
+					System.out.print(transitionFunction[i][j][k]+" ");
+				}
+				System.out.println();
+			}
+			System.out.println();
+		}
 	}
 }

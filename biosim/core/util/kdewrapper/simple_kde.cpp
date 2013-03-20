@@ -10,6 +10,14 @@ SimpleKDE::SimpleKDE(int dim, double sigma){
 	this->sigma = sigma;
 }
 
+SimpleKDE::SimpleKDE(const SimpleKDE& copy){
+	this->dimensionality = copy.dimensionality;
+	this->sigma = copy.sigma;
+	for(unsigned int i=0;i<copy.samples.size();i++){
+		this->addNoCheck(copy.samples[i],copy.weights[i]);
+	}
+}
+
 SimpleKDE::~SimpleKDE(){
 	clear();
 }
@@ -55,7 +63,7 @@ double kernel(const double x[], const int dim, double sigma){
 	return coeff*exp(exponent);
 }
 
-double SimpleKDE::estimate(const double x[], const double bandwidth){
+double SimpleKDE::estimate(const double x[], const double bandwidth) const{
 	double sum=0.0, weightSum = 0.0;
 	double* tmp = new double[dimensionality];
 	for(unsigned int i=0;i<samples.size();i++){
@@ -65,16 +73,19 @@ double SimpleKDE::estimate(const double x[], const double bandwidth){
 		sum += weights[i]*kernel(tmp,dimensionality,sigma);
 		weightSum += weights[i];
 	}
-	if(weightSum == 0.0) return 0.0;
+	if(weightSum == 0.0){ 
+		//cout<<"weightSum==0.0"<<endl;
+		return 0.0;
+	}
 	return (1.0/(weightSum*bandwidth)) * sum;
 }
 
-int SimpleKDE::getIdx(const double sample[]){
+int SimpleKDE::getIdx(const double sample[]) const{
 	for(unsigned int i=0;i<samples.size();i++){
 		double* s = samples[i];
 		bool diff = false;
 		for(int d=0;d<dimensionality;d++){
-			if(sample[d] != s[d]){
+			if(s[d] != sample[d]){
 				diff = true;
 				break;
 			}
@@ -86,8 +97,8 @@ int SimpleKDE::getIdx(const double sample[]){
 	return -1;
 }
 
-bool SimpleKDE::getSample(double sample[], const int i){
-	if(i > 0 && i < samples.size()){
+bool SimpleKDE::getSample(double sample[], const int i) const{
+	if(i >= 0 && i < samples.size()){
 		for(int j=0; j<dimensionality; j++){
 			sample[j] = samples[i][j];
 		}
@@ -97,7 +108,19 @@ bool SimpleKDE::getSample(double sample[], const int i){
 	}
 }
 
-double SimpleKDE::getWeight(const int i){
+double SimpleKDE::getDist(double sample[], const int i) const{
+	if(i>=0 && i < samples.size()){
+		double rv = 0;
+		for(int j=0;j<dimensionality;j++){
+			rv += pow(sample[j]-samples[i][j],2);
+		}
+		return sqrt(rv);
+	} else {
+		return -1.0;
+	}
+}
+
+double SimpleKDE::getWeight(const int i) const{
 	return weights[i];
 }
 
