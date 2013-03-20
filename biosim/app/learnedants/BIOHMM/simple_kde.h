@@ -3,6 +3,7 @@
 class SimpleKDE {
 	public:
 		SimpleKDE(int dim, double sigma);
+		SimpleKDE(const SimpleKDE& copy);
 		~SimpleKDE();
 		unsigned int numSamples() const { return samples.size(); };
 		void add(const double sample[], const double weight);

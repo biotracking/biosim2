@@ -5,8 +5,38 @@
 
 class BIOHMM{
 	public:
-		BIOHMM(unsigned int _numStates, unsigned int _numSwitches);
-		
+		BIOHMM(	unsigned int _numStates, 
+				unsigned int _numSwitches, 
+				unsigned int inputDims, 
+				double inputSigma, 
+				unsigned int sensorDims,
+				double sensorSigma):
+				sensors(sensorDims,sensorSigma),
+				input(_numStates,SimpleKDE(inputDims,inputSigma)){
+			
+			numStates=_numStates;
+			numSwitches = _numSwitches;
+			prior = new double[numStates];
+			inputBandwidth = 1.0;
+			sensorBandwidth = 1.0;
+			transitions = new double**[numStates];
+			for(int i=0;i<numStates;i++){
+				transitions[i] = new double*[numStates];
+				for(int j=0;j<numStates;j++){
+					transitions[i][j] = new double[numSwitches];
+				}
+			}
+		};
+		~BIOHMM(){
+			for(int i=0;i<numStates;i++){
+				for(int j=0;j<numStates;j++){
+					delete[] transitions[i][j];
+				}
+				delete[] transitions[i];
+			}
+			delete[] transitions;
+			delete[] prior;
+		};
 		double priorLogProb(int state) const { return log(prior[state]); };
 		double transitionLogProb(int from, int to, int trigger) const {
 			return log(transitions[from][to][trigger]);
@@ -50,7 +80,7 @@ class BIOHMM{
 		unsigned int numStates, numSwitches;
 		double*** transitions;
 		double* prior;
-		SimpleKDE* input;
+		std::vector<SimpleKDE> input;
 		double inputBandwidth;
 		SimpleKDE sensors;
 		double sensorBandwidth;

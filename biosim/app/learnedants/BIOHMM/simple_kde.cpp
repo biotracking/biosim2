@@ -10,6 +10,14 @@ SimpleKDE::SimpleKDE(int dim, double sigma){
 	this->sigma = sigma;
 }
 
+SimpleKDE::SimpleKDE(const SimpleKDE& copy){
+	this->dimensionality = copy.dimensionality;
+	this->sigma = copy.sigma;
+	for(unsigned int i=0;i<copy.samples.size();i++){
+		this->addNoCheck(copy.samples[i],copy.weights[i]);
+	}
+}
+
 SimpleKDE::~SimpleKDE(){
 	clear();
 }
