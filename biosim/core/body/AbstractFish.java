@@ -5,5 +5,6 @@ import biosim.core.body.actuators.*;
 
 public abstract class AbstractFish extends Body
 	implements	NearestSameAgentVec,
-				NearestObstacleVec{
+				NearestObstacleVec,
+				SelfVelXYT{
 }

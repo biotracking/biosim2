@@ -15,12 +15,22 @@ import sim.util.MutableDouble2D;
 public class NotemigonusCrysoleucas extends AbstractFish {
 	private Simulation sim;
 	
+	private double xVel, yVel, tVel;
+
 	public static final double SIZE=0.10; //7.5 to 12.5 cm
 	public static final double RANGE=Double.POSITIVE_INFINITY; //no limit on the range for now
 	public static final double MAX_VELOCITY_X=3*SIZE; //3 bodylengths per second forwards/backwards
 	public static final double MAX_VELOCITY_Y=SIZE/5.0; //1/5th of a bodylength per second sidways
 	public static final double MAX_VELOCITY_THETA=2*Math.PI; //fish can turn quickly
 	
+	public boolean getSelfVelXYT(double[] rv){
+		if(rv == null || rv.length != 3) return false;
+		rv[0] = xVel;
+		rv[1] = yVel;
+		rv[2] = tVel;
+		return true;
+	}
+
 	public double getSize(){ return SIZE; }
 	
 	public MersenneTwisterFast getRandom(){
@@ -90,9 +100,9 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 			sim.getBodyOrientation(this,curDir);
 			tmp.rotate(curDir.angle());
 			
-			double xVel = (tmp.x<=MAX_VELOCITY_X)?tmp.x:MAX_VELOCITY_X;
-			double yVel = (tmp.y<=MAX_VELOCITY_Y)?tmp.y:MAX_VELOCITY_Y;
-			double tVel = (Math.abs(desiredVelXYT[2])<=MAX_VELOCITY_THETA)?desiredVelXYT[2]:Math.signum(desiredVelXYT[2])*MAX_VELOCITY_THETA;
+			xVel = (tmp.x<=MAX_VELOCITY_X)?tmp.x:MAX_VELOCITY_X;
+			yVel = (tmp.y<=MAX_VELOCITY_Y)?tmp.y:MAX_VELOCITY_Y;
+			tVel = (Math.abs(desiredVelXYT[2])<=MAX_VELOCITY_THETA)?desiredVelXYT[2]:Math.signum(desiredVelXYT[2])*MAX_VELOCITY_THETA;
 			Double2D oldLoc = sim.field2D.getObjectLocation(this);
 			Double2D newLoc = new Double2D(oldLoc.x+(xVel*sim.resolution),oldLoc.y+(yVel*sim.resolution));
 			//for now, just check against all obstacles defined in the Environment object, since the

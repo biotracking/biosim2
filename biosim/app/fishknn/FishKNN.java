@@ -11,6 +11,7 @@ import biosim.core.util.BTFData;
 import biosim.core.util.FastKNN;
 
 import sim.util.MutableDouble2D;
+import sim.util.Double3D;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +21,7 @@ public class FishKNN implements Agent{
 	public static final int FEATURE_DIM = 4;
 	AbstractFish fishBody;
 	FastKNN knn;
+	double prevTime = 0.0;
 	public FishKNN(AbstractFish b, FastKNN knn){
 		fishBody = b;
 		this.knn = knn;
@@ -53,6 +55,15 @@ public class FishKNN implements Agent{
 		for(int i=0;i<rv.length;i++) rv[i] = rv[i]/(double)nearestK.length;
 		//if(rv[0] < 0 ) System.out.println("Movin backwards!");
 		//System.out.println("rv: ["+rv[0]+", "+rv[1]+", "+rv[2]+"]");
+		//Now, rv contains the classes, but the classes are ACCEL
+		//and we need to put a desired VEL. So get the current vel
+		//and do forward euler:
+		double[] vel = {0.0,0.0,0.0};
+		fishBody.getSelfVelXYT(vel);
+		for(int i=0;i<rv.length;i++){
+			rv[i] = vel[i] + (rv[i]*(time-prevTime));
+		}
+		prevTime = time;
 		return rv;
 	}
 	
