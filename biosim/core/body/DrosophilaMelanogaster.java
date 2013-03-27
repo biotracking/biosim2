@@ -146,7 +146,7 @@ public class DrosophilaMelanogaster extends AbstractFly{
 					}
 				}
 				if(!collides){
-					sim.field2D.setObjectLocation(this,newLoc);
+					sim.setObjectLocation(this,newLoc);
 				} else {
 					velXYT[0] = velXYT[1] = 0.0;
 				}
@@ -160,7 +160,7 @@ public class DrosophilaMelanogaster extends AbstractFly{
 					}
 				}
 			} else {
-				sim.field2D.setObjectLocation(this,sim.field2D.getObjectLocation(grabbedBy));
+				sim.setObjectLocation(this,sim.field2D.getObjectLocation(grabbedBy));
 			}
 		} else {
 			throw new RuntimeException("SimState object not an instance of "+Simulation.class.getName());

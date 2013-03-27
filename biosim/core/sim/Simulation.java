@@ -18,6 +18,7 @@ public class Simulation extends SimState{
 	public ArrayList<Double2D> bodyOrientations;
 	public ArrayList<Logger> loggers;
 	public double resolution;
+	public boolean toroidal = false;
 
 	public Simulation(long seed){
 		super(seed);
@@ -79,5 +80,14 @@ public class Simulation extends SimState{
 			}
 		}
 		return false;
+	}
+	
+	public boolean setObjectLocation(Object obj, Double2D loc){
+		if(toroidal){
+			Double2D tLoc = new Double2D(field2D.tx(loc.x),field2D.ty(loc.y));
+			return field2D.setObjectLocation(obj,tLoc);
+		} else {
+			return field2D.setObjectLocation(obj,loc);
+		}
 	}
 }

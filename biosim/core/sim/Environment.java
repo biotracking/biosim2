@@ -19,6 +19,7 @@ public class Environment implements MakesSimState{
 	public ArrayList<Double2D> poiLocations;
 	public double width, height, resolution;
 	double fieldDiscretizationSize;
+	boolean toroidal=false;
 	
 	public Environment(double width, double height,double resolution){
 		poi = new ArrayList<String>();
@@ -33,6 +34,7 @@ public class Environment implements MakesSimState{
 	}
 
 	public void setFieldDiscretizationSize(double d){ fieldDiscretizationSize = d; }
+	public void setToroidal(boolean t){ toroidal = t; }
 	
 	public void addStaticPOI(String name, double x, double y){
 		poi.add(name);
@@ -96,10 +98,10 @@ public class Environment implements MakesSimState{
 	protected void initSimField(Simulation sim){
 		for(int i=0;i<obstacles.size();i++){
 			Double2D tmp = obstacleLocations.get(i);
-			sim.field2D.setObjectLocation(obstacles.get(i),tmp);
+			sim.setObjectLocation(obstacles.get(i),tmp);
 		}
 		for(int i=0;i<poi.size();i++){
-			sim.field2D.setObjectLocation(poi.get(i),poiLocations.get(i));
+			sim.setObjectLocation(poi.get(i),poiLocations.get(i));
 		}
 		for(int i=0;i<initialBodies.size();i++){
 			Double2D tmp;
@@ -116,7 +118,7 @@ public class Environment implements MakesSimState{
 					}
 				}
 			} while(collides);
-			sim.field2D.setObjectLocation(b,tmp);
+			sim.setObjectLocation(b,tmp);
 			tmp = new Double2D(sim.random.nextDouble(),sim.random.nextDouble()).normalize();
 			sim.bodyOrientations.add(tmp);
 		}
@@ -135,6 +137,7 @@ public class Environment implements MakesSimState{
 	 */
 	protected void configSim(Simulation sim){
 		sim.resolution=resolution;
+		sim.toroidal = toroidal;
 		sim.field2D = new Continuous2D(fieldDiscretizationSize,width,height);
 		addObjectsToSim(sim);
 		initSimField(sim);

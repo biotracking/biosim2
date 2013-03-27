@@ -7,7 +7,7 @@ def rotate(x,y,theta):
 	y=float(y)
 	theta=float(theta)
 	xprime = (x*math.cos(theta))-(y*math.sin(theta))
-	yprime = (x*math.sin(theta))+(y+math.cos(theta))
+	yprime = (x*math.sin(theta))+(y*math.cos(theta))
 	return xprime,yprime
 
 def angle(x,y):
@@ -44,7 +44,7 @@ def addNN(indir=os.getcwd(), outdir=os.getcwd()):
 			if minDist == -1 or tmpD < minDist:
 				minDist = tmpD
 				minDistLine = checkLine
-		if minDistLine >= 0:
+		if minDist >= 0:
 			nnvecX,nnvecY = vecTo(xpos[curLine],ypos[curLine],xpos[minDistLine],ypos[minDistLine])
 			nnvecX,nnvecY = rotate(nnvecX,nnvecY,-float(timage[curLine]))
 			nnid = idf[minDistLine].strip()

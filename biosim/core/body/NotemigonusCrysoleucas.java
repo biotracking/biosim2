@@ -47,7 +47,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 				MutableDouble2D mutTmp = new MutableDouble2D(sim.obstacles.get(i).closestPoint(loc,tmpPoint));
 				mutTmp.subtractIn(loc);
 				mutTmp.rotate(-dir.angle());
-				if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
+				//if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
 				if(nearestObsPoint == null || nearestObsPoint.lengthSq() > mutTmp.lengthSq()){
 					nearestObsPoint = mutTmp;
 				}
@@ -75,7 +75,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
 					mutTmp.subtractIn(loc);
 					mutTmp.rotate(-dir.angle());
-					if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
+					//if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
 					if(nearestLoc == null || nearestLoc.lengthSq() > mutTmp.lengthSq()){
 						nearestLoc = mutTmp;
 					}
@@ -117,7 +117,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 				}
 			}
 			if(!collides){
-				sim.field2D.setObjectLocation(this,newLoc);
+				sim.setObjectLocation(this,newLoc);
 			} 
 			for(int i=0;i<sim.bodies.size();i++){
 				if(sim.bodies.get(i) == this){

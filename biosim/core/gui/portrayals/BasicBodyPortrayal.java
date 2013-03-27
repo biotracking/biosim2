@@ -15,7 +15,7 @@ public class BasicBodyPortrayal extends OvalPortrayal2D implements Oriented2D{
 	public Simulation sim;
 	public Body body;
 	public BasicBodyPortrayal(Simulation sim, Object body){
-		super(Color.black,0.008,false);
+		super(Color.black,((Body)body).getSize(),false);
 		this.sim = sim;
 		if(body instanceof Body){
 			this.body = (Body)body;

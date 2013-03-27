@@ -302,7 +302,7 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 			if(!collides){
 				previousVelXYT[0] = xVel;
 				previousVelXYT[1] = yVel;
-				sim.field2D.setObjectLocation(this,newLoc);
+				sim.setObjectLocation(this,newLoc);
 			} else {
 				previousVelXYT[0] = previousVelXYT[1] = 0.0;
 			}
