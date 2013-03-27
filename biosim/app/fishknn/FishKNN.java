@@ -21,6 +21,7 @@ public class FishKNN implements Agent{
 	AbstractFish fishBody;
 	public static final int FEATURES=4;
 	public static final int CLASSES=3;
+	public static final int KNN_NEIGHBORS=10;
 	//public static final int TURN_FEATS=3;
 	//public static final int SPEED_FEATS=3;
 	//public static final int TURN_CLASSES=1;
@@ -41,15 +42,17 @@ public class FishKNN implements Agent{
 	}
 	public double[] act(double time){
 		double[] rv = new double[3];
-		MutableDouble2D fish = new MutableDouble2D();
-		boolean sawFish = fishBody.getNearestSameAgentVec(fish);
+		MutableDouble2D avgFish = new MutableDouble2D();
+		MutableDouble2D nnFish = new MutableDouble2D();
+		fishBody.getNearestSameAgentVec(nnFish);
+		boolean sawFish = fishBody.getAverageSameAgentVec(avgFish);
 		MutableDouble2D wall = new MutableDouble2D();
 		boolean sawWall = fishBody.getNearestObstacleVec(wall);
 		//double[] speedFeatures= new double[SPEED_FEATS], turnFeatures = new double[TURN_FEATS];
 		double[] features = new double[FEATURES];
 		//double[][] nearestTurnK = new double[5][TURN_CLASSES];
 		//double[][] nearestSpeedK = new double[5][SPEED_CLASSES];
-		double[][] nearestK = new double[5][CLASSES];
+		double[][] nearestK = new double[KNN_NEIGHBORS][CLASSES];
 		/*
 		speedFeatures[0] = fish.x;
 		speedFeatures[1] = wall.x;
@@ -58,10 +61,13 @@ public class FishKNN implements Agent{
 		turnFeatures[1] = wall.x;
 		turnFeatures[2] = wall.y;
 		*/
-		features[0] = fish.x;
-		features[1] = fish.y;
+		features[0] =  avgFish.x;
+		features[1] =  avgFish.y;
 		features[2] = wall.x;
 		features[3] = wall.y;
+		//features[4] = nnFish.x;
+		//features[5] = nnFish.y;
+		
 		//System.out.println("Sensor vec: ["+sensorVec[0]+", "+sensorVec[1]+", "+sensorVec[2]+", "+sensorVec[3]+"]");
 		/*
 		turnKNN.query(turnFeatures,nearestK);
@@ -87,12 +93,12 @@ public class FishKNN implements Agent{
 		*/
 		knn.query(features,nearestK);
 		//sample
-		/* 
+		/* */
 		int rnd_idx = fishBody.getRandom().nextInt(nearestK.length);
 		for(int i=0;i<CLASSES;i++) rv[i] = nearestK[rnd_idx][i];
 		/* */
 		//average
-		/*  */
+		/* 
 		for(int i=0;i<CLASSES;i++) rv[i] = 0.0;
 		for(int k=0;k<nearestK.length;k++){
 			for(int i=0;i<CLASSES;i++){
@@ -113,10 +119,11 @@ public class FishKNN implements Agent{
 		//String[] turningForce = btf.loadColumn("turningforce");
 		//String[] speedingForce = btf.loadColumn("speedingforce");
 		String[] wallVec = btf.loadColumn("wallvec");
-		String[] nnVec = btf.loadColumn("nnvec");
+		//String[] nnVec = btf.loadColumn("nnvec");
+		String[] avgNNVec = btf.loadColumn("avgnnvec");
 		String[] dvel = btf.loadColumn("dvel");
 		String[] dbool = btf.loadColumn("dbool");
-		int numRows = nnVec.length;
+		int numRows = avgNNVec.length;
 		//double[] sampleTurn = new double[TURN_FEATS];
 		//double[] sampleSpeed = new double[SPEED_FEATS];
 		double[] sample = new double[FEATURES];
@@ -147,9 +154,9 @@ public class FishKNN implements Agent{
 				classes[0] = Double.parseDouble(tmp[0]);
 				classes[1] = Double.parseDouble(tmp[1]);
 				classes[2] = Double.parseDouble(tmp[2]);
-				//tmp = nnVec[i].split(" ");
-				sample[0] = Double.parseDouble(tmp[0]);
-				sample[1] = Double.parseDouble(tmp[1]);
+				tmp = avgNNVec[i].split(" ");
+				sample[0] =  Double.parseDouble(tmp[0]);
+				sample[1] =  Double.parseDouble(tmp[1]);
 				tmp = wallVec[i].split(" ");
 				sample[2] = Double.parseDouble(tmp[0]);
 				sample[3] = Double.parseDouble(tmp[1]);
