@@ -209,10 +209,10 @@ public class FishKNN implements Agent{
 				bodies[i].setAgent(agents[i]);
 			}
 			
-			
 			//env.runSimulation(args);
 			Simulation sim = env.newSimulation();
 			GUISimulation gui = new GUISimulation(sim);
+			gui.setPortrayalClass(NotemigonusCrysoleucas.class, FishPortrayal.class);
 			gui.setDisplaySize((int)(WIDTH*500),(int)(HEIGHT*500));
 			gui.createController();
 		} catch(IOException ioe){
