@@ -66,7 +66,7 @@ public class TwoStateAnt implements Agent {
 		}
 	}
 	
-	public double[] act(double time){
+	public void act(double time){
 		//double[] rv = new double[3];
 		double[] rv = {0.0,0.0,0.0};
 		//our default is to move forward in a straight line
@@ -186,7 +186,7 @@ public class TwoStateAnt implements Agent {
 			}
 		}
 		*/
-		return rv;
+		antBody.setDesiredVelocity(rv[0],rv[1],rv[2]);
 	}
 	
 	public static final double WIDTH=0.2;

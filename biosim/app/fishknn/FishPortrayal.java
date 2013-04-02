@@ -31,7 +31,7 @@ public class FishPortrayal extends OvalPortrayal2D implements Oriented2D{
 		}
 		//System.out.println(getClass().getResource("fishicn.png"));
 		URL icnLoc = getClass().getResource("fishicn.png");
-		System.out.println(icnLoc);
+		//System.out.println(icnLoc);
 		if(icnLoc != null){ 
 			try{
 				bi = ImageIO.read(icnLoc);
@@ -58,7 +58,7 @@ public class FishPortrayal extends OvalPortrayal2D implements Oriented2D{
 		int x = (int)(info.draw.x);// - width/2.0);
 		int y = (int)(info.draw.y);// - height/2.0);
 		int w = (int)(width);
-		int h = (int)(height/2.0);
+		int h = (int)(height/3.0);
 		double d = orientation2D();
 		if(bi == null){
 			AffineTransform prevTrans = graphics.getTransform();
@@ -73,8 +73,8 @@ public class FishPortrayal extends OvalPortrayal2D implements Oriented2D{
 			AffineTransform imgTrans = new AffineTransform();
 			imgTrans.translate(x,y);
 			imgTrans.rotate(d);
-			imgTrans.translate(-width/2.0,-height/4.0);
-			imgTrans.scale(width/bi.getWidth(),height/(bi.getHeight()*2));
+			imgTrans.translate(-width/2.0,-height/6.0);
+			imgTrans.scale(width/bi.getWidth(),height/(bi.getHeight()*3));
 			graphics.drawImage(bi,imgTrans,null);
 		}
 	}

@@ -32,7 +32,7 @@ public class AntKNN implements Agent{
 	}
 	public void finish(){
 	}
-	public double[] act(double time){
+	public void act(double time){
 		//System.out.println("Ant body:"+antBody);
 		double[] rv = new double[3];
 		MutableDouble2D ant = new MutableDouble2D();
@@ -74,7 +74,7 @@ public class AntKNN implements Agent{
 		prevVel[1] = rv[1];
 		prevVel[2] = rv[2];
 		//System.out.println("rv: ["+rv[0]+", "+rv[1]+", "+rv[2]+"]");
-		return rv;
+		antBody.setDesiredVelocity(rv[0],rv[1],rv[2]);
 	}
 	
 	public static FastKNN loadKNN(BTFData btf) throws IOException{

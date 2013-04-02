@@ -7,5 +7,6 @@ public abstract class AbstractFish extends Body
 	implements	NearestSameAgentVec,
 				AverageSameAgentVec,
 				NearestObstacleVec,
+				HolonomicDrive,
 				SelfVelXYT{
 }

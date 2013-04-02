@@ -19,7 +19,7 @@ import java.io.IOException;
 
 public class FishKNN implements Agent{
 	AbstractFish fishBody;
-	public static final int FEATURES=4;
+	public static final int FEATURES=6;
 	public static final int CLASSES=3;
 	public static final int KNN_NEIGHBORS=10;
 	//public static final int TURN_FEATS=3;
@@ -40,7 +40,7 @@ public class FishKNN implements Agent{
 	}
 	public void finish(){
 	}
-	public double[] act(double time){
+	public void act(double time){
 		double[] rv = new double[3];
 		MutableDouble2D avgFish = new MutableDouble2D();
 		MutableDouble2D nnFish = new MutableDouble2D();
@@ -65,8 +65,8 @@ public class FishKNN implements Agent{
 		features[1] =  avgFish.y;
 		features[2] = wall.x;
 		features[3] = wall.y;
-		//features[4] = nnFish.x;
-		//features[5] = nnFish.y;
+		features[4] = nnFish.x;
+		features[5] = nnFish.y;
 		
 		//System.out.println("Sensor vec: ["+sensorVec[0]+", "+sensorVec[1]+", "+sensorVec[2]+", "+sensorVec[3]+"]");
 		/*
@@ -107,7 +107,7 @@ public class FishKNN implements Agent{
 		}
 		for(int i=0;i<CLASSES;i++) rv[i] = rv[i]/(double)nearestK.length;
 		/* */
-		return rv;
+		fishBody.setDesiredVelocity(rv[0],rv[1],rv[2]);
 	}
 	
 	public static FastKNN loadKNN(BTFData btf) throws IOException{
@@ -119,7 +119,7 @@ public class FishKNN implements Agent{
 		//String[] turningForce = btf.loadColumn("turningforce");
 		//String[] speedingForce = btf.loadColumn("speedingforce");
 		String[] wallVec = btf.loadColumn("wallvec");
-		//String[] nnVec = btf.loadColumn("nnvec");
+		String[] nnVec = btf.loadColumn("nnvec");
 		String[] avgNNVec = btf.loadColumn("avgnnvec");
 		String[] dvel = btf.loadColumn("dvel");
 		String[] dbool = btf.loadColumn("dbool");
@@ -160,13 +160,10 @@ public class FishKNN implements Agent{
 				tmp = wallVec[i].split(" ");
 				sample[2] = Double.parseDouble(tmp[0]);
 				sample[3] = Double.parseDouble(tmp[1]);
-				//sample[0] = Double.parseDouble(tmp[0]);
-				//sample[1] = Double.parseDouble(tmp[1]);
-				//double wallDistSq = sample[2]*sample[2] + sample[3]*sample[3];
-				//double fishSpeedSq = classes[0]*classes[0] + classes[1]*classes[1];
-				//if(fishSpeedSq > Math.pow(NotemigonusCrysoleucas.SIZE*0.5,2)){
-					knn.add(sample,classes);
-				//}
+				tmp = nnVec[i].split(" ");
+				sample[4] = Double.parseDouble(tmp[0]);
+				sample[5] = Double.parseDouble(tmp[1]);
+				knn.add(sample,classes);
 			}
 		}
 		//sigmaNormalize currently broken, don't use it! (Dec 4th, 2012)

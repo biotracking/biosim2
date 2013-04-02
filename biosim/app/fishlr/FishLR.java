@@ -28,7 +28,7 @@ public class FishLR implements Agent{
 	}
 	public void finish(){
 	}
-	public double[] act(double time){
+	public void act(double time){
 		double[] rv = new double[3];
 		MutableDouble2D avgFish = new MutableDouble2D();
 		MutableDouble2D nnFish = new MutableDouble2D();
@@ -44,10 +44,10 @@ public class FishLR implements Agent{
 			fbSpeed+= FB_BETA[i]*sensors[i];
 			turnSpeed += LR_BETA[i]*sensors[i];
 		}
+		fishBody.setDesiredVelocity(fbSpeed,0.0,turnSpeed);
 		rv[0] = fbSpeed;
 		rv[1] = 0.0;
 		rv[2] = turnSpeed;
-		return rv;
 	}
 	
 	public static final double WIDTH=2.5;//2.5;

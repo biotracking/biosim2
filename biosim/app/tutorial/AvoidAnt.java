@@ -12,12 +12,11 @@ public class AvoidAnt implements Agent {
 	}
 	public void finish(){
 	}
-	public double[] act(double time){
-		double[] rv = new double[3];
+	public void act(double time){
 		//our default is to move forward in a straight line
-		rv[0] = 0.024; 	//24mm per second straight ahead
-		rv[1] = 0.0;	//Ants *can* move laterally, but ours won't for now
-		rv[2] = 0.0;	//no rotational velocity by default
+		double forwardSpeed = 0.024; 	//24mm per second straight ahead
+		double lateralSpeed = 0.0;	//Ants *can* move laterally, but ours won't for now
+		double turningSpeed = 0.0;	//no rotational velocity by default
 		//get a vector towards the nearest thing so we can avoid it
 		MutableDouble2D ant = new MutableDouble2D();
 		boolean sawAnt = antBody.getNearestSameAgentVec(ant);
@@ -30,9 +29,9 @@ public class AvoidAnt implements Agent {
 			avoidPoint = ant;
 		}
 		if(avoidPoint != null){
-			if(avoidPoint.y > 0) rv[2] = -40.0*(Math.PI/180.0);
-			else rv[2] = 40.0*(Math.PI/180.0);
+			if(avoidPoint.y > 0) turningSpeed = -40.0*(Math.PI/180.0);
+			else turningSpeed = 40.0*(Math.PI/180.0);
 		}
-		return rv;
+		antBody.setDesiredVelocity(forwardSpeed,lateralSpeed,turningSpeed);
 	}
 }

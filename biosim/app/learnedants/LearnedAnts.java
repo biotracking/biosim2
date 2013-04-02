@@ -77,7 +77,7 @@ public class LearnedAnts implements Agent{
 		
 	}
 	
-	public double[] act(double time){
+	public void act(double time){
 		//get the sensors
 		double[] rv = new double[3];
 		MutableDouble2D ant = new MutableDouble2D();
@@ -274,7 +274,7 @@ public class LearnedAnts implements Agent{
 			prevTime = -1.0;
 		}
 		lastTime = time;
-		return rv;
+		antBody.setDesiredVelocity(rv[0],rv[1],rv[2]);
 	}
 	
 	public void buildParameters(File parameterFile) throws IOException{

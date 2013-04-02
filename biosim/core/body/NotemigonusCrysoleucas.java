@@ -17,6 +17,8 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	
 	private double xVel, yVel, tVel;
 
+	public double[] desiredVelXYT = new double[3];
+
 	public static final double SIZE=0.10; //7.5 to 12.5 cm
 	public static final double RANGE=Double.POSITIVE_INFINITY; //no limit on the range for now
 	public static final double MAX_VELOCITY_X=3*SIZE; //3 bodylengths per second forwards/backwards
@@ -125,10 +127,17 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	}
 	public double getAverageSameAgentVecSensorRange(){ return RANGE; }
 
+	public void setDesiredVelocity(double x, double y, double theta){
+		desiredVelXYT[0] = x;
+		desiredVelXYT[1] = y;
+		desiredVelXYT[2] = theta;
+	}
+
 	public void step(SimState simstate){
 		if(simstate instanceof Simulation){
 			sim= (Simulation)simstate;
-			double[] desiredVelXYT = agent.act(sim.schedule.getSteps()*sim.resolution);
+			//double[] desiredVelXYT = agent.act(sim.schedule.getSteps()*sim.resolution);
+			agent.act(sim.schedule.getSteps()*sim.resolution);
 			//rotate back to global frame
 			MutableDouble2D tmp = new MutableDouble2D(desiredVelXYT[0],desiredVelXYT[1]);
 			MutableDouble2D curDir = new MutableDouble2D();

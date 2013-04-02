@@ -12,6 +12,7 @@ public abstract class AbstractAnt extends Body
 				NearestPreyVec,
 				Gripper,
 				GripperSensor,
+				HolonomicDrive,
 				SelfVelXYT {
 	public AbstractFly grabbing;
 	public void init(){

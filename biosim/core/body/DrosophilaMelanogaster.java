@@ -16,6 +16,7 @@ public class DrosophilaMelanogaster extends AbstractFly{
 	public static final double RANGE = SIZE*3;
 	public static final double MAX_VELOCITY_XY=SIZE; //1 bodylength, meters/second
 	public static final double MAX_VELOCITY_THETA=2*Math.PI; //2pi , radians/second
+	public double[] desiredVelXYT = new double[3];
 	public double[] velXYT = new double[3];
 	private Simulation sim; //most recent sim object
 	
@@ -113,11 +114,18 @@ public class DrosophilaMelanogaster extends AbstractFly{
 		return true;
 	}
 	
+	public void setDesiredVelocity(double x, double y, double theta){
+		desiredVelXYT[0] = x;
+		desiredVelXYT[1] = y;
+		desiredVelXYT[2] = theta;
+	}
+	
 	public void step(SimState simstate){
 		if(simstate instanceof Simulation){
 			sim = (Simulation)simstate;
 			if(grabbedBy == null){
-				double[] desiredVelXYT = agent.act(sim.schedule.getSteps()*sim.resolution);
+				//double[] desiredVelXYT = agent.act(sim.schedule.getSteps()*sim.resolution);
+				agent.act(sim.schedule.getSteps()*sim.resolution);
 				MutableDouble2D tmp = new MutableDouble2D(desiredVelXYT[0],desiredVelXYT[1]);
 				MutableDouble2D curDir = new MutableDouble2D();
 				sim.getBodyOrientation(this,curDir);
