@@ -1,5 +1,6 @@
 all:
 	make -C antknn/
+	make -C btfreplay/
 	make -C fishknn/
 	make -C fishlr/
 	make -C learnedants/
@@ -7,6 +8,7 @@ all:
 	make -C twostateants/
 clean:
 	make -C antknn/ clean
+	make -C btfreplay/ clean
 	make -C fishknn/ clean
 	make -C fishlr/ clean
 	make -C learnedants/ clean

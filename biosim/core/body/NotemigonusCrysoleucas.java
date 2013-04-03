@@ -24,6 +24,8 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	public static final double MAX_VELOCITY_X=3*SIZE; //3 bodylengths per second forwards/backwards
 	public static final double MAX_VELOCITY_Y=SIZE/5.0; //1/5th of a bodylength per second sidways
 	public static final double MAX_VELOCITY_THETA=2*Math.PI; //fish can turn quickly
+	public static final int PROX_SENSORS=8;
+	public static final double PROX_RANGE=Double.POSITIVE_INFINITY;
 	
 	public boolean getSelfVelXYT(double[] rv){
 		if(rv == null || rv.length != 3) return false;
@@ -91,6 +93,36 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		return false;
 	}
 	public double getNearestSameAgentVecSensorRange(){ return RANGE; }
+	
+	public double[] getProximity(double[] rv){
+		Double2D loc = sim.field2D.getObjectLocation(this);
+		MutableDouble2D dir = new MutableDouble2D();
+		if(rv == null || rv.length != PROX_SENSORS) rv = new double[PROX_SENSORS];
+		for(int i=0;i<rv.length;i++) rv[i] = -1.0;
+		if(sim.getBodyOrientation(this,dir)){
+			Bag nearest = sim.field2D.getAllObjects();
+			for(int i=0;i<nearest.numObjs;i++){
+				if(nearest.objs[i] instanceof NotemigonusCrysoleucas){
+					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
+					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
+					if(tmpFish == this) continue;
+					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
+					mutTmp.subtractIn(loc);
+					double mutTmpDist = mutTmp.length();
+					mutTmp.rotate(-dir.angle());
+					double mutTmpAngle = mutTmp.angle();
+					int angleSlot = (int)(mutTmpAngle/(2.0*Math.PI/PROX_SENSORS));
+					if(angleSlot < 0) angleSlot = PROX_SENSORS+angleSlot;
+					if(rv[angleSlot] == -1.0 || rv[angleSlot] > mutTmpDist){
+						rv[angleSlot] = mutTmpDist;
+					}
+				}
+			}
+		}
+		return rv;
+	}
+	public int getNumSensors(){ return PROX_SENSORS; }
+	public double getProximitySensorRange(){ return PROX_RANGE; }
 
 	public boolean getAverageSameAgentVec(MutableDouble2D rv){
 		Double2D loc = sim.field2D.getObjectLocation(this);

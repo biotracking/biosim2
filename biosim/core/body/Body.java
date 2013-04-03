@@ -21,12 +21,12 @@ public abstract class Body implements Steppable{
 	public abstract double getSize();
 	
 	public void init(){
-		agent.init();
+		if(agent != null) agent.init();
 		notFinished = true;
 	}
 	public void finish(){
 		if(notFinished){
-			agent.finish();
+			if(agent != null) agent.finish();
 			notFinished = false;
 		}
 	}

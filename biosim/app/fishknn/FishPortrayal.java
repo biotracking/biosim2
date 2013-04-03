@@ -30,7 +30,7 @@ public class FishPortrayal extends OvalPortrayal2D implements Oriented2D{
 			throw new RuntimeException("Cannot use a FishPortrayal for this object:"+body.getClass());
 		}
 		//System.out.println(getClass().getResource("fishicn.png"));
-		URL icnLoc = getClass().getResource("fishicn.png");
+		URL icnLoc = FishPortrayal.class.getResource("fishicn.png");
 		//System.out.println(icnLoc);
 		if(icnLoc != null){ 
 			try{

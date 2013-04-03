@@ -19,7 +19,8 @@ import java.io.IOException;
 
 public class FishKNN implements Agent{
 	AbstractFish fishBody;
-	public static final int FEATURES=6;
+	//public static final int FEATURES=6;
+	public static final int FEATURES=24;
 	public static final int CLASSES=3;
 	public static final int KNN_NEIGHBORS=10;
 	//public static final int TURN_FEATS=3;
@@ -43,11 +44,11 @@ public class FishKNN implements Agent{
 	public void act(double time){
 		double[] rv = new double[3];
 		MutableDouble2D avgFish = new MutableDouble2D();
-		MutableDouble2D nnFish = new MutableDouble2D();
-		fishBody.getNearestSameAgentVec(nnFish);
+		//MutableDouble2D nnFish = new MutableDouble2D();
+		//fishBody.getNearestSameAgentVec(nnFish);
 		boolean sawFish = fishBody.getAverageSameAgentVec(avgFish);
-		MutableDouble2D wall = new MutableDouble2D();
-		boolean sawWall = fishBody.getNearestObstacleVec(wall);
+		//MutableDouble2D wall = new MutableDouble2D();
+		//boolean sawWall = fishBody.getNearestObstacleVec(wall);
 		//double[] speedFeatures= new double[SPEED_FEATS], turnFeatures = new double[TURN_FEATS];
 		double[] features = new double[FEATURES];
 		//double[][] nearestTurnK = new double[5][TURN_CLASSES];
@@ -61,13 +62,44 @@ public class FishKNN implements Agent{
 		turnFeatures[1] = wall.x;
 		turnFeatures[2] = wall.y;
 		*/
+		/*
 		features[0] =  avgFish.x;
 		features[1] =  avgFish.y;
-		features[2] = wall.x;
-		features[3] = wall.y;
+		features[2] = 0.0;//wall.x;
+		features[3] = 0.0;//wall.y;
 		features[4] = nnFish.x;
 		features[5] = nnFish.y;
-		
+		*/
+		double[] prox = fishBody.getProximity(null);
+		for(int i=0;i<prox.length;i++){
+			features[i] = prox[i];
+		}
+		features[8] = avgFish.x;
+		features[9] = avgFish.y;
+		features[10] = features[8];
+		features[11] = features[9];
+		features[12] = features[8];
+		features[13] = features[9];
+		features[14] = features[8];
+		features[15] = features[9];
+		features[16] = features[8];
+		features[17] = features[9];
+		features[18] = features[8];
+		features[19] = features[9];
+		features[20] = features[8];
+		features[21] = features[9];
+		features[22] = features[8];
+		features[23] = features[9];
+		/*
+		features[16] = wall.x;
+		features[17] = wall.y;
+		features[18] = features[16];
+		features[19] = features[17];
+		features[20] = features[16];
+		features[21] = features[17];
+		features[22] = features[16];
+		features[23] = features[17];
+		*/
 		//System.out.println("Sensor vec: ["+sensorVec[0]+", "+sensorVec[1]+", "+sensorVec[2]+", "+sensorVec[3]+"]");
 		/*
 		turnKNN.query(turnFeatures,nearestK);
@@ -118,18 +150,21 @@ public class FishKNN implements Agent{
 		FastKNN knn = new FastKNN(FEATURES,CLASSES);
 		//String[] turningForce = btf.loadColumn("turningforce");
 		//String[] speedingForce = btf.loadColumn("speedingforce");
-		String[] wallVec = btf.loadColumn("wallvec");
-		String[] nnVec = btf.loadColumn("nnvec");
+		//String[] wallVec = btf.loadColumn("wallvec");
+		//String[] nnVec = btf.loadColumn("nnvec");
 		String[] avgNNVec = btf.loadColumn("avgnnvec");
 		String[] dvel = btf.loadColumn("dvel");
 		String[] dbool = btf.loadColumn("dbool");
-		int numRows = avgNNVec.length;
+		String[] oct = btf.loadColumn("oct");
+		int numRows = dvel.length;
 		//double[] sampleTurn = new double[TURN_FEATS];
 		//double[] sampleSpeed = new double[SPEED_FEATS];
 		double[] sample = new double[FEATURES];
+		double[] flipped_sample = new double[FEATURES];
 		//double[] turnClass = new double[1];
 		//double[] speedClass = new double[1];
 		double[] classes = new double[CLASSES];
+		double[] flipped_classes = new double[CLASSES];
 		for(int i=0;i<numRows;i++){
 			if(i%(numRows/10)==0) System.out.println("[FishKNN] "+i+"/"+numRows);
 			/*
@@ -154,6 +189,10 @@ public class FishKNN implements Agent{
 				classes[0] = Double.parseDouble(tmp[0]);
 				classes[1] = Double.parseDouble(tmp[1]);
 				classes[2] = Double.parseDouble(tmp[2]);
+				flipped_classes[0] = classes[0];
+				flipped_classes[1] = -classes[1];
+				flipped_classes[2] = -classes[2];
+				/*
 				tmp = avgNNVec[i].split(" ");
 				sample[0] =  Double.parseDouble(tmp[0]);
 				sample[1] =  Double.parseDouble(tmp[1]);
@@ -163,7 +202,69 @@ public class FishKNN implements Agent{
 				tmp = nnVec[i].split(" ");
 				sample[4] = Double.parseDouble(tmp[0]);
 				sample[5] = Double.parseDouble(tmp[1]);
+				*/
+				tmp = oct[i].split(" ");
+				for(int oh = 0; oh < 8; oh++){
+					sample[oh] = Double.parseDouble(tmp[oh]);
+					flipped_sample[8-oh] = sample[oh];
+				}
+				tmp = avgNNVec[i].split(" ");
+				sample[8] = Double.parseDouble(tmp[0]);
+				sample[9] = Double.parseDouble(tmp[1]);
+				sample[10] = sample[8];
+				sample[11] = sample[9];
+				sample[12] = sample[8];
+				sample[13] = sample[9];
+				sample[14] = sample[8];
+				sample[15] = sample[9];
+				sample[16] = sample[8];
+				sample[17] = sample[9];
+				sample[18] = sample[8];
+				sample[19] = sample[9];
+				sample[20] = sample[8];
+				sample[21] = sample[9];
+				sample[22] = sample[8];
+				sample[23] = sample[9];
+				
+				/*
+				tmp = wallVec[i].split(" ");
+				sample[16] = Double.parseDouble(tmp[0]);
+				sample[17] = Double.parseDouble(tmp[1]);
+				sample[18] = sample[16];
+				sample[19] = sample[17];
+				sample[20] = sample[16];
+				sample[21] = sample[17];
+				sample[22] = sample[16];
+				sample[23] = sample[17];
+				*/
+				flipped_sample[8] = sample[8];
+				flipped_sample[9] = -sample[9];
+				flipped_sample[10] = flipped_sample[8];
+				flipped_sample[11] = flipped_sample[9];
+				flipped_sample[12] = flipped_sample[8];
+				flipped_sample[13] = flipped_sample[9];
+				flipped_sample[14] = flipped_sample[8];
+				flipped_sample[15] = flipped_sample[9];
+				flipped_sample[16] = flipped_sample[8];
+				flipped_sample[17] = flipped_sample[9];
+				flipped_sample[18] = flipped_sample[8];
+				flipped_sample[19] = flipped_sample[9];
+				flipped_sample[20] = flipped_sample[8];
+				flipped_sample[21] = flipped_sample[9];
+				flipped_sample[22] = flipped_sample[8];
+				flipped_sample[23] = flipped_sample[9];
+				/*
+				flipped_sample[16] = sample[16];
+				flipped_sample[17] = -sample[17];
+				flipped_sample[18] = flipped_sample[16];
+				flipped_sample[19] = flipped_sample[17];
+				flipped_sample[20] = flipped_sample[16];
+				flipped_sample[21] = flipped_sample[17];
+				flipped_sample[22] = flipped_sample[16];
+				flipped_sample[23] = flipped_sample[17];
+				*/
 				knn.add(sample,classes);
+				knn.add(flipped_sample,flipped_classes);
 			}
 		}
 		//sigmaNormalize currently broken, don't use it! (Dec 4th, 2012)
@@ -187,10 +288,10 @@ public class FishKNN implements Agent{
 			//set up the environment
 			int numFish = 30;
 			Environment env = new Environment(WIDTH,HEIGHT,1.0/30.0);
-			env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall
-			env.addObstacle(new RectObstacle(0.01,HEIGHT),  0.0,  0.0);//west
-			env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0,  0.0);//north
-			env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0, HEIGHT-0.01);//south
+			//env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall
+			//env.addObstacle(new RectObstacle(0.01,HEIGHT),  0.0,  0.0);//west
+			//env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0,  0.0);//north
+			//env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0, HEIGHT-0.01);//south
 			env.setToroidal(true);
 			//add agents
 			NotemigonusCrysoleucas[] bodies = new NotemigonusCrysoleucas[numFish];
