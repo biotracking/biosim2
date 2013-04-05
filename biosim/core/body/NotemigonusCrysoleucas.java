@@ -23,9 +23,9 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	public static final double RANGE=Double.POSITIVE_INFINITY; //no limit on the range for now
 	public static final double MAX_VELOCITY_X=3*SIZE; //3 bodylengths per second forwards/backwards
 	public static final double MAX_VELOCITY_Y=SIZE/5.0; //1/5th of a bodylength per second sidways
-	public static final double MAX_VELOCITY_THETA=2*Math.PI; //fish can turn quickly
+	public static final double MAX_VELOCITY_THETA=Double.POSITIVE_INFINITY;//2*Math.PI; //fish can turn quickly
 	public static final int PROX_SENSORS=8;
-	public static final double PROX_RANGE=Double.POSITIVE_INFINITY;
+	public static final double PROX_RANGE=4*SIZE;//Double.POSITIVE_INFINITY;
 	
 	public boolean getSelfVelXYT(double[] rv){
 		if(rv == null || rv.length != 3) return false;
@@ -98,7 +98,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		Double2D loc = sim.field2D.getObjectLocation(this);
 		MutableDouble2D dir = new MutableDouble2D();
 		if(rv == null || rv.length != PROX_SENSORS) rv = new double[PROX_SENSORS];
-		for(int i=0;i<rv.length;i++) rv[i] = -1.0;
+		for(int i=0;i<rv.length;i++) rv[i] = PROX_RANGE;
 		if(sim.getBodyOrientation(this,dir)){
 			Bag nearest = sim.field2D.getAllObjects();
 			for(int i=0;i<nearest.numObjs;i++){
@@ -109,11 +109,12 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
 					mutTmp.subtractIn(loc);
 					double mutTmpDist = mutTmp.length();
+					if(mutTmpDist > PROX_RANGE) continue;
 					mutTmp.rotate(-dir.angle());
 					double mutTmpAngle = mutTmp.angle();
 					int angleSlot = (int)(mutTmpAngle/(2.0*Math.PI/PROX_SENSORS));
 					if(angleSlot < 0) angleSlot = PROX_SENSORS+angleSlot;
-					if(rv[angleSlot] == -1.0 || rv[angleSlot] > mutTmpDist){
+					if(rv[angleSlot] > mutTmpDist){
 						rv[angleSlot] = mutTmpDist;
 					}
 				}
@@ -121,7 +122,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		}
 		return rv;
 	}
-	public int getNumSensors(){ return PROX_SENSORS; }
+	public int getNumProximitySensors(){ return PROX_SENSORS; }
 	public double getProximitySensorRange(){ return PROX_RANGE; }
 
 	public boolean getAverageSameAgentVec(MutableDouble2D rv){
@@ -149,8 +150,19 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 			}
 			if(numNeighbors > 0){
 				rv.multiplyIn(1.0/(double)numNeighbors);
+				//rv = rv.normalize();
 				return true;
-			} 
+			} else {
+				rv.x = rv.y = 0.0;
+				return true;
+			}
+			/*
+			double len = rv.length();
+			if(len > 0){
+				rv.normalize();
+			}
+			return true;
+			*/
 		}
 		rv.x = 0;
 		rv.y = 0;

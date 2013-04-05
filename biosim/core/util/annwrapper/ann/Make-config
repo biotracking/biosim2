@@ -151,7 +151,7 @@ sgi:
 	$(MAKE) targets \
 	"ANNLIB = libANN.a" \
 	"C++ = CC -ansi" \
-	"CFLAGS = -O2" \
+	"CFLAGS = -O3" \
 	"MAKELIB = ar ruv" \
 	"RANLIB = true"
 

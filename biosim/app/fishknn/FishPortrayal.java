@@ -20,7 +20,20 @@ import javax.imageio.ImageIO;
 public class FishPortrayal extends OvalPortrayal2D implements Oriented2D{
 	public Simulation sim;
 	public Body body;
-	public BufferedImage bi;
+	public static BufferedImage bi;
+	static {
+		URL icnLoc = FishPortrayal.class.getResource("fishicn.png");
+		if(icnLoc != null){
+			try{
+				bi = ImageIO.read(icnLoc);
+			} catch(Exception e){
+				System.out.println("Couldn't load fish icon:"+e);
+				bi = null;
+			}
+		} else {
+			bi = null;
+		}
+	}
 	public FishPortrayal(Simulation sim, Object body){
 		super(Color.black,((Body)body).getSize(),false);
 		this.sim = sim;
@@ -28,20 +41,6 @@ public class FishPortrayal extends OvalPortrayal2D implements Oriented2D{
 			this.body = (Body)body;
 		} else {
 			throw new RuntimeException("Cannot use a FishPortrayal for this object:"+body.getClass());
-		}
-		//System.out.println(getClass().getResource("fishicn.png"));
-		URL icnLoc = FishPortrayal.class.getResource("fishicn.png");
-		//System.out.println(icnLoc);
-		if(icnLoc != null){ 
-			try{
-				bi = ImageIO.read(icnLoc);
-			} catch(Exception e){
-				System.out.println(e);
-				bi = null;
-			}
-		}
-		else{ 
-			bi = null;
 		}
 	}
 	public double orientation2D(){
