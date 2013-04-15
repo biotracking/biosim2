@@ -19,13 +19,17 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 
 	public double[] desiredVelXYT = new double[3];
 
-	public static final double SIZE=0.10; //7.5 to 12.5 cm
-	public static final double RANGE=Double.POSITIVE_INFINITY; //no limit on the range for now
+	public static final double SIZE=0.05; //7.5 to 12.5 cm...paper says they were bought at 5cm long on average
+	public static final double RANGE=1.0;//Double.POSITIVE_INFINITY; //no limit on the range for now
 	public static final double MAX_VELOCITY_X=3*SIZE; //3 bodylengths per second forwards/backwards
 	public static final double MAX_VELOCITY_Y=SIZE/5.0; //1/5th of a bodylength per second sidways
-	public static final double MAX_VELOCITY_THETA=Double.POSITIVE_INFINITY;//2*Math.PI; //fish can turn quickly
+	public static final double MAX_VELOCITY_THETA=2*Math.PI; //fish can turn quickly
 	public static final int PROX_SENSORS=8;
 	public static final double PROX_RANGE=4*SIZE;//Double.POSITIVE_INFINITY;
+
+	private boolean leaderp;
+	public boolean isLeader(){ return leaderp; }
+	public void setLeader(boolean leader){leaderp = leader; }
 	
 	public boolean getSelfVelXYT(double[] rv){
 		if(rv == null || rv.length != 3) return false;
