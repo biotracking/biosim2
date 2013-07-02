@@ -26,6 +26,13 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	public static final double MAX_VELOCITY_THETA=2*Math.PI; //fish can turn quickly
 	public static final int PROX_SENSORS=8;
 	public static final double PROX_RANGE=4*SIZE;//Double.POSITIVE_INFINITY;
+	public static final int NUM_ZONES = 3;
+	public static final double REPULSION_ZONE_RANGE=SIZE*2;
+	public static final double ORIENTATION_ZONE_RANGE=REPULSION_ZONE_RANGE+(SIZE*2);
+	public static final double ATTRACTION_ZONE_RANGE=ORIENTATION_ZONE_RANGE+(SIZE*13);
+	public static final int REPULSION_ZONE_IDX=0;
+	public static final int ORIENTATION_ZONE_IDX=1;
+	public static final int ATTRACTION_ZONE_IDX=2;
 
 	private boolean leaderp;
 	public boolean isLeader(){ return leaderp; }
@@ -174,6 +181,70 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		
 	}
 	public double getAverageSameAgentVecSensorRange(){ return RANGE; }
+
+	public boolean getZoneCoMVecs(MutableDouble2D[] zoneVecs){
+		Double2D loc = sim.field2D.getObjectLocation(this);
+		MutableDouble2D[] rv = new MutableDouble2D[NUM_ZONES];
+		for(int i=0;i<rv.length;i++) rv[i] = new MutableDouble2D();
+		int[] numNeighbors = new int[NUM_ZONES];
+		for(int i=0;i<numNeighbors.length;i++) numNeighbors[i] = 0;
+		MutableDouble2D dir = new MutableDouble2D();
+		MutableDouble2D neighborDir = new MutableDouble2D();
+		if(sim.getBodyOrientation(this,dir)){
+			Bag nearest = sim.field2D.getAllObjects();
+			for(int i=0;i<nearest.numObjs;i++){
+				if(nearest.objs[i] instanceof NotemigonusCrysoleucas){
+					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
+					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
+					if(tmpFish == this) continue;
+					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
+					mutTmp.subtractIn(loc);
+					mutTmp.rotate(-dir.angle());
+					int zone = -1;
+					double mtlsq = mutTmp.lengthSq();
+					if(mtlsq < REPULSION_ZONE_RANGE){
+						zone = REPULSION_ZONE_IDX;
+					} else if(mtlsq < ORIENTATION_ZONE_RANGE){
+						zone = ORIENTATION_ZONE_IDX;
+					} else if(mtlsq < ATTRACTION_ZONE_RANGE){
+						zone = ATTRACTION_ZONE_IDX;
+					}
+					if(zone >= 0){
+						//orientation zone is based on relative orientation,
+						//not relative position
+						if(zone==ORIENTATION_ZONE_IDX){
+							neighborDir.zero();
+							if(sim.getBodyOrientation(tmpFish,neighborDir)){
+								neighborDir.rotate(-dir.angle());
+								rv[zone].addIn(neighborDir);
+							} else {
+								System.out.println("NotemigonusCrysoleucas: neighbor failed sim.getBodyOrientation(...)");
+							}
+						} else {
+							rv[zone].addIn(mutTmp);
+						}
+						numNeighbors[zone]++;
+					}	
+				}
+			}
+			for(int i=0;i<NUM_ZONES;i++){
+				if(numNeighbors[i] > 0){
+					rv[i].multiplyIn(1.0/(double)numNeighbors[i]);
+				} else {
+					rv[i].x = rv[i].y = 0.0;
+				}
+				zoneVecs[i] = rv[i];
+			}
+			return true;
+		}
+		return false;
+	}
+	public void getZoneRanges(double[] zoneRanges){
+		zoneRanges[0] = REPULSION_ZONE_RANGE;
+		zoneRanges[1] = ORIENTATION_ZONE_RANGE;
+		zoneRanges[2] = ATTRACTION_ZONE_RANGE;
+	}
+	public int getNumZones(){ return NUM_ZONES; }
 
 	public void setDesiredVelocity(double x, double y, double theta){
 		desiredVelXYT[0] = x;

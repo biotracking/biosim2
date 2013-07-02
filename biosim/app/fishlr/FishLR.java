@@ -32,8 +32,8 @@ public class FishLR implements Agent{
 
 	*/
 	
-	public static final double[] FB_BETA = {0.00145171, 0.00013191};
-	public static final double[] LR_BETA = {-0.0000455837185, 0.000536143576};
+	public static final double[] FB_BETA = {-0.07561636, 0.2372422};
+	public static final double[] LR_BETA = {15,30309163, -1.93068044};
 	
 	/*	
 	public static final double[] FB_BETA = {0.07561636, -0.2372422};
@@ -75,14 +75,17 @@ public class FishLR implements Agent{
 		//sensors[2] = wall.x;
 		//sensors[3] = wall.y;
 		double fbSpeed = 0.0, turnSpeed = 0.0;
-		double fbAccel=0.0, lrAccel=0.0;
+		//double fbAccel=0.0, lrAccel=0.0;
 		for(int i=0;i<sensors.length;i++){
-			fbAccel+= FB_BETA[i]*sensors[i];
-			lrAccel+= -LR_BETA[i]*sensors[i];
+			//fbAccel+= FB_BETA[i]*sensors[i];
+			//lrAccel+= -LR_BETA[i]*sensors[i];
+			fbSpeed += FB_BETA[i]*sensors[i];
+			turnSpeed += FB_BETA[i]*sensors[i];
 		}
-		fishBody.setDesiredVelocity(oldVel[0]+(fbAccel*(time-oldTime)),
-									oldVel[1],
-									oldVel[2]+(lrAccel*(time-oldTime)));
+		//fishBody.setDesiredVelocity(oldVel[0]+(fbAccel*(time-oldTime)),
+		//							oldVel[1],
+		//							oldVel[2]+(lrAccel*(time-oldTime)));
+		fishBody.setDesiredVelocity(fbSpeed, 0.0, turnSpeed);
 		oldTime = time;
 	}
 	

@@ -8,6 +8,7 @@ public abstract class AbstractFish extends Body
 				AverageSameAgentVec,
 				NearestObstacleVec,
 				Proximity,
+				ZoneCoMVecs,
 				HolonomicDrive,
 				SelfVelXYT{
 }
