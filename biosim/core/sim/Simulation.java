@@ -50,6 +50,7 @@ public class Simulation extends SimState{
 		}
 		for(int i=0;i<loggers.size();i++){
 			schedule.scheduleRepeating(loggers.get(i),2,1.0);
+			loggers.get(i).init();
 		}
 	}
 

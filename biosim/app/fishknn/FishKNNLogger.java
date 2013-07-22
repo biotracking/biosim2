@@ -24,19 +24,32 @@ public class FishKNNLogger extends BTFLogger {
 	}
 	public FishKNNLogger(File dir){
 		super(dir);
-		try{
-			wallout = new BufferedWriter(new FileWriter(new File(parentDirectory,"wallvec.btf")));
-			wallboolout = new BufferedWriter(new FileWriter(new File(parentDirectory,"wallbool.btf")));
-			zoneout = new BufferedWriter(new FileWriter(new File(parentDirectory,"zonevecs.btf")));
-			zoneboolout = new BufferedWriter(new FileWriter(new File(parentDirectory,"zonebool.btf")));
-
-			desiredout = new BufferedWriter(new FileWriter(new File(parentDirectory,"dvel.btf")));
-			desiredboolout = new BufferedWriter(new FileWriter(new File(parentDirectory,"dbool.btf")));
-		} catch(IOException ioe){
-			System.err.println("[FishKNNLogger] Could not open "+dir+" for logging: "+ioe);
-			wallout = wallboolout = desiredout = desiredboolout = zoneout = zoneboolout = null;
-		}
+		tmpFilePrefix = "FishKNNLogger-";
 	}
+	public void initFiles() throws IOException {
+		super.initFiles();
+		wallout = new BufferedWriter(new FileWriter(new File(tmpDir,"wallvec.btf")));
+		wallboolout = new BufferedWriter(new FileWriter(new File(tmpDir,"wallbool.btf")));
+		zoneout = new BufferedWriter(new FileWriter(new File(tmpDir,"zonevecs.btf")));
+		zoneboolout = new BufferedWriter(new FileWriter(new File(tmpDir,"zonebool.btf")));
+		desiredout = new BufferedWriter(new FileWriter(new File(tmpDir,"dvel.btf")));
+		desiredboolout = new BufferedWriter(new FileWriter(new File(tmpDir,"dbool.btf")));
+	}
+	
+	public void nullFiles(){
+		super.nullFiles();
+		wallout = wallboolout = zoneout = zoneboolout = desiredout = desiredboolout = null;
+	}
+
+	public void closeFiles() throws IOException{
+		wallout.close();
+		wallboolout.close();
+		zoneout.close();
+		zoneboolout.close();
+		desiredout.close();
+		desiredboolout.close();
+	}
+		
 	public void step(SimState simstate){
 		super.step(simstate);
 		if(wallout == null) return;
@@ -80,19 +93,6 @@ public class FishKNNLogger extends BTFLogger {
 				}
 
 			}
-		}
-	}
-	public void finish(){
-		try{
-			super.finish();
-			wallout.close();
-			wallboolout.close();
-			zoneout.close();
-			zoneboolout.close();
-			desiredout.close();
-			desiredboolout.close();
-		} catch(IOException ioe){
-			System.err.println("[FishKNNLogger] Error closing log files: "+ioe);
 		}
 	}
 }

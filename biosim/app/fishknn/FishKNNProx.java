@@ -22,7 +22,7 @@ public class FishKNNProx implements Agent{
 	public static final int FEATURES=15;//8 proximity, nearest neighbor, neighborhood CoM, avgDist bool, nearest obst.
 	public static final int CLASSES=3;
 	public static final int KNN_NEIGHBORS=10;
-	public static final boolean MIRROR_TRAINING_DATA=true;
+	public static final boolean MIRROR_TRAINING_DATA=false;
 	public static final boolean USE_WEIGHTS=true;
 	//note that we're weighting features before the distance calculation,
 	//so the weights effectively wind up getting squared.
@@ -34,13 +34,13 @@ public class FishKNNProx implements Agent{
 													1.0, //prox6
 													1.0, //prox7
 													1.0, //prox8
-													0.0, //nnX
-													0.0, //nnY
-													1.0, //avgX
-													1.0, //avgY
-													Math.sqrt(10.0), //avgDist (thresholded at 3 body lengths)
-													1.0, //wallX
-													1.0, //wallY
+													0.0, //nnDist
+													0.0, //nnAngle
+													Math.sqrt(0.0), //avgDist
+													Math.sqrt(4.0), //avgAngle
+													Math.sqrt(4.0), //avgDist (thresholded at 3 body lengths)
+													Math.sqrt(1.0),//wallDist
+													Math.sqrt(4.0) //wallAngle
 												};
 	FastKNN knn;
 	double prevTime = 0.0;
@@ -68,18 +68,18 @@ public class FishKNNProx implements Agent{
 		double[] prox = null;
 		prox = fishBody.getProximity(prox);
 		System.arraycopy(prox,0,features,0,prox.length);
-		features[8] = nnFish.x;
-		features[9] = nnFish.y;
+		features[8] = nnFish.length();
+		features[9] = nnFish.angle();
 		double avgFishLen = avgFish.length();
 		if(avgFishLen > 0){
 			avgFish.x = avgFish.x/avgFishLen;
 			avgFish.y = avgFish.y/avgFishLen;
 		}
-		features[10] = avgFish.x;
-		features[11] = avgFish.y;
+		features[10] = avgFish.length();
+		features[11] = avgFish.angle();
 		features[12] = (avgFishLen>NotemigonusCrysoleucas.SIZE*3)?1.0:0.0;
-		features[13] = wall.x;
-		features[14] = wall.y;
+		features[13] = wall.length();
+		features[14] = wall.angle();
 		//System.out.println("Sensor vec: ["+sensorVec[0]+", "+sensorVec[1]+", "+sensorVec[2]+", "+sensorVec[3]+"]");
 		knn.query(features,nearestK);
 		//sample
@@ -133,8 +133,8 @@ public class FishKNNProx implements Agent{
 				tmp = nnVec[i].split(" ");
 				MutableDouble2D nnVecMD = new MutableDouble2D(Double.parseDouble(tmp[0]),Double.parseDouble(tmp[1]));
 				double tmpDist = nnVecMD.length();
-				sample[8] = nnVecMD.x;
-				sample[9] = nnVecMD.y;
+				sample[8] = nnVecMD.length();
+				sample[9] = nnVecMD.angle();
 				tmp = avgNNVec[i].split(" ");
 				MutableDouble2D avgNNVecMD = new MutableDouble2D(Double.parseDouble(tmp[0]),Double.parseDouble(tmp[1]));
 				tmpDist = avgNNVecMD.length();
@@ -144,14 +144,14 @@ public class FishKNNProx implements Agent{
 				} else {
 					avgNNVecMD.x = avgNNVecMD.y = 0.0;
 				}
-				sample[10] = avgNNVecMD.x;
-				sample[11] = avgNNVecMD.y;
+				sample[10] = avgNNVecMD.length();
+				sample[11] = avgNNVecMD.angle();
 				//sample[12] = (tmpDist>NotemigonusCrysoleucas.SIZE)?1.0:0.0;
 				sample[12] = (tmpDist>NotemigonusCrysoleucas.SIZE*3)?1.0:0.0;
 				tmp = wallVec[i].split(" ");
 				MutableDouble2D wallVecMD = new MutableDouble2D(Double.parseDouble(tmp[0]),Double.parseDouble(tmp[1]));
-				sample[13] = wallVecMD.x;
-				sample[14] = wallVecMD.y;
+				sample[13] = wallVecMD.length();
+				sample[14] = wallVecMD.angle();
 				if(wallVecMD.length() > NotemigonusCrysoleucas.RANGE){
 					sample[13] = 0.0;
 					sample[14] = 0.0;

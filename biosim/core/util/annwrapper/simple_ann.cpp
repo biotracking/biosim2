@@ -103,6 +103,7 @@ bool SimpleANN::query(const double feats[], int index[], int k){
 		}
 		kdTree = new ANNkd_tree(dataPts,numPts,dim);
 		updateDataset = false;
+		cout<<"SimpleANN: Rebuilt tree"<<endl;
 	}
 	if(kdTree == NULL) return false;
 	ANNidxArray nnIdx = new ANNidx[k];

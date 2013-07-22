@@ -31,9 +31,14 @@ def computeStats(indir=os.getcwd(), outdir=os.getcwd()):
 	timage = open(os.path.join(indir,"timage.btf")).readlines()
 	timestamp = open(os.path.join(indir,"timestamp.btf")).readlines()
 	nearest = open(os.path.join(indir,"nnvec.btf")).readlines()
+	wall = open(os.path.join(indir,"wallvec.btf")).readlines()
 	polarfile = open(os.path.join(outdir,"polar.dat"),"w")
 	angularfile = open(os.path.join(outdir,"angular.dat"),"w")
 	nndistfile = open(os.path.join(outdir,"nndist.dat"),"w")
+	walldistfile = open(os.path.join(outdir,"walldist.dat"),"w")
+	maxdistfile = open(os.path.join(outdir,"maxdist.dat"),"w")
+	#variance in nn dist
+	#variance in speed (vLen(velocity))
 	blockStart = 0
 	blockEnd = 0
 	curLine = 0
@@ -45,7 +50,11 @@ def computeStats(indir=os.getcwd(), outdir=os.getcwd()):
 	avgPolarization = 0
 	avgAngular = 0
 	avgNNDist = 0
+	avgWallDist = 0
+	avgMaxDist = 0
 	nndist = 0
+	walldist = 0
+	maxdist = 0
 	while curLine < numLines:
 		if curLine % (numLines/20) == 0:
 			print "Line", curLine, "of", numLines, "(%d%%)"%(100*(float(curLine)/float(numLines)))
@@ -66,6 +75,9 @@ def computeStats(indir=os.getcwd(), outdir=os.getcwd()):
 				for tmpLine in xrange(blockStart,blockEnd):
 					ricX = float(xpos[tmpLine])-comvecX
 					ricY = float(ypos[tmpLine])-comvecY
+					ricLen = vLen(ricX,ricY)
+					ricX = float(ricX)/float(ricLen)
+					ricY = float(ricY)/float(ricLen)
 					vi = rotate(1,0,float(timage[curLine]))
 					angular += cross(ricX,ricY, vi[0],vi[1])
 				angular = abs(angular/float(numThings))
@@ -79,7 +91,19 @@ def computeStats(indir=os.getcwd(), outdir=os.getcwd()):
 				nndist = float(nndist)/float(numThings)
 				nndistfile.write(str(nndist)+"\n")
 				avgNNDist += nndist
+			#write walldist
+			if numThings >0:
+				walldist = float(walldist)/float(numThings)
+				walldistfile.write(str(walldist)+"\n")
+				avgWallDist += walldist
+			#write maxdist
+			if numThings > 0:
+				maxdistfile.write(str(maxdist)+"\n")
+				avgMaxDist += maxdist
 			nndist = 0
+			comvecX, comvecY = 0.0,0.0
+			walldist = 0
+			maxdist = 0
 			blockStart = blockEnd
 			while blockEnd < numLines and timestamp[blockEnd] == timestamp[blockStart]:
 				blockEnd += 1
@@ -99,12 +123,25 @@ def computeStats(indir=os.getcwd(), outdir=os.getcwd()):
 		#NN Dist
 		nnX, nnY = nearest[curLine].split()
 		nndist += vLen(float(nnX),float(nnY))
+		#Wall Dist
+		wX, wY = wall[curLine].split()
+		walldist += vLen(float(wX),float(wY))
+		#max dist
+		curX, curY = float(xpos[curLine]), float(ypos[curLine])
+		for tmpLine in xrange(blockStart,curLine):
+			prevX, prevY = float(xpos[tmpLine]), float(ypos[tmpLine])
+			tmpDistSq = math.sqrt(dSq(prevX,curX,prevY,curY))
+			if tmpDistSq > maxdist:
+				maxdist = tmpDistSq
+		#iterate
 		curLine += 1
 	polarfile.close()
 	angularfile.close()
 	print "Average polarization:",avgPolarization/float(numStats)
 	print "Average angular momentum:", avgAngular/float(numStats)
 	print "Average nn dist:",avgNNDist/float(numStats)
+	print "Average wall dist:", avgWallDist/float(numStats)
+	print "Average max dist:", avgMaxDist/float(numStats)
 
 if __name__=="__main__":
 	if len(sys.argv) > 3:

@@ -348,7 +348,8 @@ public class FishKNN implements Agent{
 			BTFData btf = new BTFData();
 			btf.loadDir(new File(args[0]));
 			//FastKNN[] knns = loadKNN(btf);
-			FastKNN knn = loadKNN(btf);
+			//FastKNN knn = loadKNN(btf);
+			FastKNN knn = FishKNNProx.loadKNN(btf);
 			//set up the environment
 			int numFish = 30;
 			int numLeaderFish = 0;
@@ -367,18 +368,18 @@ public class FishKNN implements Agent{
 
 			Agent[] agents = new Agent[numFish];
 			for(int i=0;i<numLeaderFish;i++){
-				//agents[i] = new FishKNN(bodies[i],knns[0],knns[1]);
-				agents[i] = new biosim.app.fishlr.LeaderFish(bodies[i]);//FishKNN(bodies[i],knn);
+				agents[i] = new biosim.app.fishlr.LeaderFish(bodies[i]);
 				bodies[i].setAgent(agents[i]);
 			}
 			for(int i=numLeaderFish;i<agents.length;i++){
-				//agents[i] = new FishKNN(bodies[i],knns[0],knns[1]);
-				agents[i] = new FishKNN(bodies[i],knn);
+				//agents[i] = new FishKNN(bodies[i],knn);
+				agents[i] = new FishKNNProx(bodies[i],knn);
 				bodies[i].setAgent(agents[i]);
 			}
 			System.gc();
 			//env.runSimulation(args);
 			Simulation sim = env.newSimulation();
+			sim.addLogger(new FishKNNLogger());
 			GUISimulation gui = new GUISimulation(sim);
 			gui.setPortrayalClass(NotemigonusCrysoleucas.class, FishPortrayal.class);
 			//if(numFish > 30){

@@ -27,42 +27,41 @@ public class AvoidAntLogger extends BTFLogger {
 							homeout;
 	public AvoidAntLogger(){
 		this(new File(System.getProperties().getProperty("user.dir")));
-		/*
-		wallSensor = new ArrayList<String>();
-		antSensor  = new ArrayList<String>();
-		desiredVel = new ArrayList<String>();
-		wallSensorBool = new ArrayList<String>();
-		antSensorBool  = new ArrayList<String>();
-		desiredVelBool = new ArrayList<String>();
-		homeSensor = new ArrayList<String>();
-		*/
 	}
 	public AvoidAntLogger(File dir){
 		super(dir);
-		try{
-			/*
-			wallSensor = new ArrayList<String>();
-			antSensor = new ArrayList<String>();
-			desiredVel = new ArrayList<String>();		
-			wallSensorBool = new ArrayList<String>();
-			antSensorBool  = new ArrayList<String>();
-			desiredVelBool = new ArrayList<String>();
-			homeSensor = new ArrayList<String>();
-			*/
-			wallout = new BufferedWriter(new FileWriter(new File(parentDirectory,"wallvec.btf")));
-			wallboolout = new BufferedWriter(new FileWriter(new File(parentDirectory,"wallbool.btf")));
-			antout = new BufferedWriter(new FileWriter(new File(parentDirectory,"antvec.btf")));
-			antboolout = new BufferedWriter(new FileWriter(new File(parentDirectory,"antbool.btf")));
-			desiredout = new BufferedWriter(new FileWriter(new File(parentDirectory,"dvel.btf")));
-			desiredboolout = new BufferedWriter(new FileWriter(new File(parentDirectory,"dbool.btf")));
-			prevout = new BufferedWriter(new FileWriter(new File(parentDirectory,"pvel.btf")));
-			prevboolout = new BufferedWriter(new FileWriter(new File(parentDirectory,"pbool.btf")));
-			homeout = new BufferedWriter(new FileWriter(new File(parentDirectory,"homevec.btf")));
-		} catch(IOException ioe){
-			System.err.println("[AvoidAntLogger] Could not open "+dir+" for logging: "+ioe);
-			wallout = wallboolout = antout = antboolout = desiredout = desiredboolout = homeout = null;
-		}
+		tmpFilePrefix = "AvoidAntLogger-";
 	}
+
+	public void initFiles() throws IOException {
+		super.initFiles();
+		wallout = new BufferedWriter(new FileWriter(new File(tmpDir,"wallvec.btf")));
+		wallboolout = new BufferedWriter(new FileWriter(new File(tmpDir,"wallbool.btf")));
+		antout = new BufferedWriter(new FileWriter(new File(tmpDir,"antvec.btf")));
+		antboolout = new BufferedWriter(new FileWriter(new File(tmpDir,"antbool.btf")));
+		desiredout = new BufferedWriter(new FileWriter(new File(tmpDir,"dvel.btf")));
+		desiredboolout = new BufferedWriter(new FileWriter(new File(tmpDir,"dbool.btf")));
+		prevout = new BufferedWriter(new FileWriter(new File(tmpDir,"pvel.btf")));
+		prevboolout = new BufferedWriter(new FileWriter(new File(tmpDir,"pbool.btf")));
+		homeout = new BufferedWriter(new FileWriter(new File(tmpDir,"homevec.btf")));
+	}
+	public void nullFiles(){
+		super.nullFiles();
+		wallout = wallboolout = antout = antboolout = desiredout = desiredboolout = prevout = prevboolout = homeout = null;
+	}
+	public void closeFiles() throws IOException{
+		wallout.close();
+		wallboolout.close();
+		antout.close();
+		antboolout.close();
+		desiredout.close();
+		desiredboolout.close();
+		prevout.close();
+		prevboolout.close();
+		homeout.close();
+	}
+		
+
 	public void step(SimState simstate){
 		super.step(simstate);
 		if(wallout == null) return;
@@ -113,40 +112,6 @@ public class AvoidAntLogger extends BTFLogger {
 				}
 
 			}
-		}
-	}
-	public void finish(){
-		try{
-			super.finish();
-			/*
-			FileWriter wallVecOut = new FileWriter(new File(parentDirectory,"wallvec.btf"));
-			FileWriter wallBoolOut = new FileWriter(new File(parentDirectory,"wallbool.btf"));
-			FileWriter antVecOut = new FileWriter(new File(parentDirectory,"antvec.btf"));
-			FileWriter antBoolOut = new FileWriter(new File(parentDirectory,"antbool.btf"));
-			FileWriter desiredVelOut = new FileWriter(new File(parentDirectory,"dvel.btf"));
-			FileWriter desiredBoolOut = new FileWriter(new File(parentDirectory,"dbool.btf"));
-			FileWriter homeOut = new FileWriter(new File(parentDirectory,"homevec.btf"));
-			for(int i=0;i<wallSensor.size();i++){
-				wallVecOut.write(wallSensor.get(i)+"\n");
-				wallBoolOut.write(wallSensorBool.get(i)+"\n");
-				antVecOut.write(antSensor.get(i)+"\n");
-				antBoolOut.write(antSensorBool.get(i)+"\n");
-				desiredVelOut.write(desiredVel.get(i)+"\n");
-				desiredBoolOut.write(desiredVelBool.get(i)+"\n");
-				homeOut.write(homeSensor.get(i)+"\n");
-			}
-			*/
-			wallout.close();
-			wallboolout.close();
-			antout.close();
-			antboolout.close();
-			desiredout.close();
-			desiredboolout.close();
-			prevout.close();
-			prevboolout.close();
-			homeout.close();
-		} catch(IOException ioe){
-			System.err.println("[AvoidAntLogger] Error closing log files: "+ioe);
 		}
 	}
 }

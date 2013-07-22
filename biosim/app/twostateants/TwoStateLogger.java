@@ -51,6 +51,11 @@ public class TwoStateLogger implements biosim.core.sim.Logger{
 			foodInGripperOut = foodVecOut = nearNestOut = stateout = null;
 		}
 	}
+
+	public void init(){
+		//TODO: Move all of the stuff in the constructor down here
+		//so that we can log multiple runs from the console
+	}
 	
 	public void step(SimState simstate){
 		if(nearNestOut == null) return;
