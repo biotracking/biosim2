@@ -43,6 +43,7 @@ public class BTFLogger implements Logger{
 		yimgout.close();
 		timgout.close();
 		idout.close();
+		timeout.close();
 	}
 	
 	public void init(){
@@ -56,10 +57,10 @@ public class BTFLogger implements Logger{
 				throw new IOException("Could not mkdir "+tmpDir.getAbsolutePath());
 			}
 			System.out.println("[BTFLogger] Starting new logs in "+tmpDir.getAbsolutePath());
-			initFiles();
+			this.initFiles();
 		} catch(IOException ioe){
 			System.err.println("[BTFLogger] Could not init logs: "+ioe);
-			nullFiles();
+			this.nullFiles();
 		}
 	}
 	public void step(SimState simstate){
@@ -85,7 +86,7 @@ public class BTFLogger implements Logger{
 		System.out.println("[BTFLogger] Finishing logs");
 		if(ximgout==null) return;
 		try{
-			closeFiles();
+			this.closeFiles();
 		} catch (IOException ioe){
 			System.err.println("[BTFLogger] Error closing log files: "+ioe);
 		}

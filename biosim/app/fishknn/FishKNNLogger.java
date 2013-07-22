@@ -42,6 +42,7 @@ public class FishKNNLogger extends BTFLogger {
 	}
 
 	public void closeFiles() throws IOException{
+		super.closeFiles();
 		wallout.close();
 		wallboolout.close();
 		zoneout.close();

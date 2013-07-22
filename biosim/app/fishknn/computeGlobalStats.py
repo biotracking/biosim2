@@ -38,6 +38,7 @@ def computeStats(indir=os.getcwd(), outdir=os.getcwd()):
 	walldistfile = open(os.path.join(outdir,"walldist.dat"),"w")
 	maxdistfile = open(os.path.join(outdir,"maxdist.dat"),"w")
 	#variance in nn dist
+	vardistfile = open(os.path.join(outdir,"vardist.dat"),"w")
 	#variance in speed (vLen(velocity))
 	blockStart = 0
 	blockEnd = 0
@@ -52,6 +53,7 @@ def computeStats(indir=os.getcwd(), outdir=os.getcwd()):
 	avgNNDist = 0
 	avgWallDist = 0
 	avgMaxDist = 0
+	avgVarDist = 0
 	nndist = 0
 	walldist = 0
 	maxdist = 0
@@ -86,20 +88,26 @@ def computeStats(indir=os.getcwd(), outdir=os.getcwd()):
 			else:
 				angular = 0
 			angularfile.write(str(angular)+"\n")
-			#write nndist
 			if numThings > 0:
+				#write nndist
 				nndist = float(nndist)/float(numThings)
 				nndistfile.write(str(nndist)+"\n")
 				avgNNDist += nndist
-			#write walldist
-			if numThings >0:
+				#write walldist
 				walldist = float(walldist)/float(numThings)
 				walldistfile.write(str(walldist)+"\n")
 				avgWallDist += walldist
-			#write maxdist
-			if numThings > 0:
+				#write maxdist
 				maxdistfile.write(str(maxdist)+"\n")
 				avgMaxDist += maxdist
+				#write vardist
+				vardist = 0.0
+				for tmpLine in xrange(blockStart,blockEnd):
+					tmpNNX, tmpNNY = nearest[tmpLine].split()
+					vardist += (vLen(float(tmpNNX),float(tmpNNY))-nndist)**2
+				vardist = math.sqrt(vardist/float(numThings))
+				vardistfile.write(str(vardist)+"\n")
+				avgVarDist += vardist
 			nndist = 0
 			comvecX, comvecY = 0.0,0.0
 			walldist = 0
@@ -142,6 +150,7 @@ def computeStats(indir=os.getcwd(), outdir=os.getcwd()):
 	print "Average nn dist:",avgNNDist/float(numStats)
 	print "Average wall dist:", avgWallDist/float(numStats)
 	print "Average max dist:", avgMaxDist/float(numStats)
+	print "Average std. dev. of NN dist:", avgVarDist/float(numStats)
 
 if __name__=="__main__":
 	if len(sys.argv) > 3:

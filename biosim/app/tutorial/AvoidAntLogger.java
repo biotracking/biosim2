@@ -50,6 +50,7 @@ public class AvoidAntLogger extends BTFLogger {
 		wallout = wallboolout = antout = antboolout = desiredout = desiredboolout = prevout = prevboolout = homeout = null;
 	}
 	public void closeFiles() throws IOException{
+		super.closeFiles();
 		wallout.close();
 		wallboolout.close();
 		antout.close();
