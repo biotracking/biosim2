@@ -27,7 +27,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	public static final int PROX_SENSORS=8;
 	public static final double PROX_RANGE=4*SIZE;//Double.POSITIVE_INFINITY;
 	public static final int NUM_ZONES = 3;
-	public static final double REPULSION_ZONE_RANGE=SIZE*2;
+	public static final double REPULSION_ZONE_RANGE=SIZE*1;
 	public static final double ORIENTATION_ZONE_RANGE=REPULSION_ZONE_RANGE+(SIZE*2);
 	public static final double ATTRACTION_ZONE_RANGE=ORIENTATION_ZONE_RANGE+(SIZE*13);
 	public static final int REPULSION_ZONE_IDX=0;
