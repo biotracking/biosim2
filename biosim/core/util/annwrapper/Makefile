@@ -9,6 +9,7 @@ endif
 #Linux
 ifeq ($(UNAME), Linux)
 LIBNAME := libannwrapper.so
+JNI_INC := -I/usr/lib/jvm/java-1.7.0-openjdk-amd64/include/
 libannwrapper.so: simple_ann.o annwrapper_wrap.o  ann/src/*.o
 	g++ -O3 -shared simple_ann.o annwrapper_wrap.o ann/src/*.o -o libannwrapper.so
 endif
@@ -16,9 +17,9 @@ endif
 all: $(LIBNAME) ann
 
 simple_ann.o: simple_ann.h simple_ann.cpp 
-	g++ -c -O3 simple_ann.cpp -Iann/include/
+	g++ -c -O3 -fPIC simple_ann.cpp -Iann/include/
 annwrapper_wrap.o: annwrapper_wrap.cxx
-	g++ -c -O3 annwrapper_wrap.cxx -Iann/include/ $(JNI_INC)
+	g++ -c -O3 -fPIC annwrapper_wrap.cxx -Iann/include/ $(JNI_INC)
 annwrapper_wrap.cxx: annwrapper.i
 	swig -c++ -java -package biosim.core.util.annwrapper annwrapper.i
 clean:
