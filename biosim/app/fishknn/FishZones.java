@@ -43,7 +43,7 @@ public class FishZones extends FishKNN{
 				desiredDir = zones[1].dup().normalize().addIn(zones[2].dup().normalize()).multiplyIn(0.5);
 			} else if(fishInZone[1]){
 				desiredDir = zones[1].dup();
-			} else {
+			} else if(fishInZone[2]){
 				desiredDir = zones[2].dup();
 			}
 		}
