@@ -76,12 +76,12 @@ public class FishKNNLogger extends BTFLogger {
 						zoneboolout.write(zoneSensorRv+"\n");
 						if(zoneSensorRv){
 							for(int z=0;z<zoneSensorVec.length;z++){
-								zoneout.write(zoneSensorVec[z]+" ");
+								zoneout.write(zoneSensorVec[z].x+" "+zoneSensorVec[z].y+" ");
 							}
 							zoneout.write("\n");
 						} else {
 							for(int z=0;z<zoneSensorVec.length;z++){
-								zoneout.write("0 ");
+								zoneout.write("0 0");
 							}
 							zoneout.write("\n");
 						}

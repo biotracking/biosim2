@@ -341,6 +341,7 @@ public class FishKNN implements Agent{
 	
 	public static final double WIDTH=2.50;//2.5;
 	public static final double HEIGHT=1.5;//1.5;
+	public static final boolean WALLS=false;
 	
 	public static void main(String[] args){
 		try{
@@ -348,17 +349,21 @@ public class FishKNN implements Agent{
 			BTFData btf = new BTFData();
 			btf.loadDir(new File(args[0]));
 			//FastKNN[] knns = loadKNN(btf);
-			//FastKNN knn = loadKNN(btf);
-			FastKNN knn = FishKNNProx.loadKNN(btf);
+			FastKNN knn = loadKNN(btf);
+			//FastKNN knn = FishKNNProx.loadKNN(btf);
 			//set up the environment
 			int numFish = 30;
 			int numLeaderFish = 0;
 			Environment env = new Environment(WIDTH,HEIGHT,1.0/30.0);
-			env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall
-			env.addObstacle(new RectObstacle(0.01,HEIGHT),  0.0,  0.0);//west
-			env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0,  0.0);//north
-			env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0, HEIGHT-0.01);//south
-			env.setToroidal(true);
+			if(WALLS){
+				env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall
+				env.addObstacle(new RectObstacle(0.01,HEIGHT),  0.0,  0.0);//west
+				env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0,  0.0);//north
+				env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0, HEIGHT-0.01);//south
+				env.setToroidal(false);
+			} else {
+				env.setToroidal(true);
+			}
 			//add agents
 			NotemigonusCrysoleucas[] bodies = new NotemigonusCrysoleucas[numFish];
 			for(int i=0;i<bodies.length;i++){
@@ -379,7 +384,7 @@ public class FishKNN implements Agent{
 			System.gc();
 			//env.runSimulation(args);
 			Simulation sim = env.newSimulation();
-			sim.addLogger(new FishKNNLogger());
+			//sim.addLogger(new FishKNNLogger());
 			GUISimulation gui = new GUISimulation(sim);
 			gui.setPortrayalClass(NotemigonusCrysoleucas.class, FishPortrayal.class);
 			//if(numFish > 30){

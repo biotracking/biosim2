@@ -27,7 +27,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	public static final int PROX_SENSORS=8;
 	public static final double PROX_RANGE=4*SIZE;//Double.POSITIVE_INFINITY;
 	public static final int NUM_ZONES = 3;
-	public static final double REPULSION_ZONE_RANGE=SIZE*1;
+	public static final double REPULSION_ZONE_RANGE=SIZE*0.5;
 	public static final double ORIENTATION_ZONE_RANGE=REPULSION_ZONE_RANGE+(SIZE*2);
 	public static final double ATTRACTION_ZONE_RANGE=ORIENTATION_ZONE_RANGE+(SIZE*13);
 	public static final int REPULSION_ZONE_IDX=0;
@@ -225,6 +225,14 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 						}
 						numNeighbors[zone]++;
 					}	
+				}
+			}
+			//also add in obstacle vector to avoidance zone if there is one
+			MutableDouble2D tmpObs = new MutableDouble2D();
+			if(getNearestObstacleVec(tmpObs)){
+				if(tmpObs.lengthSq()<REPULSION_ZONE_RANGE){
+					rv[REPULSION_ZONE_IDX].addIn(tmpObs);
+					numNeighbors[REPULSION_ZONE_IDX]++;
 				}
 			}
 			for(int i=0;i<NUM_ZONES;i++){

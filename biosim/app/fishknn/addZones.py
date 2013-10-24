@@ -1,4 +1,8 @@
 import os, os.path, string, sys, math
+LEFT_WALL_X=0.0
+RIGHT_WALL_X=2.1
+TOP_WALL_Y=0.0
+BOTTOM_WALL_Y=1.2
 def dSq(x1,x2,y1,y2):
 	return ((float(x1)-float(x2))**2) + ((float(y1)-float(y2))**2)
 
@@ -70,6 +74,24 @@ def addZones(outdir=os.getcwd(),indir=os.getcwd()):
 				numNeighbors[zone] +=1
 				vec = vecs[zone]
 				vecs[zone] = (vec[0]+tmpVecX,vec[1]+tmpVecY)
+		#Also add in nearest wall if it's in the repulsion range
+		#leftwall
+		wallDSq = ((float(xpos[curLine])-LEFT_WALL_X)**2, (RIGHT_WALL_X-float(xpos[curLine]))**2, (float(ypos[curLine])-TOP_WALL_Y)**2, (BOTTOM_WALL_Y-float(ypos[curLine]))**2)
+		minWallDSq = min(wallDSq)
+		if minWallDSq < rad_rSq:
+			tmpWallX,tmpWallY = (0,0)
+			if wallDSq[0] == minWallDSq:
+				tmpWallX,tmpWallY = vecTo(xpos[curLine],ypos[curLine],LEFT_WALL_X,ypos[curLine])
+			elif wallDSq[1] == minWallDSq:
+				tmpWallX,tmpWallY = vecTo(xpos[curLine],ypos[curLine],RIGHT_WALL_X,ypos[curLine])
+			elif wallDSq[2] == minWallDSq:
+				tmpWallX,tmpWallY = vecTo(xpos[curLine],ypos[curLine],xpos[curLine],TOP_WALL_Y)
+			else:
+				tmpWallX,tmpWallY = vecTo(xpos[curLine],ypos[curLine],xpos[curLine],BOTTOM_WALL_Y)
+			tmpWallX, tmpWallY = rotate(tmpWallX,tmpWallY,-float(timage[curLine]))
+			vec = vecs['rep']
+			vecs['rep'] = (vec[0]+tmpWallX,vec[1]+tmpWallY)
+			numNeighbors['rep'] += 1
 		for key in numNeighbors:
 			vec = vecs[key]
 			nn = float(numNeighbors[key])

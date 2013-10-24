@@ -11,6 +11,13 @@ import java.util.ArrayList;
 import biosim.core.body.Body;
 import biosim.core.sim.Obstacle;
 
+/**
+ * Environment is a helper class for setting up the initial state of
+ * a Simulation before it is run.
+ * An example of typical usage is given in biosim.app.tutorial.Tutorial.
+ *
+ * @author Brian Hrolenok
+ **/
 public class Environment implements MakesSimState{
 	public ArrayList<Obstacle> obstacles;
 	public ArrayList<Double2D> obstacleLocations;
