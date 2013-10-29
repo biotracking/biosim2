@@ -19,6 +19,9 @@ public class ReplayBody extends Body{
 	public MersenneTwisterFast getRandom(){
 		return null;
 	}
+	protected boolean computeNewConfiguration(MutableDouble2D newPos, MutableDouble2D newDir){
+		return false;
+	}
 	public void step(SimState simstate){
 		if(simstate instanceof Simulation){
 			Simulation sim = (Simulation)simstate;

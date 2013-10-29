@@ -1,15 +1,21 @@
 package biosim.core.body;
+
 import biosim.core.agent.Agent;
+import biosim.core.sim.Simulation;
+import biosim.core.sim.Obstacle;
+
 import ec.util.MersenneTwisterFast;
 import sim.engine.Steppable;
 import sim.engine.SimState;
+import sim.util.MutableDouble2D;
+import sim.util.Double2D;
 
 public abstract class Body implements Steppable{
 	protected Agent agent;
+	protected Simulation sim;
 	public boolean notFinished = false;
 	public void setAgent(Agent a){ agent = a; }
 	public Agent getAgent(){ return agent; }
-	public abstract void step(SimState simstate);
 	public abstract MersenneTwisterFast getRandom();
 	/**
 	* The size of the body in meters. Used in the default portrayal as the size
@@ -19,7 +25,29 @@ public abstract class Body implements Steppable{
 	* you may need to write a custom configSim(...) method.
 	**/
 	public abstract double getSize();
-	
+	protected abstract boolean computeNewConfiguration(MutableDouble2D newPos, MutableDouble2D newDir);
+	protected boolean collisionCheck(MutableDouble2D newPos, MutableDouble2D newDir){
+		int numObstacles=sim.obstacles.size();
+		Double2D newPosD2D = new Double2D(newPos);//dumb dumb dumb dumb
+		for(int i=0;i<numObstacles;i++){
+			Obstacle o = sim.obstacles.get(i);
+			if(newPos.distance(o.closestPoint(newPosD2D,sim.field2D.getObjectLocation(o)))<(getSize()/2)){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	protected void move(MutableDouble2D newPos, MutableDouble2D newDir){
+		sim.setObjectLocation(this,new Double2D(newPos));
+		for(int i=0;i<sim.bodies.size();i++){
+			if(sim.bodies.get(i)==this){
+				sim.bodyOrientations.set(i,new Double2D(newDir));
+				break;
+			}
+		}
+	}
+
 	public void init(){
 		if(agent != null) agent.init();
 		notFinished = true;
@@ -28,6 +56,19 @@ public abstract class Body implements Steppable{
 		if(notFinished){
 			if(agent != null) agent.finish();
 			notFinished = false;
+		}
+	}
+	public void step(SimState simstate){
+		if(simstate instanceof Simulation){
+			sim = (Simulation)simstate;
+			agent.act(sim.schedule.getSteps()*sim.resolution);
+			MutableDouble2D newPos = new MutableDouble2D();
+			MutableDouble2D newDir = new MutableDouble2D();
+			if(computeNewConfiguration(newPos,newDir)){
+				if(!collisionCheck(newPos,newDir)){
+					move(newPos,newDir);
+				}
+			}
 		}
 	}
 }

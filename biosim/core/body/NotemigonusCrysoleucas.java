@@ -259,6 +259,26 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		desiredVelXYT[1] = y;
 		desiredVelXYT[2] = theta;
 	}
+	protected boolean computeNewConfiguration(MutableDouble2D newPos, MutableDouble2D newDir){
+		MutableDouble2D tmp = new MutableDouble2D(desiredVelXYT[0],desiredVelXYT[1]);
+		MutableDouble2D curDir = new MutableDouble2D();
+		sim.getBodyOrientation(this,curDir);
+		tmp.rotate(curDir.angle());
+		double xVel = (tmp.x<=MAX_VELOCITY_X)?tmp.x:MAX_VELOCITY_X;
+		double yVel = (tmp.y<=MAX_VELOCITY_Y)?tmp.y:MAX_VELOCITY_Y;
+		double tVel = (Math.abs(desiredVelXYT[2])<=MAX_VELOCITY_THETA)?desiredVelXYT[2]:Math.signum(desiredVelXYT[2])*MAX_VELOCITY_THETA;
+		Double2D oldPos = sim.field2D.getObjectLocation(this);
+		newPos.x = oldPos.x+(xVel*sim.resolution);
+		newPos.y = oldPos.y+(yVel*sim.resolution);
+		for(int i=0;i<sim.bodies.size();i++){
+			if(sim.bodies.get(i)==this){
+				newDir.setTo(sim.bodyOrientations.get(i));
+				newDir.rotate(tVel*sim.resolution);
+				break;
+			}
+		}
+		return true;
+	}
 
 	public void step(SimState simstate){
 		if(simstate instanceof Simulation){
