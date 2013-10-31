@@ -17,7 +17,7 @@ import biosim.core.sim.RectObstacle;
 public class AphaenogasterCockerelli extends AbstractAnt {
 	public double[] desiredVelXYT, previousVelXYT;
 	private double xVel, yVel, tVel;
-	private Simulation sim; //most recent sim object
+	//private Simulation sim; //most recent sim object
 	
 	//getters for inspectors
 	public Double3D getVel(){ return new Double3D(xVel,yVel,tVel); }
@@ -54,8 +54,12 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 			for(int i=0;i<sim.poi.size();i++){
 				if(sim.poi.get(i).equalsIgnoreCase("nest")){
 					Double2D nestLoc = sim.field2D.getObjectLocation(sim.poi.get(i));
-					rv.setTo(nestLoc);
-					rv.subtractIn(loc);
+					if(sim.toroidal){
+						rv.setTo(sim.field2D.tv(nestLoc,loc));
+					} else {
+						rv.setTo(nestLoc);
+						rv.subtractIn(loc);
+					}
 					rv.rotate(-dir.angle());
 					rv.normalize();
 					return true;
@@ -71,8 +75,12 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 			for(int i=0;i<sim.poi.size();i++){
 				if(sim.poi.get(i).equalsIgnoreCase(name)){
 					Double2D nestLoc = sim.field2D.getObjectLocation(sim.poi.get(i));
-					rv.setTo(nestLoc);
-					rv.subtractIn(loc);
+					if(sim.toroidal){
+						rv.setTo(sim.field2D.tv(nestLoc,loc));
+					} else {
+						rv.setTo(nestLoc);
+						rv.subtractIn(loc);
+					}
 					rv.rotate(-dir.angle());
 					rv.normalize();
 					return true;
@@ -87,7 +95,11 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 		for(int i=0;i<sim.poi.size();i++){
 			if(sim.poi.get(i).equalsIgnoreCase(name)){
 				MutableDouble2D poiLoc = new MutableDouble2D(sim.field2D.getObjectLocation(sim.poi.get(i)));
-				return (poiLoc.subtractIn(loc).length() < this.getSize());
+				if(sim.toroidal){
+					return (sim.field2D.tds(loc,new Double2D(poiLoc)) < this.getSize()*this.getSize());
+				}else {
+					return (poiLoc.subtractIn(loc).length() < this.getSize());
+				}
 			}
 		}
 		return false;
@@ -98,14 +110,28 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 		MutableDouble2D dir = new MutableDouble2D();
 		if(sim.getBodyOrientation(this,dir)){
 			MutableDouble2D nearestObsPoint = null;
+			double nearestObsPointDS = -1.0;
 			for(int i=0;i<sim.obstacles.size();i++){
 				Double2D tmpPoint = sim.field2D.getObjectLocation(sim.obstacles.get(i));
-				MutableDouble2D mutTmp = new MutableDouble2D(sim.obstacles.get(i).closestPoint(loc,tmpPoint));
-				mutTmp.subtractIn(loc);
-				mutTmp.rotate(-dir.angle());
-				if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
-				if(nearestObsPoint == null || nearestObsPoint.lengthSq() > mutTmp.lengthSq()){
-					nearestObsPoint = mutTmp;
+				MutableDouble2D mutTmp;
+				if(sim.toroidal){
+					mutTmp = new MutableDouble2D(sim.obstacles.get(i).toroidalClosestPoint(loc,tmpPoint,sim.field2D));
+					mutTmp = new MutableDouble2D(sim.field2D.tv(new Double2D(mutTmp),loc));
+					mutTmp.rotate(-dir.angle());
+					if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() < -Math.PI/2) continue;
+					double tmpDS = sim.field2D.tds(new Double2D(0,0),new Double2D(mutTmp));
+					if(nearestObsPoint == null || nearestObsPointDS > tmpDS){
+						nearestObsPoint = mutTmp;
+						nearestObsPointDS = tmpDS;
+					}
+				} else {
+					mutTmp = new MutableDouble2D(sim.obstacles.get(i).closestPoint(loc,tmpPoint));
+					mutTmp.subtractIn(loc);
+					mutTmp.rotate(-dir.angle());
+					if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
+					if(nearestObsPoint == null || nearestObsPoint.lengthSq() > mutTmp.lengthSq()){
+						nearestObsPoint = mutTmp;
+					}
 				}
 			}
 			if(nearestObsPoint != null && nearestObsPoint.length() <= RANGE){
@@ -116,7 +142,7 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 		return false;
 	}
 	public double getNearestObstacleVecSensorRange(){ return RANGE; }
-	public boolean getNearestSameAgentVec(MutableDouble2D rv){
+	public boolean getNearestSameTypeVec(MutableDouble2D rv){
 		Double2D loc = sim.field2D.getObjectLocation(this);
 		MutableDouble2D dir = new MutableDouble2D();
 		if(sim.getBodyOrientation(this,dir)){
@@ -127,8 +153,13 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 					AphaenogasterCockerelli tmpAnt = (AphaenogasterCockerelli)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpAnt);
 					if(tmpAnt == this) continue;
-					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
-					mutTmp.subtractIn(loc);
+					MutableDouble2D mutTmp;
+					if(sim.toroidal){
+						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
+					} else {
+						mutTmp = new MutableDouble2D(tmpLoc);
+						mutTmp.subtractIn(loc);
+					}
 					mutTmp.rotate(-dir.angle());
 					if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
 					if(nearestLoc == null || nearestLoc.lengthSq() > mutTmp.lengthSq()){
@@ -166,7 +197,7 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 		return false;
 		*/
 	}
-	public double getNearestSameAgentVecSensorRange(){ return RANGE; }
+	public double getNearestSameTypeVecSensorRange(){ return RANGE; }
 
 	public boolean getNearestPreyVec(MutableDouble2D rv){
 		Double2D loc = sim.field2D.getObjectLocation(this);
@@ -179,8 +210,13 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 					AbstractFly tmpFly = (AbstractFly)nearest.objs[i];
 					if(!tmpFly.yummy) continue;
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFly);
-					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
-					mutTmp.subtractIn(loc);
+					MutableDouble2D mutTmp;
+					if(sim.toroidal){
+						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
+					} else {
+						mutTmp = new MutableDouble2D(tmpLoc);
+						mutTmp.subtractIn(loc);
+					}
 					mutTmp.rotate(-dir.angle());
 					if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
 					if(nearestLoc == null || nearestLoc.lengthSq() > mutTmp.lengthSq()){
@@ -222,8 +258,13 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 					AbstractFly tmpFly = (AbstractFly)nearest.objs[i];
 					if(!tmpFly.yummy) continue;
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFly);
-					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
-					mutTmp.subtractIn(loc);
+					MutableDouble2D mutTmp;
+					if(sim.toroidal){
+						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
+					} else {
+						mutTmp = new MutableDouble2D(tmpLoc);
+						mutTmp.subtractIn(loc);
+					}
 					mutTmp.rotate(-dir.angle());
 					if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
 					if(nearestLoc == null || nearestLoc.lengthSq() > mutTmp.lengthSq()){
@@ -273,7 +314,7 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 		}
 		return true;
 	}
-
+	/*
 	public void step(SimState simstate){
 		if(simstate instanceof Simulation){
 			sim= (Simulation)simstate;
@@ -284,23 +325,6 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 			MutableDouble2D curDir = new MutableDouble2D();
 			sim.getBodyOrientation(this,curDir);
 			tmp.rotate(curDir.angle());
-			/*
-			desiredVelXYT[0] = tmp.x;
-			desiredVelXYT[1] = tmp.y;
-			double velMag = Math.sqrt(Math.pow(desiredVelXYT[0],2)+Math.pow(desiredVelXYT[1],2));
-			if(velMag > MAX_VELOCITY_XY){
-				xVel = (desiredVelXYT[0]/velMag)*MAX_VELOCITY_XY;
-				yVel = (desiredVelXYT[1]/velMag)*MAX_VELOCITY_XY;
-			} else {
-				xVel = desiredVelXYT[0];
-				yVel = desiredVelXYT[1];
-			}
-			if(desiredVelXYT[2] > MAX_VELOCITY_THETA){
-				tVel = MAX_VELOCITY_THETA;
-			} else {
-				tVel = desiredVelXYT[2];
-			}
-			*/
 			double velMag = Math.sqrt(Math.pow(tmp.x,2)+Math.pow(tmp.y,2));
 			if(velMag > MAX_VELOCITY_XY){
 				xVel = (tmp.x/velMag)*MAX_VELOCITY_XY;
@@ -348,4 +372,5 @@ public class AphaenogasterCockerelli extends AbstractAnt {
 			throw new RuntimeException("SimState object not an instance of "+Simulation.class.getName());
 		}
 	}
+	*/
 }

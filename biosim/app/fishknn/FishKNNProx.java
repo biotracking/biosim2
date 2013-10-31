@@ -57,8 +57,8 @@ public class FishKNNProx implements Agent{
 		double[] rv = new double[3];
 		MutableDouble2D avgFish = new MutableDouble2D();
 		MutableDouble2D nnFish = new MutableDouble2D();
-		fishBody.getNearestSameAgentVec(nnFish);
-		boolean sawFish = fishBody.getAverageSameAgentVec(avgFish);
+		fishBody.getNearestSameTypeVec(nnFish);
+		boolean sawFish = fishBody.getAverageSameTypeVec(avgFish);
 		if(!sawFish) avgFish.x = avgFish.y = 0.0;
 		MutableDouble2D wall = new MutableDouble2D();
 		boolean sawWall = fishBody.getNearestObstacleVec(wall);

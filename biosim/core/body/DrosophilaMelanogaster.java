@@ -18,7 +18,7 @@ public class DrosophilaMelanogaster extends AbstractFly{
 	public static final double MAX_VELOCITY_THETA=2*Math.PI; //2pi , radians/second
 	public double[] desiredVelXYT = new double[3];
 	public double[] velXYT = new double[3];
-	private Simulation sim; //most recent sim object
+	//private Simulation sim; //most recent sim object
 	
 	public double getSize(){ return SIZE;}
 	
@@ -26,8 +26,8 @@ public class DrosophilaMelanogaster extends AbstractFly{
 		return sim.random;
 	}
 	
-	public double getNearestSameAgentVecSensorRange(){ return RANGE; }
-	public boolean getNearestSameAgentVec(MutableDouble2D rv){
+	public double getNearestSameTypeVecSensorRange(){ return RANGE; }
+	public boolean getNearestSameTypeVec(MutableDouble2D rv){
 		Double2D loc = sim.field2D.getObjectLocation(this);
 		MutableDouble2D dir = new MutableDouble2D();
 		if(sim.getBodyOrientation(this,dir)){
@@ -140,7 +140,7 @@ public class DrosophilaMelanogaster extends AbstractFly{
 		}
 		return true;
 	}
-	
+	/*
 	public void step(SimState simstate){
 		if(simstate instanceof Simulation){
 			sim = (Simulation)simstate;
@@ -195,4 +195,5 @@ public class DrosophilaMelanogaster extends AbstractFly{
 			throw new RuntimeException("SimState object not an instance of "+Simulation.class.getName());
 		}
 	}
+	*/
 }

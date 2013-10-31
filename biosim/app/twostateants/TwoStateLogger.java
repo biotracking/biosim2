@@ -80,7 +80,7 @@ public class TwoStateLogger implements biosim.core.sim.Logger{
 					AphaenogasterCockerelli aphaeno = (AphaenogasterCockerelli)tsant.antBody;
 
 					wallSensorRv = tsant.antBody.getNearestObstacleVec(wallSensorVec);
-					antSensorRv = tsant.antBody.getNearestSameAgentVec(antSensorVec);
+					antSensorRv = tsant.antBody.getNearestSameTypeVec(antSensorVec);
 					tsant.antBody.getPoiDir(homeSensorVec,"nest");
 					System.arraycopy(aphaeno.desiredVelXYT,0,foo,0,3);
 					bar = true;

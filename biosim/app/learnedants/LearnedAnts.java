@@ -81,7 +81,7 @@ public class LearnedAnts implements Agent{
 		//get the sensors
 		double[] rv = new double[3];
 		MutableDouble2D ant = new MutableDouble2D();
-		boolean sawAnt = antBody.getNearestSameAgentVec(ant);
+		boolean sawAnt = antBody.getNearestSameTypeVec(ant);
 		if(sawAnt){
 			antDists.add(ant.length());
 			if(firstSawAnt == -1){

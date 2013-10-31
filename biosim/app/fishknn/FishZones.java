@@ -63,10 +63,10 @@ public class FishZones extends FishKNN{
 	public static void main(String[] args){
 		int numFish = 30;
 		Environment env = new Environment(WIDTH,HEIGHT,1.0/30.0);
-		env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall
-		env.addObstacle(new RectObstacle(0.01,HEIGHT),  0.0,  0.0);//west
-		env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0,  0.0);//north
-		env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0, HEIGHT-0.01);//south
+		//env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall
+		//env.addObstacle(new RectObstacle(0.01,HEIGHT),  0.0,  0.0);//west
+		//env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0,  0.0);//north
+		//env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0, HEIGHT-0.01);//south
 		env.setToroidal(true);
 		//add agents
 		NotemigonusCrysoleucas[] bodies = new NotemigonusCrysoleucas[numFish];

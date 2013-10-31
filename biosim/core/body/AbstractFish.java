@@ -4,8 +4,8 @@ import biosim.core.body.sensors.*;
 import biosim.core.body.actuators.*;
 
 public abstract class AbstractFish extends Body
-	implements	NearestSameAgentVec,
-				AverageSameAgentVec,
+	implements	NearestSameTypeVec,
+				AverageSameTypeVec,
 				NearestObstacleVec,
 				Proximity,
 				ZoneCoMVecs,

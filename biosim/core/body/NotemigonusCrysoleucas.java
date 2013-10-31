@@ -13,7 +13,8 @@ import sim.util.Double2D;
 import sim.util.MutableDouble2D;
 
 public class NotemigonusCrysoleucas extends AbstractFish {
-	private Simulation sim;
+	//shadows inherited sim. Safe to remove when inherited step(...) has been tested
+	//private Simulation sim;
 	
 	private double xVel, yVel, tVel;
 
@@ -57,14 +58,28 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		MutableDouble2D dir = new MutableDouble2D();
 		if(sim.getBodyOrientation(this,dir)){
 			MutableDouble2D nearestObsPoint = null;
+			double nearestObsPointDS = -1.0;
 			for(int i=0;i<sim.obstacles.size();i++){
 				Double2D tmpPoint = sim.field2D.getObjectLocation(sim.obstacles.get(i));
-				MutableDouble2D mutTmp = new MutableDouble2D(sim.obstacles.get(i).closestPoint(loc,tmpPoint));
-				mutTmp.subtractIn(loc);
-				mutTmp.rotate(-dir.angle());
-				//if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
-				if(nearestObsPoint == null || nearestObsPoint.lengthSq() > mutTmp.lengthSq()){
-					nearestObsPoint = mutTmp;
+				MutableDouble2D mutTmp;
+				if(sim.toroidal){
+					mutTmp = new MutableDouble2D(sim.obstacles.get(i).toroidalClosestPoint(loc,tmpPoint,sim.field2D));
+					mutTmp = new MutableDouble2D(sim.field2D.tv(new Double2D(mutTmp),loc));
+					mutTmp.rotate(-dir.angle());
+					//if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() < -Math.PI/2) continue;
+					double tmpDS = sim.field2D.tds(new Double2D(0,0),new Double2D(mutTmp));
+					if(nearestObsPoint == null || nearestObsPointDS > tmpDS){
+						nearestObsPoint = mutTmp;
+						nearestObsPointDS = tmpDS;
+					}					
+				} else {
+					mutTmp = new MutableDouble2D(sim.obstacles.get(i).closestPoint(loc,tmpPoint));
+					mutTmp.subtractIn(loc);
+					mutTmp.rotate(-dir.angle());
+					//if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
+					if(nearestObsPoint == null || nearestObsPoint.lengthSq() > mutTmp.lengthSq()){
+						nearestObsPoint = mutTmp;
+					}
 				}
 			}
 			if(nearestObsPoint != null && nearestObsPoint.length() <= RANGE){
@@ -76,7 +91,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	}
 	public double getNearestObstacleVecSensorRange(){ return RANGE; }
 	
-	public boolean getNearestSameAgentVec(MutableDouble2D rv){
+	public boolean getNearestSameTypeVec(MutableDouble2D rv){
 		Double2D loc = sim.field2D.getObjectLocation(this);
 		MutableDouble2D dir = new MutableDouble2D();
 		if(sim.getBodyOrientation(this,dir)){
@@ -87,8 +102,13 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
 					if(tmpFish == this) continue;
-					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
-					mutTmp.subtractIn(loc);
+					MutableDouble2D mutTmp;
+					if(sim.toroidal){
+						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
+					} else { 
+						mutTmp = new MutableDouble2D(tmpLoc);
+						mutTmp.subtractIn(loc);
+					}
 					mutTmp.rotate(-dir.angle());
 					//if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
 					if(nearestLoc == null || nearestLoc.lengthSq() > mutTmp.lengthSq()){
@@ -103,7 +123,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		}
 		return false;
 	}
-	public double getNearestSameAgentVecSensorRange(){ return RANGE; }
+	public double getNearestSameTypeVecSensorRange(){ return RANGE; }
 	
 	public double[] getProximity(double[] rv){
 		Double2D loc = sim.field2D.getObjectLocation(this);
@@ -117,8 +137,13 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
 					if(tmpFish == this) continue;
-					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
-					mutTmp.subtractIn(loc);
+					MutableDouble2D mutTmp;
+					if(sim.toroidal){
+						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
+					} else {
+						mutTmp = new MutableDouble2D(tmpLoc);
+						mutTmp.subtractIn(loc);
+					}
 					double mutTmpDist = mutTmp.length();
 					if(mutTmpDist > PROX_RANGE) continue;
 					mutTmp.rotate(-dir.angle());
@@ -136,7 +161,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	public int getNumProximitySensors(){ return PROX_SENSORS; }
 	public double getProximitySensorRange(){ return PROX_RANGE; }
 
-	public boolean getAverageSameAgentVec(MutableDouble2D rv){
+	public boolean getAverageSameTypeVec(MutableDouble2D rv){
 		Double2D loc = sim.field2D.getObjectLocation(this);
 		MutableDouble2D dir = new MutableDouble2D();
 		rv.x = 0;
@@ -149,8 +174,13 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
 					if(tmpFish == this) continue;
-					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
-					mutTmp.subtractIn(loc);
+					MutableDouble2D mutTmp;
+					if(sim.toroidal){
+						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
+					} else {
+						mutTmp = new MutableDouble2D(tmpLoc);
+						mutTmp.subtractIn(loc);
+					}
 					mutTmp.rotate(-dir.angle());
 					//if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
 					if(mutTmp.lengthSq() <= RANGE*RANGE){
@@ -180,7 +210,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		return false;
 		
 	}
-	public double getAverageSameAgentVecSensorRange(){ return RANGE; }
+	public double getAverageSameTypeVecSensorRange(){ return RANGE; }
 
 	public boolean getZoneCoMVecs(MutableDouble2D[] zoneVecs){
 		Double2D loc = sim.field2D.getObjectLocation(this);
@@ -197,8 +227,13 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
 					if(tmpFish == this) continue;
-					MutableDouble2D mutTmp = new MutableDouble2D(tmpLoc);
-					mutTmp.subtractIn(loc);
+					MutableDouble2D mutTmp;
+					if(sim.toroidal){
+						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
+					} else {
+						mutTmp = new MutableDouble2D(tmpLoc);
+						mutTmp.subtractIn(loc);
+					}
 					mutTmp.rotate(-dir.angle());
 					int zone = -1;
 					double mtlsq = mutTmp.lengthSq();
@@ -280,6 +315,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		return true;
 	}
 
+	/*
 	public void step(SimState simstate){
 		if(simstate instanceof Simulation){
 			sim= (Simulation)simstate;
@@ -323,5 +359,6 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 			throw new RuntimeException("SimState object not an instance of "+Simulation.class.getName());
 		}
 	}
+	*/
 
 }

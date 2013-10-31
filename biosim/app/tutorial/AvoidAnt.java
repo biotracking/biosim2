@@ -5,6 +5,8 @@ import biosim.core.body.AbstractAnt;
 import sim.util.MutableDouble2D;
 public class AvoidAnt implements Agent {
 	AbstractAnt antBody;
+	public static double AVOID_RANGE=3.0;
+	public double nextAction = -1.0;
 	public AvoidAnt(AbstractAnt b){
 		antBody = b;
 	}
@@ -19,7 +21,7 @@ public class AvoidAnt implements Agent {
 		double turningSpeed = 0.0;	//no rotational velocity by default
 		//get a vector towards the nearest thing so we can avoid it
 		MutableDouble2D ant = new MutableDouble2D();
-		boolean sawAnt = antBody.getNearestSameAgentVec(ant);
+		boolean sawAnt = antBody.getNearestSameTypeVec(ant);
 		MutableDouble2D wall = new MutableDouble2D();
 		boolean sawWall = antBody.getNearestObstacleVec(wall);
 		MutableDouble2D avoidPoint = null;

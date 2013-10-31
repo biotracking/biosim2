@@ -72,7 +72,7 @@ public class RealAntInputParser extends BIOHMMInputParser{
 		antBody.getNearestObstacleVec(tmp.zero());
 		sensorVec[0] = tmp.x;
 		sensorVec[1] = tmp.y;
-		antBody.getNearestSameAgentVec(tmp.zero());
+		antBody.getNearestSameTypeVec(tmp.zero());
 		sensorVec[2] = tmp.x;
 		sensorVec[3] = tmp.y;
 		antBody.getPoiDir(tmp,"nest");
@@ -106,7 +106,7 @@ public class RealAntInputParser extends BIOHMMInputParser{
 	
 	public static int getSwitch(AbstractAnt antBody){
 		MutableDouble2D antVec = new MutableDouble2D();
-		boolean sawAnt = antBody.getNearestSameAgentVec(antVec.zero());
+		boolean sawAnt = antBody.getNearestSameTypeVec(antVec.zero());
 		return (sawAnt && antVec.length() < NEAR_THRESH)?1:0;
 	}
 	

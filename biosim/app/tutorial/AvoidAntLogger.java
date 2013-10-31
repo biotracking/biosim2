@@ -82,7 +82,7 @@ public class AvoidAntLogger extends BTFLogger {
 					boolean bar = false;
 					AphaenogasterCockerelli ant = (AphaenogasterCockerelli)b;
 					wallSensorRv = ant.getNearestObstacleVec(wallSensorVec);
-					antSensorRv = ant.getNearestSameAgentVec(antSensorVec);
+					antSensorRv = ant.getNearestSameTypeVec(antSensorVec);
 					ant.getHomeDir(homeSensorVec);
 					System.arraycopy(ant.desiredVelXYT,0,foo,0,3);
 					bar = true;

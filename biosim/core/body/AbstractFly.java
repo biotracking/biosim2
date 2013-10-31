@@ -8,7 +8,7 @@ import sim.engine.Steppable;
 import sim.engine.SimState;
 
 public abstract class AbstractFly extends Body
-	implements 	NearestSameAgentVec,
+	implements 	NearestSameTypeVec,
 				NearestObstacleVec,
 				NearestPredatorVec,
 				HolonomicDrive,

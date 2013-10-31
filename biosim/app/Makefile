@@ -1,6 +1,7 @@
 all:
 	make -C antknn/
 	make -C btfreplay/
+	make -C domworld/
 	make -C fishknn/
 	make -C fishlr/
 	make -C learnedants/
@@ -9,6 +10,7 @@ all:
 clean:
 	make -C antknn/ clean
 	make -C btfreplay/ clean
+	make -C domworld/ clean
 	make -C fishknn/ clean
 	make -C fishlr/ clean
 	make -C learnedants/ clean

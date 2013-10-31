@@ -4,7 +4,7 @@ import biosim.core.body.sensors.*;
 import biosim.core.body.actuators.*;
 
 public abstract class AbstractAnt extends Body
-	implements	NearestSameAgentVec,
+	implements	NearestSameTypeVec,
 				Homing,
 				DirectionToPOI,
 				NearPOI,

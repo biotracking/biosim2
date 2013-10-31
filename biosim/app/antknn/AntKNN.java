@@ -36,7 +36,7 @@ public class AntKNN implements Agent{
 		//System.out.println("Ant body:"+antBody);
 		double[] rv = new double[3];
 		MutableDouble2D ant = new MutableDouble2D();
-		boolean sawAnt = antBody.getNearestSameAgentVec(ant);
+		boolean sawAnt = antBody.getNearestSameTypeVec(ant);
 		MutableDouble2D wall = new MutableDouble2D();
 		boolean sawWall = antBody.getNearestObstacleVec(wall);
 		MutableDouble2D home = new MutableDouble2D();

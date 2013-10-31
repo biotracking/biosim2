@@ -12,5 +12,6 @@ import biosim.core.body.actuators.*;
  */
 public abstract class AbstractMonkey extends Body
 	implements	HolonomicDrive,
-				AllVisibleSameAgentsVecs {
+				AllVisibleSameType,
+				AllVisibleSameTypeVecs {
 }

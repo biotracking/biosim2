@@ -65,8 +65,8 @@ public class FishLR implements Agent{
 		MutableDouble2D avgFish = new MutableDouble2D();
 		MutableDouble2D nnFish = new MutableDouble2D();
 		MutableDouble2D wall = new MutableDouble2D();
-		boolean sawFish = fishBody.getAverageSameAgentVec(avgFish);
-		fishBody.getAverageSameAgentVec(nnFish);
+		boolean sawFish = fishBody.getAverageSameTypeVec(avgFish);
+		fishBody.getAverageSameTypeVec(nnFish);
 		fishBody.getNearestObstacleVec(wall);
 		fishBody.getSelfVelXYT(oldVel);
 		double[] sensors = new double[FB_BETA.length];

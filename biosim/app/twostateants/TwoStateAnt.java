@@ -75,7 +75,7 @@ public class TwoStateAnt implements Agent {
 		//rv[2] = 0.0;	//no rotational velocity by default
 		//get a vector towards the nearest thing so we can avoid/approach it
 		MutableDouble2D ant = new MutableDouble2D();
-		boolean sawAnt = antBody.getNearestSameAgentVec(ant);
+		boolean sawAnt = antBody.getNearestSameTypeVec(ant);
 		MutableDouble2D wall = new MutableDouble2D();
 		boolean sawWall = antBody.getNearestObstacleVec(wall);
 		MutableDouble2D nest = new MutableDouble2D();

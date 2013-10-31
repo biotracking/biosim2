@@ -67,6 +67,12 @@ public abstract class Body implements Steppable{
 			if(computeNewConfiguration(newPos,newDir)){
 				if(!collisionCheck(newPos,newDir)){
 					move(newPos,newDir);
+				} else {
+					//Allow rotation in place if it does not collide
+					MutableDouble2D oldPos = new MutableDouble2D(sim.field2D.getObjectLocation(this));
+					if(!collisionCheck(oldPos,newDir)){
+						move(oldPos,newDir);
+					}
 				}
 			}
 		}

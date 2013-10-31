@@ -71,7 +71,7 @@ public class BIOHMMInputParser {
 		antBody.getNearestObstacleVec(tmp.zero());
 		sensorVec[0] = tmp.x;
 		sensorVec[1] = tmp.y;
-		antBody.getNearestSameAgentVec(tmp.zero());
+		antBody.getNearestSameTypeVec(tmp.zero());
 		sensorVec[2] = tmp.x;
 		sensorVec[3] = tmp.y;
 		antBody.getPoiDir(tmp,"nest");
