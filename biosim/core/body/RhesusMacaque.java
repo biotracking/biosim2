@@ -16,7 +16,7 @@ public class RhesusMacaque extends AbstractMonkey {
 	public static double SIZE=0.5;
 	public static double MAX_VELOCITY_X=2.0;
 	public static double MAX_VELOCITY_Y=1.0;
-	public static double MAX_VELOCITY_THETA= Math.PI/2.0;
+	public static double MAX_VELOCITY_THETA= 2*Math.PI;
 
 	private double[] desiredVelXYT = {0.0,0.0,0.0};
 

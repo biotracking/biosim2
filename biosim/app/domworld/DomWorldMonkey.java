@@ -18,6 +18,7 @@ public class DomWorldMonkey implements Agent{
 	public static double APPROACH_SPEED=1.0;
 	public static double FRONTAL_FOV= 120.0 * (2*Math.PI/360.0);
 	public Agent target=null, fleeFrom=null, chaseTowards=null;
+	public double fleeEnd=-1.0, chaseEnd=-1.0;
 	public double targetDist=-1.0;
 	public boolean isRandomWalking=false;
 	public double randomTurnSpeed=0.0;
@@ -40,24 +41,30 @@ public class DomWorldMonkey implements Agent{
 
 		body.setDesiredVelocity(0,0,0);
 		if(nextTime != -1.0 && nextTime > time){
-			if(fleeFrom != null){
+			if(fleeFrom != null){//&& fleeEnd>time){
 				for(int i=0;i<agents.size();i++){
 					if(agents.get(i) == fleeFrom){
+						//body.setDesiredVelocity(2.0*(fleeEnd-time),0,vecs.get(i).dup().negate().angle());
+						
 						if(vecs.get(i).length()<(2.0+PERSONAL_DIST)){
 							body.setDesiredVelocity((2.0+PERSONAL_DIST)-vecs.get(i).length(),0,vecs.get(i).dup().negate().angle());
 						} else {
 							fleeFrom = null;
 						}
+						
 					}
 				}
-			} else if(chaseTowards != null){
+			} else if(chaseTowards != null){// && chaseEnd > time){
 				for(int i=0;i<agents.size();i++){
 					if(agents.get(i) == chaseTowards){
+						//body.setDesiredVelocity(1.0*(chaseEnd-time),0,vecs.get(i).angle());
+						
 						if(vecs.get(i).length()<(1.0+PERSONAL_DIST)){
 							body.setDesiredVelocity((1.0+PERSONAL_DIST)-vecs.get(i).length(),0,vecs.get(i).angle());
 						} else {
 							chaseTowards = null;
 						}
+						
 					}
 				}
 			} 
@@ -84,6 +91,7 @@ public class DomWorldMonkey implements Agent{
 		}
 		isRandomWalking = false;
 		chaseTowards = fleeFrom = target = null;
+		chaseEnd = fleeEnd = -1.0;
 		double tmpRnd = body.getRandom().nextDouble();
 		//System.out.println("Random: "+tmpRnd);
 		//System.out.println("lg(rnd): "+Math.log(tmpRnd));
@@ -125,19 +133,25 @@ public class DomWorldMonkey implements Agent{
 						if(body.getRandom().nextDouble() < chanceOfWinning){
 							//I WON!
 							chaseTowards = otherGuy;
+							chaseEnd = time+1.0;
 							otherGuy.fleeFrom = this;
+							otherGuy.fleeEnd = time+1.0;
 						} else {
 							//CRAP, SUPER RUNAWAY!
 							fleeFrom = otherGuy;
+							fleeEnd = time+1.0;
 							otherGuy.chaseTowards = this;
+							otherGuy.chaseEnd = time+1.0;
 						}
 					} else{
 						//He ran, oh well.
 						otherGuy.fleeFrom = this;
+						otherGuy.fleeEnd = time+1.0;
 					}
 				} else {
 					//FLEE!
 					fleeFrom = otherGuy;
+					fleeEnd = time+1.0;
 				}
 			} catch(ClassCastException cce){
 				//don't do anything, there are NON MONKEYS in this sim!
