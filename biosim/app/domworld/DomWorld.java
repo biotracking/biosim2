@@ -10,8 +10,8 @@ import biosim.core.agent.Agent;
 import biosim.core.gui.GUISimulation;
 
 public class DomWorld {
-	public static final double HEIGHT=20.0;
-	public static final double WIDTH=20.0;
+	public static final double HEIGHT=100.0;
+	public static final double WIDTH=100.0;
 
 	public static void main(String[] args){
 		int numMonkeys = 30;

@@ -11,10 +11,10 @@ import biosim.core.sim.Simulation;
 import biosim.core.agent.Agent;
 
 public class RhesusMacaque extends AbstractMonkey {
-	public static double SENSOR_RANGE=10.0;
-	public static double SENSOR_FOV= 300.0 * (2*Math.PI/360.0);
-	public static double SIZE=1.0;
-	public static double MAX_VELOCITY_X=1.0;
+	public static double SENSOR_RANGE=50.0;
+	public static double SENSOR_FOV= 360.0 * (2*Math.PI/360.0);
+	public static double SIZE=0.5;
+	public static double MAX_VELOCITY_X=2.0;
 	public static double MAX_VELOCITY_Y=1.0;
 	public static double MAX_VELOCITY_THETA= Math.PI/2.0;
 
@@ -113,11 +113,5 @@ public class RhesusMacaque extends AbstractMonkey {
 			}
 		}
 		return true;
-	}
-
-	public void step(SimState simstate){
-		if(simstate instanceof Simulation){
-			sim = (Simulation)simstate;
-		}
 	}
 }
