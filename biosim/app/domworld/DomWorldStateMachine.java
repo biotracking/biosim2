@@ -23,11 +23,11 @@ public class DomWorldStateMachine extends StateMachine {
 	public static int NUM_STATES=6;
 	//monkey behavior paramters
 	public static double PERSONAL_DIST=4.0;
-	public static double NEAR_DIST=2000.0;
+	public static double NEAR_DIST=20.0;
 	public static double FAR_DIST=NEAR_DIST*Math.sqrt(30);//30 == number of agents. It's arbitrary.
 	public static int MIN_OTHERS=3;
 	public static double AVERAGE_EVENT_TIME=10.0;
-	public static double FRONTAL_FOV= 360.0 * (2.0*Math.PI/360.0);
+	public static double FRONTAL_FOV= 120.0 * (2.0*Math.PI/360.0);
 	public static double RANDOM_WALK_SPEED=0.5;
 	public static double RANDOM_WALK_DIST=1.0;
 	public static double FLEE_SPEED=2.0;
