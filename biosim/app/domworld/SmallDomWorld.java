@@ -30,6 +30,9 @@ public class SmallDomWorld {
 
 	public static void main(String[] args){
 		int numMonkeys = 5;
+		DomWorldStateMachine.PERSONAL_DIST=0.5; //within arms reach
+		DomWorldStateMachine.NEAR_DIST=3.0; //closer than corner-to-corner
+		DomWorldStateMachine.MIN_OTHERS=2; //3 is more than half the monkeys
 		Environment env = new Environment(WIDTH,HEIGHT,1.0/30.0);
 		env.setToroidal(true);
 		env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall

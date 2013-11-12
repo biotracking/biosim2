@@ -65,10 +65,21 @@ public class DomWorldStateMachine extends StateMachine {
 			public String toString(){ return "RANDOM_WALK";}
 			public int act(double time){
 				ArrayList<MutableDouble2D> vecs = new ArrayList<MutableDouble2D>();
+				MutableDouble2D nearestObs = new MutableDouble2D();
+				boolean successObst = body.getNearestObstacleVec(nearestObs);
 				boolean successVecs = body.getAllVisibleSameTypeVecs(vecs);
 				double forwardSpeed = RANDOM_WALK_SPEED;
 				//double forwardSpeed = (RANDOM_WALK_SPEED)*(stopRandomWalkingAt-time)/(stopRandomWalkingAt-startRandomWalkingAt);
+				//get the vector to the nearest obstacle, find the vector along the plane closest to our orientation
+				//add some gaussian noise
 				double turnSpeed = (body.getRandom().nextDouble()-0.5)*Math.PI;
+				if(successObst && (nearestObs.x != 0.0 || nearestObs.y!=0.0)){
+					nearestObs.rotate(Math.PI/2.0);
+					if(Math.abs(nearestObs.angle()) > (Math.PI/2.0)){
+						nearestObs.negate();
+					}
+					nearestObs.rotate(body.getRandom().nextGaussian()* (10.0*2.0*Math.PI/360.0));
+				}
 				body.setDesiredVelocity(forwardSpeed,0.0,turnSpeed);
 				if(lostFight())
 					return FLEE;

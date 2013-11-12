@@ -13,7 +13,7 @@ import biosim.core.agent.Agent;
 public class RhesusMacaque extends AbstractMonkey {
 	public static double SENSOR_RANGE=50.0;
 	public static double SENSOR_FOV= 360.0 * (2*Math.PI/360.0);
-	public static double SIZE=0.5;
+	public static double SIZE=0.25;
 	public static double MAX_VELOCITY_X=2.0;
 	public static double MAX_VELOCITY_Y=1.0;
 	public static double MAX_VELOCITY_THETA= 2*Math.PI;
