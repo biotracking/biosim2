@@ -17,12 +17,17 @@ public class RhesusMacaque extends AbstractMonkey {
 	public static double MAX_VELOCITY_X=2.0;
 	public static double MAX_VELOCITY_Y=1.0;
 	public static double MAX_VELOCITY_THETA= 2*Math.PI;
+	public static double PROX_RANGE=SENSOR_RANGE;
+	public static double PROX_SENSORS=100;
 
 	private double[] desiredVelXYT = {0.0,0.0,0.0};
 
 	public double getSize(){return SIZE;}
 	public MersenneTwisterFast getRandom(){return sim.random;}
 	public void setDesiredVelocity(double x, double y, double theta){
+		if(Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(theta)){
+			throw new RuntimeException("Tried to set NaN velocity");
+		}
 		desiredVelXYT[0] = x;
 		desiredVelXYT[1] = y;
 		desiredVelXYT[2] = theta;
@@ -47,6 +52,7 @@ public class RhesusMacaque extends AbstractMonkey {
 					}
 					mutTmp.rotate(-dir.angle());
 					if(mutTmp.angle() > SENSOR_FOV/2 || mutTmp.angle() <-SENSOR_FOV/2) continue;
+					if(mutTmp.length() > SENSOR_RANGE) continue;
 					rv.add(tmpMonkey.agent);
 				}
 			}
@@ -80,6 +86,7 @@ public class RhesusMacaque extends AbstractMonkey {
 					}
 					mutTmp.rotate(-dir.angle());
 					if(mutTmp.angle() > SENSOR_FOV/2 || mutTmp.angle() <-SENSOR_FOV/2) continue;
+					if(mutTmp.length() > SENSOR_RANGE) continue;
 					rv.add(mutTmp);
 				}
 			}
@@ -94,6 +101,44 @@ public class RhesusMacaque extends AbstractMonkey {
 		return SENSOR_FOV;
 	}
 
+	public boolean getNearestObstacleVec(MutableDouble2D rv){
+		Double2D loc = sim.field2D.getObjectLocation(this);
+		MutableDouble2D dir = new MutableDouble2D();
+		if(sim.getBodyOrientation(this,dir)){
+			MutableDouble2D nearestObsPoint = null;
+			double nearestObsPointDS = -1.0;
+			for(int i=0;i<sim.obstacles.size();i++){
+				Double2D tmpPoint = sim.field2D.getObjectLocation(sim.obstacles.get(i));
+				MutableDouble2D mutTmp;
+				if(sim.toroidal){
+					mutTmp = new MutableDouble2D(sim.obstacles.get(i).toroidalClosestPoint(loc,tmpPoint,sim.field2D));
+					mutTmp = new MutableDouble2D(sim.field2D.tv(new Double2D(mutTmp),loc));
+					mutTmp.rotate(-dir.angle());
+					//if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() < -Math.PI/2) continue;
+					double tmpDS = sim.field2D.tds(new Double2D(0,0),new Double2D(mutTmp));
+					if(nearestObsPoint == null || nearestObsPointDS > tmpDS){
+						nearestObsPoint = mutTmp;
+						nearestObsPointDS = tmpDS;
+					}					
+				} else {
+					mutTmp = new MutableDouble2D(sim.obstacles.get(i).closestPoint(loc,tmpPoint));
+					mutTmp.subtractIn(loc);
+					mutTmp.rotate(-dir.angle());
+					//if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
+					if(nearestObsPoint == null || nearestObsPoint.lengthSq() > mutTmp.lengthSq()){
+						nearestObsPoint = mutTmp;
+					}
+				}
+			}
+			if(nearestObsPoint != null && nearestObsPoint.length() <= SENSOR_RANGE){
+				rv.setTo(nearestObsPoint);
+				return true;
+			} 
+		}
+		return false;
+	}
+	public double getNearestObstacleVecSensorRange(){ return SENSOR_RANGE; }
+
 	protected boolean computeNewConfiguration(MutableDouble2D newPos, MutableDouble2D newDir){
 		MutableDouble2D tmp = new MutableDouble2D(desiredVelXYT[0],desiredVelXYT[1]);
 		MutableDouble2D curDir = new MutableDouble2D();
@@ -105,13 +150,8 @@ public class RhesusMacaque extends AbstractMonkey {
 		Double2D oldPos = sim.field2D.getObjectLocation(this);
 		newPos.x = oldPos.x+(xVel*sim.resolution);
 		newPos.y = oldPos.y+(yVel*sim.resolution);
-		for(int i=0;i<sim.bodies.size();i++){
-			if(sim.bodies.get(i)==this){
-				newDir.setTo(sim.bodyOrientations.get(i));
-				newDir.rotate(tVel*sim.resolution);
-				break;
-			}
-		}
+		newDir.setTo(curDir);
+		newDir.rotate(tVel*sim.resolution);
 		return true;
 	}
 }

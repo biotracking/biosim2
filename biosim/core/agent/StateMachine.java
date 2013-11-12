@@ -11,5 +11,6 @@ public abstract class StateMachine implements Agent {
 	public int nextState;
 	public void act(double time){
 		nextState = states[nextState].act(time);
+		//System.out.println(states[nextState]);
 	}
 }

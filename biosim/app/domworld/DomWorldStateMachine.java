@@ -3,8 +3,10 @@
 package biosim.app.domworld;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import sim.util.MutableDouble2D;
+import ec.util.MersenneTwisterFast;
 
 import biosim.core.agent.Agent;
 import biosim.core.agent.StateMachine;
@@ -21,15 +23,21 @@ public class DomWorldStateMachine extends StateMachine {
 	public static int NUM_STATES=6;
 	//monkey behavior paramters
 	public static double PERSONAL_DIST=4.0;
-	public static double NEAR_DIST=20.0;
+	public static double NEAR_DIST=2000.0;
 	public static double FAR_DIST=NEAR_DIST*Math.sqrt(30);//30 == number of agents. It's arbitrary.
 	public static int MIN_OTHERS=3;
 	public static double AVERAGE_EVENT_TIME=10.0;
-	public static double FRONTAL_FOV= 120.0 * (2*Math.PI/360.0);
+	public static double FRONTAL_FOV= 360.0 * (2.0*Math.PI/360.0);
 	public static double RANDOM_WALK_SPEED=0.5;
+	public static double RANDOM_WALK_DIST=1.0;
 	public static double FLEE_SPEED=2.0;
+	public static double FLEE_DIST=5.0;
 	public static double CHASE_SPEED=1.0;
+	public static double CHASE_DIST=1.0;
 	public static double GROUP_SPEED=0.75;
+	public static double GROUP_DIST=1.0; //The distance to travel towards another group member.
+	public static double ETA = 6.0;	//derived so that the probability of A wining in a fight with B
+									//where D_a = 1/30, D_b = 1.0, is roughly 0.003
 	//instance data members
 	private DomWorldStateMachine target = null, chaseTowards=null, fleeFrom=null;
 	private double startLoiteringAt, stopLoiteringAt;
@@ -39,15 +47,22 @@ public class DomWorldStateMachine extends StateMachine {
 	private double startGroupingAt, stopGroupingAt;
 	private double dominanceRank;
 	private AbstractMonkey body;
+	private HashMap<DomWorldStateMachine,Double> preferences;
+
+	public void setTieStrengths(HashMap<DomWorldStateMachine,Double> tsprefs){
+		preferences = tsprefs;
+	}
 
 	public DomWorldStateMachine(AbstractMonkey b, double domRank){
 		body = b;
 		dominanceRank = domRank;
+		preferences = null;
 		states = new State[NUM_STATES];
 		//RANDOM WALK behavior. 
 		//Pick a random direction and head there for 
 		//RANDOM_WALK_DIST meters
 		states[RANDOM_WALK] = new State() {
+			public String toString(){ return "RANDOM_WALK";}
 			public int act(double time){
 				ArrayList<MutableDouble2D> vecs = new ArrayList<MutableDouble2D>();
 				boolean successVecs = body.getAllVisibleSameTypeVecs(vecs);
@@ -61,67 +76,291 @@ public class DomWorldStateMachine extends StateMachine {
 					return CHASE;
 				if(tooClose(vecs))
 					return ENCOUNTER;
-				if(randomWalkLoiterTimeout(time))
+				if(randomWalkLoiterTimeout(time)){
+					stopLoiteringAt = -1;
+					//stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
+					//startLoiteringAt = time;
 					return LOITER;
+				}
 				return RANDOM_WALK;
 			}
 		};
 		//GROUP behavior.
-		//Pick a random person within view range and
-		//head towards them for APPROACH_DIST meters
+		//Pick a person within view range and
+		//head towards them for APPROACH_DIST meters.
+		//Pick from visible people according to tie-strength
 		states[GROUP] = new State() {
+			public String toString(){ return "GROUP";}
 			public int act(double time){
 				ArrayList<MutableDouble2D> vecs = new ArrayList<MutableDouble2D>();
 				ArrayList<Agent> agents = new ArrayList<Agent>();
 				boolean successVecs = body.getAllVisibleSameTypeVecs(vecs);
 				boolean successAgents = body.getAllVisibleSameType(agents);
+				body.setDesiredVelocity(0.0,0.0,0.0);
 				int tgtId = -1;
+				double prefSum = 0;
+				if(agents.size()<=0){
+					stopLoiteringAt = -1;
+					//stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
+					//startLoiteringAt = time;
+					target = null;
+					return LOITER;
+				}
 				for(int i=0;i<agents.size();i++){
+					prefSum += preferences.get(agents.get(i));
 					if(agents.get(i)==target){
 						tgtId = i;
+						break;
 					}
 				}
 				if(tgtId==-1){
-					if(agents.size()>0){
-						tgtId = body.getRandom().nextInt(agents.size());
-					} else{
-						return RANDOM_WALK;
+					int blahTemp;
+					double sampleProp;
+					while(tgtId==-1){
+						blahTemp = body.getRandom().nextInt(agents.size());
+						sampleProp = body.getRandom().nextDouble();
+						if(sampleProp<(preferences.get(agents.get(blahTemp))/prefSum) ){
+							tgtId = blahTemp;
+						}
 					}
 				}
 				double forwardSpeed = GROUP_SPEED;
 				//double forwardSpeed = (GROUP_SPEED)*(stopGroupingAt-time)/(stopGroupingAt-startGroupingAt);
 				double turnSpeed = vecs.get(tgtId).angle();
 				body.setDesiredVelocity(forwardSpeed,0.0,turnSpeed);
-				if(lostFight())
+				if(lostFight()){
+					target = null;
 					return FLEE;
-				if(wonFight())
+				}
+				if(wonFight()){
+					target = null;
 					return CHASE;
-				if(tooClose(vecs))
+				}
+				if(tooClose(vecs)){
+					target = null;
 					return ENCOUNTER;
-				if(groupLoiterTimeout(time))
+				}
+				if(groupLoiterTimeout(time)){
+					stopLoiteringAt = -1;
+					//stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
+					//startLoiteringAt = time;
+					target = null;
 					return LOITER;
+				}
 				return GROUP;
 			}
 		};
 		//FLEE behavior.
 		//Head away from the person that is chasing
 		//me for FLEE_DIST meters
-
+		states[FLEE] = new State(){
+			public String toString(){return "FLEE";}
+			public int act(double time){
+				MutableDouble2D nearestObs = new MutableDouble2D();
+				ArrayList<MutableDouble2D> vecs = new ArrayList<MutableDouble2D>();
+				ArrayList<Agent> agents = new ArrayList<Agent>();
+				boolean successVecs = body.getAllVisibleSameTypeVecs(vecs);
+				boolean successAgents = body.getAllVisibleSameType(agents);
+				boolean successObst = body.getNearestObstacleVec(nearestObs);
+				int tgtId = -1;
+				if(agents.size()<=0){
+					stopLoiteringAt = -1;
+					//stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
+					//startLoiteringAt = time;
+					fleeFrom = null;
+					return LOITER;
+				}
+				for(int i=0;i<agents.size();i++){
+					if(agents.get(i)==fleeFrom){
+						tgtId = i;
+						break;
+					}
+				}
+				if(tgtId==-1){
+					stopLoiteringAt = -1;
+					//stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
+					//startLoiteringAt = time;
+					fleeFrom = null;
+					return LOITER;
+				}
+				MutableDouble2D fleeVec = vecs.get(tgtId).dup().negate();
+				//fleeVec.multiplyIn(1.0/fleeVec.length());
+				//fleeVec.addIn(nearestObs.dup().negate().multiplyIn(1.0/nearestObs.length()));
+				fleeVec.addIn(nearestObs.dup().negate());
+				double forwardSpeed = GROUP_SPEED;
+				double turnSpeed = fleeVec.angle();
+				body.setDesiredVelocity(forwardSpeed,0.0,turnSpeed);
+				if(fleeLoiterTimeout(time)){
+					stopLoiteringAt = -1;
+					//stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
+					//startLoiteringAt = time;
+					fleeFrom = null;
+					return LOITER;
+				}
+				return FLEE;
+			}
+		};
 		//CHASE behavior.
 		//Head towards the person that I'm chasing
 		//for CHASE_DIST meters
-
+		states[CHASE] = new State(){
+			public String toString(){return "CHASE";}
+			public int act(double time){
+				MutableDouble2D nearestObs = new MutableDouble2D();
+				ArrayList<MutableDouble2D> vecs = new ArrayList<MutableDouble2D>();
+				ArrayList<Agent> agents = new ArrayList<Agent>();
+				boolean successVecs = body.getAllVisibleSameTypeVecs(vecs);
+				boolean successAgents = body.getAllVisibleSameType(agents);
+				boolean successObst = body.getNearestObstacleVec(nearestObs);
+				int tgtId = -1;
+				if(agents.size()<=0){
+					stopLoiteringAt = -1;
+					//stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
+					//startLoiteringAt = time;
+					chaseTowards = null;
+					return LOITER;
+				}
+				for(int i=0;i<agents.size();i++){
+					if(agents.get(i)==chaseTowards){
+						tgtId=i;
+						break;
+					}
+				}
+				if(tgtId == -1){
+					stopLoiteringAt = -1;
+					//stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
+					//startLoiteringAt = time;
+					chaseTowards = null;
+					return LOITER;
+				}
+				MutableDouble2D chaseVec = vecs.get(tgtId).dup();
+				//chaseVec.multiplyIn(1.0/Math.exp(chaseVec.length()));
+				//chaseVec.addIn(nearestObs.dup().negate().multiplyIn(1.0/Math.exp(nearestObs.length())));
+				chaseVec.addIn(nearestObs.dup().negate());
+				double forwardSpeed = CHASE_SPEED;
+				double turnSpeed = chaseVec.angle();
+				body.setDesiredVelocity(forwardSpeed,0.0,turnSpeed);
+				if(chaseLoiterTimeout(time)){
+					body.setDesiredVelocity(0.0,0.0,-turnSpeed);
+					stopLoiteringAt = -1;
+					// stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
+					// startLoiteringAt = time;
+					chaseTowards = null;
+					return LOITER;
+				}
+				return CHASE;
+			}
+		};
 		//LOITER behavior.
 		//Sit still.
+		states[LOITER] = new State(){
+			public String toString(){return "LOITER";}
+			public int act(double time){
+				ArrayList<MutableDouble2D> vecs = new ArrayList<MutableDouble2D>();
+				boolean successVecs = body.getAllVisibleSameTypeVecs(vecs);
+				body.setDesiredVelocity(0.0,0.0,0.0);
+				if(stopLoiteringAt == -1){
+					stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
+					startLoiteringAt = time;
+					//System.out.println("Loitering for "+ (stopLoiteringAt-startLoiteringAt) +" seconds");
+				}
 
+				if(lostFight()){
+					return FLEE;
+				}
+				if(wonFight()){
+					return CHASE;
+				}
+				if(tooClose(vecs)){
+					return ENCOUNTER;
+				}
+				if(isFarFromGroup(vecs)){
+					//NOTE: GROUP actually will pick an individual if none is set
+					//unlike FLEE and CHASE, so all we have to do here is set
+					//the timeout
+					startGroupingAt = time;
+					stopGroupingAt = time + (GROUP_DIST/GROUP_SPEED);
+					return GROUP;
+				}
+				if(loiterRandomWalkTimeout(time)){
+					startRandomWalkingAt = time;
+					stopRandomWalkingAt = time+(RANDOM_WALK_DIST/RANDOM_WALK_SPEED);
+					return RANDOM_WALK;
+				}
+				return LOITER;
+			}
+		};
 		//ENCOUNTER behavior.
 		//Fight!
+		states[ENCOUNTER] = new State(){
+			public String toString(){return "ENCOUNTER";}
+			public int act(double time){
+				ArrayList<MutableDouble2D> vecs = new ArrayList<MutableDouble2D>();
+				ArrayList<Agent> agents = new ArrayList<Agent>();
+				boolean successVecs = body.getAllVisibleSameTypeVecs(vecs);
+				boolean successAgents = body.getAllVisibleSameType(agents);
+				//If fleeFrom or chaseTowards have already been set, no
+				//need to calculate anything
+				if(lostFight()){
+					return FLEE;
+				}
+				if(wonFight()){
+					return CHASE;
+				}
+				//NO AVOIDANCE, just classic DomWorld
+				//fights MUST happen.
+				double closestD = -1;
+				int closestId = -1;
+				for(int i=0;i<vecs.size();i++){
+					double guyDist = vecs.get(i).length();
+					if(closestId == -1 || guyDist < closestD){
+						closestId = i;
+						closestD = guyDist;
+					}
+				}
+				if(closestId == -1){
+					//I guess they left
+					stopLoiteringAt = -1;
+					//stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
+					//startLoiteringAt = time;
+					return LOITER;
+				}
+				if(!(agents.get(closestId) instanceof DomWorldStateMachine)){
+					throw new RuntimeException("Closest agent is not a monkey");
+				}
+				DomWorldStateMachine otherGuy = (DomWorldStateMachine)agents.get(closestId);
+				double winProb = 1.0/(1+Math.exp(-ETA*(dominanceRank-otherGuy.dominanceRank)));
+				double randomSample = body.getRandom().nextDouble();
+				if(randomSample<winProb){
+					chaseTowards = otherGuy;
+					startChasingAt = time;
+					stopChasingAt = time+(CHASE_DIST/CHASE_SPEED);
+					otherGuy.fleeFrom = DomWorldStateMachine.this;
+					otherGuy.startFleeingAt = time;
+					otherGuy.stopFleeingAt = time+(FLEE_DIST/FLEE_SPEED);
+					return CHASE;
+				} else {
+					fleeFrom = otherGuy;
+					startFleeingAt = time;
+					stopFleeingAt = time+(FLEE_DIST/FLEE_SPEED);
+					otherGuy.chaseTowards = DomWorldStateMachine.this;
+					otherGuy.startChasingAt = time;
+					otherGuy.stopChasingAt = time+(CHASE_DIST/CHASE_SPEED);
+					return FLEE;
+				}
+			}
+		};
+		//initial state is to loiter!
+		stopLoiteringAt = -1;//(-AVERAGE_EVENT_TIME*Math.log(initRandom.nextDouble()));
+		nextState = LOITER;
 	}
 
 	public boolean isFarFromGroup(ArrayList<MutableDouble2D> perceivedMonkeys){
 		int groupCtr = 0;
 		for(int i=0;i<perceivedMonkeys.size();i++){
 			double guyDist = perceivedMonkeys.get(i).length();
+			//System.out.println("Dir to monkey: "+perceivedMonkeys.get(i).angle());
+			//System.out.println("Dist to monkey: "+perceivedMonkeys.get(i));
 			boolean inFront = perceivedMonkeys.get(i).angle()<FRONTAL_FOV/2.0;
 			inFront = inFront && perceivedMonkeys.get(i).angle()>-FRONTAL_FOV/2.0;
 			if(guyDist <= NEAR_DIST && inFront){
@@ -131,6 +370,8 @@ public class DomWorldStateMachine extends StateMachine {
 		if(groupCtr >MIN_OTHERS){
 			return false;
 		} else{
+			//System.out.println("NEAR_DIST: "+NEAR_DIST);
+			//System.out.println("Group: "+groupCtr+" "+perceivedMonkeys.size());
 			return true;
 		}
 	}
@@ -189,7 +430,7 @@ public class DomWorldStateMachine extends StateMachine {
 		startChasingAt = stopChasingAt = -1;
 		startGroupingAt = stopGroupingAt = -1;
 		startLoiteringAt = 0;
-		stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()));
+		stopLoiteringAt = -1;//(-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()));
 	}
 	public void finish(){
 	}
