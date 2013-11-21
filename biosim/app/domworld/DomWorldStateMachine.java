@@ -340,6 +340,11 @@ public class DomWorldStateMachine extends StateMachine {
 					throw new RuntimeException("Closest agent is not a monkey");
 				}
 				DomWorldStateMachine otherGuy = (DomWorldStateMachine)agents.get(closestId);
+				//If he's chasing, or being chased, ignore it.
+				if(otherGuy.nextState == CHASE || otherGuy.nextState==FLEE){
+					stopLoiteringAt = -1;
+					return LOITER;
+				}
 				double winProb = 1.0/(1+Math.exp(-ETA*(dominanceRank-otherGuy.dominanceRank)));
 				double randomSample = body.getRandom().nextDouble();
 				if(randomSample<winProb){

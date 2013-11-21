@@ -66,14 +66,17 @@ public class Environment implements MakesSimState{
 
 	public Class simulationClass(){ return Simulation.class; }
 	
+	public Simulation newSimulation(){
+		return newSimulation(System.currentTimeMillis());
+	}
 	/**
 	 * Convenience method for generating Simulation objects.
 	 * Used primarily to generate simulation objects to the
 	 * GUISimulation class. Use runSimulation(...) for non-gui
 	 * runs.
 	 */
-	public Simulation newSimulation(){
-		Simulation sim = new Simulation(System.currentTimeMillis());
+	public Simulation newSimulation(long seed){
+		Simulation sim = new Simulation(seed);
 		sim.env = this;
 		configSim(sim);
 		return sim;
