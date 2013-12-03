@@ -353,45 +353,6 @@ public class SmallDomWorld {
 		} else {
 			sim = defaultConfig();
 		}
-		/*
-		RhesusMacaque[] bodies = new RhesusMacaque[numMonkeys];
-		for(int i=0;i<bodies.length;i++){
-			bodies[i] = new RhesusMacaque();
-			env.addBody(bodies[i]);
-		}
-		Simulation sim = env.newSimulation();
-		Agent[] agents = new Agent[bodies.length];
-		double[][] tieStrengths = randomTieStrength(sim.random,numMonkeys);
-		DecimalFormat df = new DecimalFormat("0.0000");
-		printMat(tieStrengths,df);
-		*/
-		/*
-		DecimalFormat df = new DecimalFormat("0.0000");
-		System.out.println("Tie strengths:");
-		for(int i=0;i<tieStrengths.length;i++){
-			System.out.print("Row "+i+": ");
-			for(int j=0;j<tieStrengths[i].length;j++){
-				System.out.print(df.format(tieStrengths[i][j])+" ");
-			}
-			System.out.println();
-		}
-		*/
-		/*
-		for(int i=0;i<agents.length;i++){
-			double rndDom = sim.random.nextDouble();
-			agents[i] = new DomWorldStateMachine(bodies[i],rndDom);
-			//agents[i] = new DomWorldMonkey(bodies[i],sim.random.nextDouble());
-			bodies[i].setAgent(agents[i]);
-			System.out.println("Monkey "+i+" dominance: "+df.format(rndDom));
-		}
-		for(int i=0;i<agents.length;i++){
-			HashMap<DomWorldStateMachine,Double> tsprefs = new HashMap<DomWorldStateMachine,Double>();
-			for(int j=0;j<numMonkeys;j++){
-				tsprefs.put((DomWorldStateMachine)agents[j],tieStrengths[i][j]);
-			}
-			((DomWorldStateMachine)agents[i]).setTieStrengths(tsprefs);
-		}
-		*/
 		if(LOGGING){
 			sim.addLogger(new BTFLogger());
 		}

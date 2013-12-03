@@ -65,9 +65,11 @@ public class DomWorldStateMachine extends StateMachine {
 			public String toString(){ return "RANDOM_WALK";}
 			public int act(double time){
 				ArrayList<MutableDouble2D> vecs = new ArrayList<MutableDouble2D>();
+				ArrayList<Agent> agents = new ArrayList<Agent>();
 				MutableDouble2D nearestObs = new MutableDouble2D();
 				boolean successObst = body.getNearestObstacleVec(nearestObs);
 				boolean successVecs = body.getAllVisibleSameTypeVecs(vecs);
+				boolean successAgents = body.getAllVisibleSameType(agents);
 				double forwardSpeed = RANDOM_WALK_SPEED;
 				//double forwardSpeed = (RANDOM_WALK_SPEED)*(stopRandomWalkingAt-time)/(stopRandomWalkingAt-startRandomWalkingAt);
 				//get the vector to the nearest obstacle, find the vector along the plane closest to our orientation
@@ -85,7 +87,7 @@ public class DomWorldStateMachine extends StateMachine {
 					return FLEE;
 				if(wonFight())
 					return CHASE;
-				if(tooClose(vecs))
+				if(tooClose(vecs,agents))
 					return ENCOUNTER;
 				if(randomWalkLoiterTimeout(time)){
 					stopLoiteringAt = -1;
@@ -147,7 +149,7 @@ public class DomWorldStateMachine extends StateMachine {
 					target = null;
 					return CHASE;
 				}
-				if(tooClose(vecs)){
+				if(tooClose(vecs,agents)){
 					target = null;
 					return ENCOUNTER;
 				}
@@ -267,8 +269,10 @@ public class DomWorldStateMachine extends StateMachine {
 		states[LOITER] = new State(){
 			public String toString(){return "LOITER";}
 			public int act(double time){
+				ArrayList<Agent> agents = new ArrayList<Agent>();
 				ArrayList<MutableDouble2D> vecs = new ArrayList<MutableDouble2D>();
 				boolean successVecs = body.getAllVisibleSameTypeVecs(vecs);
+				boolean successAgents = body.getAllVisibleSameType(agents);
 				body.setDesiredVelocity(0.0,0.0,0.0);
 				if(stopLoiteringAt == -1){
 					stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
@@ -282,7 +286,7 @@ public class DomWorldStateMachine extends StateMachine {
 				if(wonFight()){
 					return CHASE;
 				}
-				if(tooClose(vecs)){
+				if(tooClose(vecs,agents)){
 					return ENCOUNTER;
 				}
 				if(isFarFromGroup(vecs)){
@@ -392,10 +396,13 @@ public class DomWorldStateMachine extends StateMachine {
 		}
 	}
 
-	public boolean tooClose(ArrayList<MutableDouble2D> perceivedMonkeys){
+	public boolean tooClose(ArrayList<MutableDouble2D> perceivedMonkeys, ArrayList<Agent> perceivedAgents){
 		MutableDouble2D closestMonkey = null;
 		double closestD = -1;
 		for(int i=0;i<perceivedMonkeys.size();i++){
+			if(!(perceivedAgents.get(i) instanceof DomWorldStateMachine)) continue;
+			if(((DomWorldStateMachine)perceivedAgents.get(i)).nextState == CHASE) continue;
+			if(((DomWorldStateMachine)perceivedAgents.get(i)).nextState == FLEE) continue;
 			double guyDist = perceivedMonkeys.get(i).length();
 			boolean inFront = perceivedMonkeys.get(i).angle()<FRONTAL_FOV/2.0;
 			inFront = inFront && perceivedMonkeys.get(i).angle()>-FRONTAL_FOV/2.0;
