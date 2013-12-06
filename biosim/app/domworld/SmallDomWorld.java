@@ -37,6 +37,13 @@ public class SmallDomWorld {
 		}
 		return rv;
 	}
+	public static void missingPropsError(String propName){
+		throw new RuntimeException("missing property: "+propName);
+	}
+
+	public static void invalidValue(String propName, String value){
+		throw new RuntimeException("invalid property value: "+propName+" = "+value);
+	}
 
 	public static double[][] tieStrengthFromFile(String fname) throws IOException{
 		double[][] rv = null;
@@ -62,14 +69,6 @@ public class SmallDomWorld {
 			}
 		}
 		return rv;
-	}
-
-	public static void missingPropsError(String propName){
-		throw new RuntimeException("missing property: "+propName);
-	}
-
-	public static void invalidValue(String propName, String value){
-		throw new RuntimeException("invalid property value: "+propName+" = "+value);
 	}
 
 	public static Simulation defaultConfig(){
@@ -205,101 +204,7 @@ public class SmallDomWorld {
 			//do some stuff
 		}
 		//BEHAVIOR PARAMS
-		tmp = props.getProperty("PERSONAL_DIST");
-		if(tmp != null){
-			DomWorldStateMachine.PERSONAL_DIST = Double.parseDouble(tmp);
-			if(DomWorldStateMachine.PERSONAL_DIST < RhesusMacaque.SIZE){
-				invalidValue("PERSONAL_DIST",tmp);
-			}
-		}
-		tmp = props.getProperty("NEAR_DIST");
-		if(tmp != null){
-			DomWorldStateMachine.NEAR_DIST = Double.parseDouble(tmp);
-			if(DomWorldStateMachine.NEAR_DIST < RhesusMacaque.SIZE){
-				invalidValue("NEAR_DIST",tmp);
-			}
-		}
-		DomWorldStateMachine.FAR_DIST=DomWorldStateMachine.NEAR_DIST*Math.sqrt(numMonkeys);
-		tmp = props.getProperty("MIN_OTHERS");
-		if(tmp != null){
-			DomWorldStateMachine.MIN_OTHERS = Integer.parseInt(tmp);
-			if(DomWorldStateMachine.MIN_OTHERS < 0 || DomWorldStateMachine.MIN_OTHERS > numMonkeys){
-				invalidValue("MIN_OTHERS",tmp);
-			}
-		}
-		tmp = props.getProperty("AVERAGE_EVENT_TIME");
-		if(tmp != null){
-			DomWorldStateMachine.AVERAGE_EVENT_TIME = Double.parseDouble(tmp);
-			if(DomWorldStateMachine.AVERAGE_EVENT_TIME < 0){
-				invalidValue("AVERAGE_EVENT_TIME",tmp);
-			}
-		}
-		tmp = props.getProperty("FRONTAL_FOV");
-		if(tmp != null){
-			DomWorldStateMachine.FRONTAL_FOV = Double.parseDouble(tmp);
-			if(DomWorldStateMachine.FRONTAL_FOV <= 0.0 || DomWorldStateMachine.FRONTAL_FOV >= 2.0*Math.PI){
-				invalidValue("FRONTAL_FOV",tmp);
-			}
-		}
-		tmp = props.getProperty("RANDOM_WALK_SPEED");
-		if(tmp != null){
-			DomWorldStateMachine.RANDOM_WALK_SPEED = Double.parseDouble(tmp);
-			if(DomWorldStateMachine.RANDOM_WALK_SPEED < 0.0){
-				invalidValue("RANDOM_WALK_SPEED",tmp);
-			}
-		}
-		tmp = props.getProperty("RANDOM_WALK_DIST");
-		if(tmp != null){
-			DomWorldStateMachine.RANDOM_WALK_DIST = Double.parseDouble(tmp);
-			if(DomWorldStateMachine.RANDOM_WALK_DIST < 0.0){
-				invalidValue("RANDOM_WALK_DIST",tmp);
-			}
-		}		tmp = props.getProperty("FLEE_SPEED");
-		if(tmp != null){
-			DomWorldStateMachine.FLEE_SPEED = Double.parseDouble(tmp);
-			if(DomWorldStateMachine.FLEE_SPEED < 0.0){
-				invalidValue("FLEE_SPEED",tmp);
-			}
-		}
-		tmp = props.getProperty("FLEE_DIST");
-		if(tmp != null){
-			DomWorldStateMachine.FLEE_DIST = Double.parseDouble(tmp);
-			if(DomWorldStateMachine.FLEE_DIST < 0.0){
-				invalidValue("FLEE_DIST",tmp);
-			}
-		}
-		tmp = props.getProperty("CHASE_SPEED");
-		if(tmp != null){
-			DomWorldStateMachine.CHASE_SPEED = Double.parseDouble(tmp);
-			if(DomWorldStateMachine.CHASE_SPEED < 0.0){
-				invalidValue("CHASE_SPEED",tmp);
-			}
-		}
-		tmp = props.getProperty("CHASE_DIST");
-		if(tmp != null){
-			DomWorldStateMachine.CHASE_DIST = Double.parseDouble(tmp);
-			if(DomWorldStateMachine.CHASE_DIST < 0.0){
-				invalidValue("CHASE_DIST",tmp);
-			}
-		}
-		tmp = props.getProperty("GROUP_SPEED");
-		if(tmp != null){
-			DomWorldStateMachine.GROUP_SPEED = Double.parseDouble(tmp);
-			if(DomWorldStateMachine.GROUP_SPEED < 0.0){
-				invalidValue("GROUP_SPEED",tmp);
-			}
-		}
-		tmp = props.getProperty("GROUP_DIST");
-		if(tmp != null){
-			DomWorldStateMachine.GROUP_DIST = Double.parseDouble(tmp);
-			if(DomWorldStateMachine.GROUP_DIST < 0.0){
-				invalidValue("GROUP_DIST",tmp);
-			}
-		}
-		tmp = props.getProperty("ETA");
-		if(tmp != null){
-			DomWorldStateMachine.ETA = Double.parseDouble(tmp);
-		}
+		DomWorldStateMachine.configure(props);
 		//INITIALIZE AGENTS & BODIES
 		RhesusMacaque[] bodies = new RhesusMacaque[numMonkeys];
 		for(int i=0;i<bodies.length;i++){

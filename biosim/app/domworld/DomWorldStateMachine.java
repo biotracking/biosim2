@@ -4,6 +4,7 @@ package biosim.app.domworld;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Properties;
 
 import sim.util.MutableDouble2D;
 import ec.util.MersenneTwisterFast;
@@ -38,6 +39,126 @@ public class DomWorldStateMachine extends StateMachine {
 	public static double GROUP_DIST=1.0; //The distance to travel towards another group member.
 	public static double ETA = 6.0;	//derived so that the probability of A wining in a fight with B
 									//where D_a = 1/30, D_b = 1.0, is roughly 0.003
+	public static double HIERARCHY_STABILITY=0.9; 	//probability that a monkey entering the personal distance
+													//of another monkey invokes a conflict
+	//static config functions
+	public static void invalidValue(String propName, String value){
+		ETA=-1.0;
+		throw new RuntimeException("invalid property value: "+propName+" = "+value);
+	}
+
+	public static void configure(Properties props){
+		String tmp;
+		//BEHAVIOR PARAMS
+		tmp = props.getProperty("PERSONAL_DIST");
+		if(tmp != null){
+			PERSONAL_DIST = Double.parseDouble(tmp);
+			if(PERSONAL_DIST < 0){
+				invalidValue("PERSONAL_DIST",tmp);
+			}
+		}
+		tmp = props.getProperty("NEAR_DIST");
+		if(tmp != null){
+			NEAR_DIST = Double.parseDouble(tmp);
+			if(NEAR_DIST < PERSONAL_DIST){
+				invalidValue("NEAR_DIST",tmp);
+			}
+		}
+		tmp = props.getProperty("FAR_DIST");
+		if(tmp != null){
+			FAR_DIST = Double.parseDouble(tmp);
+			if(FAR_DIST < NEAR_DIST){
+				invalidValue("FAR_DIST",tmp);
+			}
+		}
+		tmp = props.getProperty("MIN_OTHERS");
+		if(tmp != null){
+			MIN_OTHERS = Integer.parseInt(tmp);
+			if(MIN_OTHERS < 0){
+				invalidValue("MIN_OTHERS",tmp);
+			}
+		}
+		tmp = props.getProperty("AVERAGE_EVENT_TIME");
+		if(tmp != null){
+			AVERAGE_EVENT_TIME = Double.parseDouble(tmp);
+			if(AVERAGE_EVENT_TIME < 0){
+				invalidValue("AVERAGE_EVENT_TIME",tmp);
+			}
+		}
+		tmp = props.getProperty("FRONTAL_FOV");
+		if(tmp != null){
+			FRONTAL_FOV = Double.parseDouble(tmp);
+			if(FRONTAL_FOV <= 0.0 || FRONTAL_FOV >= 2.0*Math.PI){
+				invalidValue("FRONTAL_FOV",tmp);
+			}
+		}
+		tmp = props.getProperty("RANDOM_WALK_SPEED");
+		if(tmp != null){
+			RANDOM_WALK_SPEED = Double.parseDouble(tmp);
+			if(RANDOM_WALK_SPEED < 0.0){
+				invalidValue("RANDOM_WALK_SPEED",tmp);
+			}
+		}
+		tmp = props.getProperty("RANDOM_WALK_DIST");
+		if(tmp != null){
+			RANDOM_WALK_DIST = Double.parseDouble(tmp);
+			if(RANDOM_WALK_DIST < 0.0){
+				invalidValue("RANDOM_WALK_DIST",tmp);
+			}
+		}		tmp = props.getProperty("FLEE_SPEED");
+		if(tmp != null){
+			FLEE_SPEED = Double.parseDouble(tmp);
+			if(FLEE_SPEED < 0.0){
+				invalidValue("FLEE_SPEED",tmp);
+			}
+		}
+		tmp = props.getProperty("FLEE_DIST");
+		if(tmp != null){
+			FLEE_DIST = Double.parseDouble(tmp);
+			if(FLEE_DIST < 0.0){
+				invalidValue("FLEE_DIST",tmp);
+			}
+		}
+		tmp = props.getProperty("CHASE_SPEED");
+		if(tmp != null){
+			CHASE_SPEED = Double.parseDouble(tmp);
+			if(CHASE_SPEED < 0.0){
+				invalidValue("CHASE_SPEED",tmp);
+			}
+		}
+		tmp = props.getProperty("CHASE_DIST");
+		if(tmp != null){
+			CHASE_DIST = Double.parseDouble(tmp);
+			if(CHASE_DIST < 0.0){
+				invalidValue("CHASE_DIST",tmp);
+			}
+		}
+		tmp = props.getProperty("GROUP_SPEED");
+		if(tmp != null){
+			GROUP_SPEED = Double.parseDouble(tmp);
+			if(GROUP_SPEED < 0.0){
+				invalidValue("GROUP_SPEED",tmp);
+			}
+		}
+		tmp = props.getProperty("GROUP_DIST");
+		if(tmp != null){
+			GROUP_DIST = Double.parseDouble(tmp);
+			if(GROUP_DIST < 0.0){
+				invalidValue("GROUP_DIST",tmp);
+			}
+		}
+		tmp = props.getProperty("ETA");
+		if(tmp != null){
+			ETA = Double.parseDouble(tmp);
+		}
+		tmp = props.getProperty("HIERARCHY_STABILITY");
+		if(tmp != null){
+			HIERARCHY_STABILITY = Double.parseDouble(tmp);
+			if(HIERARCHY_STABILITY < 0.0){
+				invalidValue("HIERARCHY_STABILITY",tmp);
+			}
+		}
+	}
 	//instance data members
 	private DomWorldStateMachine target = null, chaseTowards=null, fleeFrom=null;
 	private double startLoiteringAt, stopLoiteringAt;
@@ -48,6 +169,7 @@ public class DomWorldStateMachine extends StateMachine {
 	private double dominanceRank;
 	private AbstractMonkey body;
 	private HashMap<DomWorldStateMachine,Double> preferences;
+	private Agent lastClosest;
 
 	public void setTieStrengths(HashMap<DomWorldStateMachine,Double> tsprefs){
 		preferences = tsprefs;
@@ -199,7 +321,7 @@ public class DomWorldStateMachine extends StateMachine {
 				MutableDouble2D fleeVec = vecs.get(tgtId).dup().negate();
 				//fleeVec.multiplyIn(1.0/fleeVec.length());
 				//fleeVec.addIn(nearestObs.dup().negate().multiplyIn(1.0/nearestObs.length()));
-				fleeVec.addIn(nearestObs.dup().negate());
+				if(nearestObs.length() < fleeVec.length()) fleeVec.addIn(nearestObs.dup().negate());
 				double forwardSpeed = GROUP_SPEED;
 				double turnSpeed = fleeVec.angle();
 				body.setDesiredVelocity(forwardSpeed,0.0,turnSpeed);
@@ -398,6 +520,7 @@ public class DomWorldStateMachine extends StateMachine {
 
 	public boolean tooClose(ArrayList<MutableDouble2D> perceivedMonkeys, ArrayList<Agent> perceivedAgents){
 		MutableDouble2D closestMonkey = null;
+		Agent closestMonkeyAgent = null;;
 		double closestD = -1;
 		for(int i=0;i<perceivedMonkeys.size();i++){
 			if(!(perceivedAgents.get(i) instanceof DomWorldStateMachine)) continue;
@@ -410,9 +533,12 @@ public class DomWorldStateMachine extends StateMachine {
 				if(closestMonkey==null || guyDist < closestD){
 					closestMonkey = perceivedMonkeys.get(i);
 					closestD = guyDist;
+					closestMonkeyAgent = perceivedAgents.get(i);
 				}
 			}
 		}
+		if(lastClosest == closestMonkeyAgent || body.getRandom().nextDouble()<HIERARCHY_STABILITY) return false;
+		lastClosest = closestMonkeyAgent;
 		return (closestMonkey!=null)&&(closestMonkey.length()<PERSONAL_DIST);
 	}
 
