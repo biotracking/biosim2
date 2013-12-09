@@ -32,7 +32,7 @@ public class DomWorldStateMachine extends StateMachine {
 	public static double RANDOM_WALK_SPEED=0.5;
 	public static double RANDOM_WALK_DIST=1.0;
 	public static double FLEE_SPEED=2.0;
-	public static double FLEE_DIST=5.0;
+	public static double FLEE_DIST=2.0;
 	public static double CHASE_SPEED=1.0;
 	public static double CHASE_DIST=1.0;
 	public static double GROUP_SPEED=0.75;
@@ -173,6 +173,26 @@ public class DomWorldStateMachine extends StateMachine {
 
 	public void setTieStrengths(HashMap<DomWorldStateMachine,Double> tsprefs){
 		preferences = tsprefs;
+	}
+
+	private class Roam implements State{
+		public String toString(){ return "ROAM";}
+		public int act(double time){
+			//momentum, random component (direction), follow wall if close,
+			//avoid monkey as weak obstacles,
+			//
+			//set out in random directions, when they hit the walls they 
+			//patrol the walls, generally avoid eachother weakly
+			return -1;
+		}
+	}
+
+	private class GoToWaypoint implements State{
+		public String toString(){ return "GO_TO_WAYPOINT";}
+		public int act(double time){
+			//Pick a random spot in the arena and head there
+			return -1;
+		}
 	}
 
 	public DomWorldStateMachine(AbstractMonkey b, double domRank){
@@ -395,7 +415,12 @@ public class DomWorldStateMachine extends StateMachine {
 				ArrayList<MutableDouble2D> vecs = new ArrayList<MutableDouble2D>();
 				boolean successVecs = body.getAllVisibleSameTypeVecs(vecs);
 				boolean successAgents = body.getAllVisibleSameType(agents);
-				body.setDesiredVelocity(0.0,0.0,0.0);
+				MutableDouble2D avgVec = new MutableDouble2D();
+				avgVec.x = avgVec.y = 0.0;
+				for(int i=0;i<vecs.size();i++){
+					avgVec.addIn(vecs.get(i).dup().normalize());
+				}
+				body.setDesiredVelocity(0.0,0.0,avgVec.angle());
 				if(stopLoiteringAt == -1){
 					stopLoiteringAt = (-AVERAGE_EVENT_TIME*Math.log(body.getRandom().nextDouble()))+time;
 					startLoiteringAt = time;
