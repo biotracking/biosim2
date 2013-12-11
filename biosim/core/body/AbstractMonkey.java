@@ -14,5 +14,8 @@ public abstract class AbstractMonkey extends Body
 	implements	HolonomicDrive,
 				AllVisibleSameType,
 				AllVisibleSameTypeVecs,
-				NearestObstacleVec {
+				NearestObstacleVec, 
+				Compass,
+				GPS,
+				EnvironmentSize2D {
 }

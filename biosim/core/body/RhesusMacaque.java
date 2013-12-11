@@ -32,6 +32,24 @@ public class RhesusMacaque extends AbstractMonkey {
 		desiredVelXYT[1] = y;
 		desiredVelXYT[2] = theta;
 	}
+
+	public boolean getAbsoluteOrientation(MutableDouble2D dir){
+		return sim.getBodyOrientation(this,dir);
+	}
+
+	public boolean getAbsolutePosition(MutableDouble2D loc){
+		Double2D rv = sim.field2D.getObjectLocation(this);
+		if(rv == null) return false;
+		loc.setTo(rv);
+		return true;
+	}
+
+	public boolean getEnvironmentSize(MutableDouble2D size){
+		Double2D rv = sim.field2D.getDimensions();
+		size.setTo(rv);
+		return true;
+	}
+
 	public boolean getAllVisibleSameType(List<Agent> rv){
 		if(rv == null) return false;
 		Double2D loc = sim.field2D.getObjectLocation(this);
