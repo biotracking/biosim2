@@ -47,6 +47,7 @@ public class DomWorldStateMachine extends StateMachine {
 	public static double HIERARCHY_STABILITY=0.9; 	//probability that a monkey entering the personal distance
 													//of another monkey invokes a conflict
 	public static double ROAM_OBST_DIST=0.5;
+	public static double EPSILON=2.0*Math.PI/360.0;
 	//static config functions
 	public static void invalidValue(String propName, String value){
 		ETA=-1.0;
@@ -164,6 +165,13 @@ public class DomWorldStateMachine extends StateMachine {
 				invalidValue("HIERARCHY_STABILITY",tmp);
 			}
 		}
+		tmp = props.getProperty("EPSILON");
+		if(tmp!=null){
+			EPSILON = Double.parseDouble(tmp);
+			if(EPSILON < 0){
+				invalidValue("EPSILON",tmp);
+			}
+		}
 	}
 	//instance data members
 	private DomWorldStateMachine target = null, chaseTowards=null, fleeFrom=null;
@@ -232,6 +240,15 @@ public class DomWorldStateMachine extends StateMachine {
 					vecTowards.negate();
 				}
 			}
+			vecTowards.normalize();
+			/*
+			MutableDouble2D avoid = new MutableDouble2D();
+			MutableDouble2D tmp = null;
+			double tmpD = -1.0;
+			for(int i=0;i<vecs.size();i++){
+				if(tmpD == -1.0 || vecs.get(i))
+			}
+			*/
 			body.setDesiredVelocity(ROAM_SPEED,0.0,vecTowards.angle());
 			return ROAM;
 		}
@@ -280,7 +297,9 @@ public class DomWorldStateMachine extends StateMachine {
 				return FLEE;
 			}
 			MutableDouble2D vecTowards = new MutableDouble2D(gtwLocation).subtractIn(loc).rotate(-loc.angle());
-			body.setDesiredVelocity(RANDOM_WALK_SPEED,0,vecTowards.angle());
+			double desiredTheta = vecTowards.angle();
+			double desiredX = (desiredTheta>EPSILON)?0.0:Math.min(RANDOM_WALK_SPEED,Math.max(0.0,vecTowards.x));
+			body.setDesiredVelocity(desiredX,0,desiredTheta);
 			return GO_TO_WAYPOINT;
 		}
 	}
@@ -365,9 +384,9 @@ public class DomWorldStateMachine extends StateMachine {
 					}
 				}
 			}
-			double forwardSpeed = GROUP_SPEED;
 			//double forwardSpeed = (GROUP_SPEED)*(stopGroupingAt-time)/(stopGroupingAt-startGroupingAt);
 			double turnSpeed = vecs.get(tgtId).angle();
+			double forwardSpeed = (turnSpeed > EPSILON)?0.0:Math.min(GROUP_SPEED,Math.max(0.0,vecs.get(tgtId).x));
 			body.setDesiredVelocity(forwardSpeed,0.0,turnSpeed);
 			if(lostFight()){
 				target = null;
@@ -429,7 +448,7 @@ public class DomWorldStateMachine extends StateMachine {
 			//fleeVec.multiplyIn(1.0/fleeVec.length());
 			//fleeVec.addIn(nearestObs.dup().negate().multiplyIn(1.0/nearestObs.length()));
 			if(nearestObs.length() < fleeVec.length()) fleeVec.addIn(nearestObs.dup().negate());
-			double forwardSpeed = GROUP_SPEED;
+			double forwardSpeed = FLEE_SPEED;
 			double turnSpeed = fleeVec.angle();
 			body.setDesiredVelocity(forwardSpeed,0.0,turnSpeed);
 			if(fleeLoiterTimeout(time)){
@@ -625,6 +644,11 @@ public class DomWorldStateMachine extends StateMachine {
 		//initial state is to loiter!
 		stopLoiteringAt = -1;//(-AVERAGE_EVENT_TIME*Math.log(initRandom.nextDouble()));
 		nextState = LOITER;
+	}
+
+	public void act(double time){
+		super.act(time);
+		body.setTextDisplay(states[nextState].toString());
 	}
 
 	public boolean isFarFromGroup(ArrayList<MutableDouble2D> perceivedMonkeys){

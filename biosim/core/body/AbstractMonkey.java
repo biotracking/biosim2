@@ -17,5 +17,6 @@ public abstract class AbstractMonkey extends Body
 				NearestObstacleVec, 
 				Compass,
 				GPS,
-				EnvironmentSize2D {
+				EnvironmentSize2D,
+				TextDisplay {
 }

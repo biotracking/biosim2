@@ -263,6 +263,7 @@ public class SmallDomWorld {
 		}
 		if(GUI){
 			GUISimulation gui = new GUISimulation(sim);
+			gui.setPortrayalClass(RhesusMacaque.class, StateMachinePortrayal.class);
 			gui.createController();
 		}
 	}

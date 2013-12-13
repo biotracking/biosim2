@@ -21,6 +21,9 @@ public class RhesusMacaque extends AbstractMonkey {
 	public static double PROX_SENSORS=100;
 
 	private double[] desiredVelXYT = {0.0,0.0,0.0};
+	private String text = " ";
+	public void setTextDisplay(String displayText){ text = displayText; }
+	public String getTextDisplay(){ return text;}
 
 	public double getSize(){return SIZE;}
 	public MersenneTwisterFast getRandom(){return sim.random;}
