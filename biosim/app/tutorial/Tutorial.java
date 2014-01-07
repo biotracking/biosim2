@@ -2,11 +2,8 @@ package biosim.app.tutorial;
 
 import biosim.core.sim.Simulation;
 import biosim.core.sim.Environment;
-import biosim.core.sim.Obstacle;
 import biosim.core.sim.RectObstacle;
-import biosim.core.body.Body;
 import biosim.core.body.AphaenogasterCockerelli;
-import biosim.core.agent.Agent;
 import biosim.core.gui.GUISimulation;
 //import biosim.core.util.BTFLogger;
 public class Tutorial {
@@ -27,7 +24,7 @@ public class Tutorial {
 			bodies[i] = new AphaenogasterCockerelli();
 			env.addBody(bodies[i]);
 		}
-		Agent[] agents = new Agent[numAnts];
+		AvoidAnt[] agents = new AvoidAnt[numAnts];
 		for(int i=0;i<agents.length;i++){
 			agents[i] = new AvoidAnt(bodies[i]);
 			bodies[i].setAgent(agents[i]);

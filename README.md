@@ -11,8 +11,8 @@ BioSim is a work in progress, and is used in active research so while we
 will try to keep things in working order, they will occasionally break.
 
 BioSim is built on top of MASON:
-http://cs.gmu.edu/~eclab/projects/mason/
+* http://cs.gmu.edu/~eclab/projects/mason/
 
 More information:
-http://www.bio-tracking.org/category/software/
-https://github.com/biotracking
+* https://github.com/biotracking/biosim2/
+* http://www.bio-tracking.org/category/software/
