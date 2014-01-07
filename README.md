@@ -14,5 +14,5 @@ BioSim is built on top of MASON:
 * http://cs.gmu.edu/~eclab/projects/mason/
 
 More information:
-* https://github.com/biotracking/biosim2/
+* https://github.com/biotracking/biosim2/wiki
 * http://www.bio-tracking.org/category/software/
