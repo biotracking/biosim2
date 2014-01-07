@@ -5,7 +5,6 @@ import biosim.core.sim.Environment;
 import biosim.core.sim.RectObstacle;
 import biosim.core.body.AphaenogasterCockerelli;
 import biosim.core.gui.GUISimulation;
-//import biosim.core.util.BTFLogger;
 public class Tutorial {
 	public static final double WIDTH=0.2;
 	public static final double HEIGHT=0.2;
@@ -18,21 +17,23 @@ public class Tutorial {
 		env.addObstacle(new RectObstacle(0.01,0.2),  0.0,  0.0);//west
 		env.addObstacle(new RectObstacle(0.2,0.01),  0.0,  0.0);//north
 		env.addObstacle(new RectObstacle(0.2,0.01),  0.0, 0.19);//south
-		//add agents
+		//Create bodies
 		AphaenogasterCockerelli[] bodies = new AphaenogasterCockerelli[numAnts];
 		for(int i=0;i<bodies.length;i++){
 			bodies[i] = new AphaenogasterCockerelli();
 			env.addBody(bodies[i]);
 		}
+		//Add link agents to bodies
 		AvoidAnt[] agents = new AvoidAnt[numAnts];
 		for(int i=0;i<agents.length;i++){
 			agents[i] = new AvoidAnt(bodies[i]);
 			bodies[i].setAgent(agents[i]);
 		}
-		//env.runSimulation(args);
+		//Create new simulation and turn on logging
 		Simulation sim = env.newSimulation();
 		sim.addLogger(new AvoidAntLogger());
 		GUISimulation gui = new GUISimulation(sim);
+		//display the MASON console
 		gui.createController();
 	}
 }

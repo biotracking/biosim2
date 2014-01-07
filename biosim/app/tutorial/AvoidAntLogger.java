@@ -16,10 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class AvoidAntLogger extends BTFLogger {
-	public ArrayList<String> 	wallSensor, wallSensorBool, 
-								antSensor, antSensorBool,
-								desiredVel, desiredVelBool,
-								homeSensor;
+
 	public BufferedWriter 	wallout, wallboolout,
 							antout, antboolout,
 							desiredout, desiredboolout,
@@ -88,15 +85,7 @@ public class AvoidAntLogger extends BTFLogger {
 					bar = true;
 					System.arraycopy(ant.previousVelXYT,0,qux,0,3);
 					baz = true;
-					/*
-					wallSensor.add(wallSensorVec.x+" "+wallSensorVec.y);
-					wallSensorBool.add(""+wallSensorRv);
-					antSensor.add(antSensorVec.x+" "+antSensorVec.y);
-					antSensorBool.add(""+antSensorRv);
-					desiredVel.add(foo[0]+" "+foo[1]+" "+foo[2]);
-					desiredVelBool.add(""+bar);
-					homeSensor.add(homeSensorVec.x+" "+homeSensorVec.y);
-					*/
+
 					try{
 						wallout.write(wallSensorVec.x+" "+wallSensorVec.y+"\n");
 						wallboolout.write(wallSensorRv+"\n");

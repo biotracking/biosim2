@@ -1,6 +1,5 @@
 package biosim.app.tutorial;
 import biosim.core.agent.Agent;
-import biosim.core.body.Body;
 import biosim.core.body.AbstractAnt;
 import sim.util.MutableDouble2D;
 public class AvoidAnt implements Agent {
