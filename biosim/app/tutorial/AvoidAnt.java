@@ -4,8 +4,6 @@ import biosim.core.body.AbstractAnt;
 import sim.util.MutableDouble2D;
 public class AvoidAnt implements Agent {
 	AbstractAnt antBody;
-	public static double AVOID_RANGE=3.0;
-	public double nextAction = -1.0;
 	public AvoidAnt(AbstractAnt b){
 		antBody = b;
 	}

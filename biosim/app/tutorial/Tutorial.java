@@ -31,7 +31,7 @@ public class Tutorial {
 		}
 		//Create new simulation and turn on logging
 		Simulation sim = env.newSimulation();
-		sim.addLogger(new AvoidAntLogger());
+		//sim.addLogger(new AvoidAntLogger());
 		GUISimulation gui = new GUISimulation(sim);
 		//display the MASON console
 		gui.createController();
