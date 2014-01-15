@@ -22,10 +22,14 @@ public class AvoidAnt implements Agent {
 		MutableDouble2D wall = new MutableDouble2D();
 		boolean sawWall = antBody.getNearestObstacleVec(wall);
 		MutableDouble2D avoidPoint = null;
-		if(sawWall){
+		if(!sawWall &&  !sawAnt){
+			avoidPoint = null;
+		} else if (!sawAnt){
 			avoidPoint = wall;
-		} else if (sawAnt){
+		} else if (!sawWall){
 			avoidPoint = ant;
+		} else {
+			avoidPoint = (ant.lengthSq() < wall.lengthSq())? ant:wall;
 		}
 		if(avoidPoint != null){
 			if(avoidPoint.y > 0) turningSpeed = -40.0*(Math.PI/180.0);
