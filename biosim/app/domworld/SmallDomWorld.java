@@ -25,7 +25,7 @@ public class SmallDomWorld {
 	public static double RESOLUTION=1.0/30.0;
 	public static boolean LOGGING=true;
 	public static boolean GUI=true;
-	public static boolean TOROIDAL=true;
+	public static boolean TOROIDAL=false;
 
 	public static double[][] randomTieStrength(MersenneTwisterFast rnd, int n){
 		double[][] rv = new double[n][n];
@@ -214,7 +214,9 @@ public class SmallDomWorld {
 		Agent[] agents = new Agent[bodies.length];
 		for(int i=0;i<numMonkeys;i++){
 			double dom = Double.parseDouble(strDominance[i]);
-			agents[i] = new DomWorldStateMachine(bodies[i],dom);
+			DomWorldStateMachine tmpAgent = new DomWorldStateMachine(bodies[i],dom);
+			tmpAgent.agentName = i+" ";
+			agents[i] = tmpAgent;
 			bodies[i].setAgent(agents[i]);
 			System.out.println("Monkey "+i+" dominance: "+df.format(dom));
 		}

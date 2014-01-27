@@ -47,7 +47,7 @@ public class DomWorldStateMachine extends StateMachine {
 	public static double HIERARCHY_STABILITY=0.9; 	//probability that a monkey entering the personal distance
 													//of another monkey invokes a conflict
 	public static double ROAM_OBST_DIST=0.5;
-	public static double EPSILON=2.0*Math.PI/360.0;
+	public static double EPSILON=(2.0*Math.PI/360.0);
 	//static config functions
 	public static void invalidValue(String propName, String value){
 		ETA=-1.0;
@@ -187,6 +187,7 @@ public class DomWorldStateMachine extends StateMachine {
 	private AbstractMonkey body;
 	private HashMap<DomWorldStateMachine,Double> preferences;
 	private Agent lastClosest;
+	public String agentName = "";
 
 	public void setTieStrengths(HashMap<DomWorldStateMachine,Double> tsprefs){
 		preferences = tsprefs;
@@ -350,7 +351,10 @@ public class DomWorldStateMachine extends StateMachine {
 	//head towards them for APPROACH_DIST meters.
 	//Pick from visible people according to tie-strength
 	private class Group implements State{
-		public String toString(){ return "GROUP";}
+		public String toString(){ 
+			String tstring = (target==null)?"":" TARGET "+target.agentName;
+			return "GROUP"+tstring;
+		}
 		public int act(double time){
 			ArrayList<MutableDouble2D> vecs = new ArrayList<MutableDouble2D>();
 			ArrayList<Agent> agents = new ArrayList<Agent>();
@@ -384,9 +388,10 @@ public class DomWorldStateMachine extends StateMachine {
 					}
 				}
 			}
+			target = (DomWorldStateMachine)agents.get(tgtId);
 			//double forwardSpeed = (GROUP_SPEED)*(stopGroupingAt-time)/(stopGroupingAt-startGroupingAt);
 			double turnSpeed = vecs.get(tgtId).angle();
-			double forwardSpeed = (turnSpeed > EPSILON)?0.0:Math.min(GROUP_SPEED,Math.max(0.0,vecs.get(tgtId).x));
+			double forwardSpeed = (Math.abs(turnSpeed) > EPSILON)?0.0:Math.min(GROUP_SPEED,Math.max(0.0,vecs.get(tgtId).x));
 			body.setDesiredVelocity(forwardSpeed,0.0,turnSpeed);
 			if(lostFight()){
 				target = null;
@@ -466,7 +471,10 @@ public class DomWorldStateMachine extends StateMachine {
 	//Head towards the person that I'm chasing
 	//for CHASE_DIST meters
 	private class Chase implements State{
-		public String toString(){return "CHASE";}
+		public String toString(){
+			String tstring = (chaseTowards==null)?"":" TARGET "+chaseTowards.agentName;
+			return "CHASE"+tstring;
+		}
 		public int act(double time){
 			MutableDouble2D nearestObs = new MutableDouble2D();
 			ArrayList<MutableDouble2D> vecs = new ArrayList<MutableDouble2D>();
@@ -498,9 +506,10 @@ public class DomWorldStateMachine extends StateMachine {
 			MutableDouble2D chaseVec = vecs.get(tgtId).dup();
 			//chaseVec.multiplyIn(1.0/Math.exp(chaseVec.length()));
 			//chaseVec.addIn(nearestObs.dup().negate().multiplyIn(1.0/Math.exp(nearestObs.length())));
-			chaseVec.addIn(nearestObs.dup().negate());
-			double forwardSpeed = CHASE_SPEED;
-			double turnSpeed = chaseVec.angle();
+			//chaseVec.addIn(nearestObs.dup().negate());
+			//double forwardSpeed = CHASE_SPEED;
+			double turnSpeed = chaseVec.angle()*30;
+			double forwardSpeed = (Math.abs(chaseVec.angle()) > EPSILON)?0.0:CHASE_SPEED;
 			body.setDesiredVelocity(forwardSpeed,0.0,turnSpeed);
 			if(chaseLoiterTimeout(time)){
 				body.setDesiredVelocity(0.0,0.0,-turnSpeed);
@@ -553,11 +562,11 @@ public class DomWorldStateMachine extends StateMachine {
 				return GROUP;
 			}
 			if(loiterRandomWalkTimeout(time)){
+				/* */
 				startRandomWalkingAt = time;
-				//stopRandomWalkingAt = time+(RANDOM_WALK_DIST/RANDOM_WALK_SPEED);
 				stopRandomWalkingAt = time+(ROAM_DIST/ROAM_SPEED);
-				//return RANDOM_WALK;
 				return ROAM;
+				/* */
 			}
 			return LOITER;
 		}
@@ -648,7 +657,7 @@ public class DomWorldStateMachine extends StateMachine {
 
 	public void act(double time){
 		super.act(time);
-		body.setTextDisplay(states[nextState].toString());
+		body.setTextDisplay(agentName+states[nextState].toString());
 	}
 
 	public boolean isFarFromGroup(ArrayList<MutableDouble2D> perceivedMonkeys){
@@ -691,9 +700,9 @@ public class DomWorldStateMachine extends StateMachine {
 				}
 			}
 		}
-		if(lastClosest == closestMonkeyAgent || body.getRandom().nextDouble()<HIERARCHY_STABILITY) return false;
+		boolean ignoringClosest = (lastClosest == closestMonkeyAgent) || (body.getRandom().nextDouble()<HIERARCHY_STABILITY);
 		lastClosest = closestMonkeyAgent;
-		return (closestMonkey!=null)&&(closestMonkey.length()<PERSONAL_DIST);
+		return (!ignoringClosest)&&(closestMonkey!=null)&&(closestMonkey.length()<PERSONAL_DIST);
 	}
 
 	public boolean lostFight(){
