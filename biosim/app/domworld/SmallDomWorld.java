@@ -26,6 +26,7 @@ public class SmallDomWorld {
 	public static boolean LOGGING=true;
 	public static boolean GUI=true;
 	public static boolean TOROIDAL=false;
+	public static boolean STATE_LABELS=true;
 
 	public static double[][] randomTieStrength(MersenneTwisterFast rnd, int n){
 		double[][] rv = new double[n][n];
@@ -203,6 +204,10 @@ public class SmallDomWorld {
 			}
 			//do some stuff
 		}
+		tmp = props.getProperty("STATE_LABELS");
+		if(tmp != null){
+			STATE_LABELS = Boolean.parseBoolean(tmp);
+		}
 		//BEHAVIOR PARAMS
 		DomWorldStateMachine.configure(props);
 		//INITIALIZE AGENTS & BODIES
@@ -265,7 +270,9 @@ public class SmallDomWorld {
 		}
 		if(GUI){
 			GUISimulation gui = new GUISimulation(sim);
-			gui.setPortrayalClass(RhesusMacaque.class, StateMachinePortrayal.class);
+			if(STATE_LABELS){
+				gui.setPortrayalClass(RhesusMacaque.class, StateMachinePortrayal.class);
+			}
 			gui.createController();
 		}
 	}

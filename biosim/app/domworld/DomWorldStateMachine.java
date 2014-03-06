@@ -48,6 +48,7 @@ public class DomWorldStateMachine extends StateMachine {
 													//of another monkey invokes a conflict
 	public static double ROAM_OBST_DIST=0.5;
 	public static double EPSILON=(2.0*Math.PI/360.0);
+	public static double MIN_GDIST=0.1; //The closest you want to be while grouping, (10cm)
 	//static config functions
 	public static void invalidValue(String propName, String value){
 		ETA=-1.0;
@@ -391,7 +392,8 @@ public class DomWorldStateMachine extends StateMachine {
 			target = (DomWorldStateMachine)agents.get(tgtId);
 			//double forwardSpeed = (GROUP_SPEED)*(stopGroupingAt-time)/(stopGroupingAt-startGroupingAt);
 			double turnSpeed = vecs.get(tgtId).angle();
-			double forwardSpeed = (Math.abs(turnSpeed) > EPSILON)?0.0:Math.min(GROUP_SPEED,Math.max(0.0,vecs.get(tgtId).x));
+			// double forwardSpeed = (Math.abs(turnSpeed) > EPSILON)?0.0:Math.min(GROUP_SPEED,Math.max(0.0,vecs.get(tgtId).x));
+			double forwardSpeed = (Math.abs(turnSpeed) > EPSILON)?0.0:Math.min(GROUP_SPEED,vecs.get(tgtId).x - MIN_GDIST);
 			body.setDesiredVelocity(forwardSpeed,0.0,turnSpeed);
 			if(lostFight()){
 				target = null;
@@ -453,8 +455,9 @@ public class DomWorldStateMachine extends StateMachine {
 			//fleeVec.multiplyIn(1.0/fleeVec.length());
 			//fleeVec.addIn(nearestObs.dup().negate().multiplyIn(1.0/nearestObs.length()));
 			if(nearestObs.length() < fleeVec.length()) fleeVec.addIn(nearestObs.dup().negate());
-			double forwardSpeed = FLEE_SPEED;
-			double turnSpeed = fleeVec.angle();
+			//double forwardSpeed = FLEE_SPEED;
+			double turnSpeed = fleeVec.angle()*30;
+			double forwardSpeed = (Math.abs(fleeVec.angle()) > EPSILON)?0.0:FLEE_SPEED;
 			body.setDesiredVelocity(forwardSpeed,0.0,turnSpeed);
 			if(fleeLoiterTimeout(time)){
 				stopLoiteringAt = -1;
@@ -625,6 +628,7 @@ public class DomWorldStateMachine extends StateMachine {
 				otherGuy.fleeFrom = DomWorldStateMachine.this;
 				otherGuy.startFleeingAt = time;
 				otherGuy.stopFleeingAt = time+(FLEE_DIST/FLEE_SPEED);
+				//System.out.println(agentName+": Chasing "+otherGuy.agentName);
 				return CHASE;
 			} else {
 				fleeFrom = otherGuy;
@@ -633,6 +637,7 @@ public class DomWorldStateMachine extends StateMachine {
 				otherGuy.chaseTowards = DomWorldStateMachine.this;
 				otherGuy.startChasingAt = time;
 				otherGuy.stopChasingAt = time+(CHASE_DIST/CHASE_SPEED);
+				//System.out.println(agentName+": Fleeing "+otherGuy.agentName);
 				return FLEE;
 			}
 		}

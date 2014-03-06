@@ -1,0 +1,25 @@
+numMonkeys = 6
+tieStrength = 	1.0, 1.0, 1.0, 0.0, 0.0, 0.0, \
+				1.0, 1.0, 1.0, 0.0, 0.0, 0.0, \
+				1.0, 1.0, 1.0, 0.0, 0.0, 0.0, \
+				1.0, 1.0, 1.0, 1.0, 1.0, 1.0, \
+				0.0, 0.0, 0.0, 0.0, 1.0, 1.0, \
+				0.0, 0.0, 0.0, 0.0, 1.0, 1.0
+dominance = 32.0, 16.0, 8.0, 4.0, 2.0, 1.0
+LOGGING = true
+GUI = true
+TOROIDAL = false
+obstacles = 	0.01, 3.00, 2.99, 0.00, \
+				0.01, 3.00, 0.00, 0.00, \
+				3.00, 0.01, 0.00, 0.00, \
+				3.00, 0.01, 0.00, 2.99
+PERSONAL_DIST = 0.25
+NEAR_DIST = 0.8
+MIN_OTHERS = 1
+GROUP_SPEED = 0.25
+RANDOM_WALK_SPEED = 0.15
+FLEE_DIST = 2.0
+AVERAGE_EVENT_TIME = 120.0
+HIERARCHY_STABILITY = 0.8
+EPSILON = 1.0
+STATE_LABELS = true
