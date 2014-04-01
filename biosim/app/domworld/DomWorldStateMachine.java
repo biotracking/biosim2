@@ -49,6 +49,8 @@ public class DomWorldStateMachine extends StateMachine {
 	public static double ROAM_OBST_DIST=0.5;
 	public static double EPSILON=(2.0*Math.PI/360.0);
 	public static double MIN_GDIST=0.1; //The closest you want to be while grouping, (10cm)
+	public static boolean NO_GROUPING=false;
+	public static boolean NO_PREFERENCES=false;
 	//static config functions
 	public static void invalidValue(String propName, String value){
 		ETA=-1.0;
@@ -172,6 +174,14 @@ public class DomWorldStateMachine extends StateMachine {
 			if(EPSILON < 0){
 				invalidValue("EPSILON",tmp);
 			}
+		}
+		tmp = props.getProperty("NO_GROUPING");
+		if(tmp!=null){
+			NO_GROUPING = Boolean.parseBoolean(tmp);
+		}
+		tmp = props.getProperty("NO_PREFERENCES");
+		if(tmp!=null){
+			NO_PREFERENCES = Boolean.parseBoolean(tmp);
 		}
 	}
 	//instance data members
@@ -381,6 +391,9 @@ public class DomWorldStateMachine extends StateMachine {
 			if(tgtId==-1){
 				int blahTemp;
 				double sampleProp;
+				if(NO_PREFERENCES){
+					tgtId = body.getRandom().nextInt(agents.size());
+				}
 				while(tgtId==-1){
 					blahTemp = body.getRandom().nextInt(agents.size());
 					sampleProp = body.getRandom().nextDouble();
@@ -658,6 +671,9 @@ public class DomWorldStateMachine extends StateMachine {
 		//initial state is to loiter!
 		stopLoiteringAt = -1;//(-AVERAGE_EVENT_TIME*Math.log(initRandom.nextDouble()));
 		nextState = LOITER;
+		if(NO_GROUPING){
+			states[GROUP] = states[ROAM];
+		} 
 	}
 
 	public void act(double time){
