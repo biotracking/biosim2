@@ -17,7 +17,7 @@ public class DrosophilaMelanogaster extends AbstractFly{
 	public static final double MAX_VELOCITY_XY=SIZE; //1 bodylength, meters/second
 	public static final double MAX_VELOCITY_THETA=2*Math.PI; //2pi , radians/second
 	public double[] desiredVelXYT = new double[3];
-	public double[] velXYT = new double[3];
+	public double xVel, yVel, tVel;
 	//private Simulation sim; //most recent sim object
 	
 	public double getSize(){ return SIZE;}
@@ -108,9 +108,10 @@ public class DrosophilaMelanogaster extends AbstractFly{
 	}
 	
 	public boolean getSelfVelXYT(double[] rv){
-		for(int i=0;i<rv.length;i++){
-			rv[i] = velXYT[i];
-		}
+		if(rv == null || rv.length != 3) return false;
+		rv[0] = xVel;
+		rv[1] = yVel;
+		rv[2] = tVel;
 		return true;
 	}
 	
@@ -125,9 +126,9 @@ public class DrosophilaMelanogaster extends AbstractFly{
 		MutableDouble2D curDir = new MutableDouble2D();
 		sim.getBodyOrientation(this,curDir);
 		tmp.rotate(curDir.angle());
-		double xVel = (tmp.x<=MAX_VELOCITY_XY)?tmp.x:MAX_VELOCITY_XY;
-		double yVel = (tmp.y<=MAX_VELOCITY_XY)?tmp.y:MAX_VELOCITY_XY;
-		double tVel = (Math.abs(desiredVelXYT[2])<=MAX_VELOCITY_THETA)?desiredVelXYT[2]:Math.signum(desiredVelXYT[2])*MAX_VELOCITY_THETA;
+		xVel = (tmp.x<=MAX_VELOCITY_XY)?tmp.x:MAX_VELOCITY_XY;
+		yVel = (tmp.y<=MAX_VELOCITY_XY)?tmp.y:MAX_VELOCITY_XY;
+		tVel = (Math.abs(desiredVelXYT[2])<=MAX_VELOCITY_THETA)?desiredVelXYT[2]:Math.signum(desiredVelXYT[2])*MAX_VELOCITY_THETA;
 		Double2D oldPos = sim.field2D.getObjectLocation(this);
 		newPos.x = oldPos.x+(xVel*sim.resolution);
 		newPos.y = oldPos.y+(yVel*sim.resolution);
