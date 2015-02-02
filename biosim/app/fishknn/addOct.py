@@ -66,7 +66,7 @@ def addOct(indir=os.getcwd(), outdir=os.getcwd()):
 			tmpD = dSq(xpos[curLine],xpos[checkLine],ypos[curLine],ypos[checkLine])
 			if minDist[angleSlot] == -1 or tmpD < minDist[angleSlot]:
 				minDist[angleSlot] = tmpD
-		#octfile.write(str(minDist[0])+" "+str(minDist[1])+" "+str(minDist[2])+" "+str(minDist[3])+" "+str(minDist[4])+" "+str(minDist[5])+" "+str(minDist[6])+" "+str(minDist[7])+"\n")
+		octfile.write(str(minDist[0])+" "+str(minDist[1])+" "+str(minDist[2])+" "+str(minDist[3])+" "+str(minDist[4])+" "+str(minDist[5])+" "+str(minDist[6])+" "+str(minDist[7])+"\n")
 		curLine += 1
 	octfile.close()
 

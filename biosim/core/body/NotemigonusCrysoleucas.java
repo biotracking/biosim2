@@ -212,6 +212,60 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	}
 	public double getAverageSameTypeVecSensorRange(){ return RANGE; }
 
+	public boolean getAverageRBFSameTypeVec(MutableDouble2D rv, double sigma){
+		Double2D loc = sim.field2D.getObjectLocation(this);
+		MutableDouble2D dir = new MutableDouble2D();
+		rv.x = 0;
+		rv.y = 0;
+		int numNeighbors = 0;
+		if(sim.getBodyOrientation(this,dir)){
+			Bag nearest = sim.field2D.getAllObjects();//sim.field2D.getObjectsExactlyWithinDistance(loc,RANGE);
+			for(int i=0;i<nearest.numObjs;i++){
+				if(nearest.objs[i] instanceof NotemigonusCrysoleucas){
+					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
+					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
+					if(tmpFish == this) continue;
+					MutableDouble2D mutTmp;
+					if(sim.toroidal){
+						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
+					} else {
+						mutTmp = new MutableDouble2D(tmpLoc);
+						mutTmp.subtractIn(loc);
+					}
+					mutTmp.rotate(-dir.angle());
+					//if(mutTmp.angle() > Math.PI/2 || mutTmp.angle() <-Math.PI/2) continue;
+					double weight = Math.exp(-mutTmp.lengthSq()/(2.0*Math.pow(sigma,2)));
+					rv.addIn(mutTmp.multiplyIn(weight));
+					numNeighbors++;
+					// if(mutTmp.lengthSq() <= RANGE*RANGE){
+					// 	numNeighbors++;
+					// 	rv.addIn(mutTmp);
+					// }
+				}
+			}
+			if(numNeighbors > 0){
+				rv.multiplyIn(1.0/(double)numNeighbors);
+				//rv = rv.normalize();
+				return true;
+			} else {
+				rv.x = rv.y = 0.0;
+				return true;
+			}
+			/*
+			double len = rv.length();
+			if(len > 0){
+				rv.normalize();
+			}
+			return true;
+			*/
+		}
+		rv.x = 0;
+		rv.y = 0;
+		return false;
+		
+	}
+	public double getAverageRBFSameTypeVecSensorRange(){ return -1; }
+
 	public boolean getZoneCoMVecs(MutableDouble2D[] zoneVecs){
 		Double2D loc = sim.field2D.getObjectLocation(this);
 		MutableDouble2D[] rv = new MutableDouble2D[NUM_ZONES];
