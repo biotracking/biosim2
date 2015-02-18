@@ -72,8 +72,6 @@ public class FishPortrayal extends OvalPortrayal2D implements Oriented2D{
 			graphics.rotate(d);
 			graphics.setColor(Color.black);
 			graphics.fillOval(-w/2,-h/2,w,h);
-			//graphics.setColor(Color.black);
-			//graphics.drawOval(-w/2,-h/2,w,h);
 			graphics.setColor(Color.red);
 			graphics.drawLine(0, 0, w/2,0);
 			graphics.setTransform(prevTrans);
@@ -89,7 +87,11 @@ public class FishPortrayal extends OvalPortrayal2D implements Oriented2D{
 			if(((NotemigonusCrysoleucas)body).isLeader()){
 				graphics.setColor(Color.blue);
 				graphics.fillOval(x-(int)(width/8),y-(int)(height/8),(int)(width/4),(int)(height/4));
-			} 
+			}  else if(((NotemigonusCrysoleucas)body).getAvgDensity()>=0){
+				double howGreen = Math.exp(-((NotemigonusCrysoleucas)body).getAvgDensity());
+				graphics.setColor(new Color((float)(1.0f-howGreen), (float)howGreen, 0.0f));
+				graphics.fillOval(x-(int)(width/8),y-(int)(height/8),(int)(width/4),(int)(height/4));
+			}
 		}
 	}
 }

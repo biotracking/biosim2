@@ -39,6 +39,10 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	public boolean isLeader(){ return leaderp; }
 	public void setLeader(boolean leader){leaderp = leader; }
 	
+	private double avgDensity = -1.0;
+	public double getAvgDensity(){ return avgDensity; }
+	public void setAvgDensity(double ad){ avgDensity = ad; }
+
 	public boolean getSelfVelXYT(double[] rv){
 		if(rv == null || rv.length != 3) return false;
 		rv[0] = xVel;

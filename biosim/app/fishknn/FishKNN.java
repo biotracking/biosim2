@@ -78,6 +78,7 @@ public class FishKNN implements Agent{
 		//double[][] nearestTurnK = new double[5][TURN_CLASSES];
 		//double[][] nearestSpeedK = new double[5][SPEED_CLASSES];
 		double[][] nearestK = new double[KNN_NEIGHBORS][CLASSES];
+		double[][] nearestK_features = new double[KNN_NEIGHBORS][FEATURES];
 		MutableDouble2D[] zones = new MutableDouble2D[fishBody.getNumZones()];
 		boolean zonesWorked = fishBody.getZoneCoMVecs(zones);
 		if(zonesWorked){
@@ -161,7 +162,19 @@ public class FishKNN implements Agent{
 		
 		prevTime = time;
 		*/
-		knn.query(features,nearestK);
+		knn.query(features,nearestK,null,nearestK_features);
+		//Average Neighbor Distance
+		double ad = 0.0;
+		for(int eye=0;eye<KNN_NEIGHBORS;eye++){
+			double tmp = 0.0;
+			for(int jay=0;jay<FEATURES;jay++){
+				tmp += Math.pow(nearestK_features[eye][jay]-features[jay],2);
+			}
+			ad += Math.sqrt(tmp);
+		}
+		ad = ad/(double)KNN_NEIGHBORS;
+		// System.out.println(ad);
+		((NotemigonusCrysoleucas)fishBody).setAvgDensity(ad);
 		//sample
 		/**/ 
 		int rnd_idx = fishBody.getRandom().nextInt(nearestK.length);
@@ -341,7 +354,7 @@ public class FishKNN implements Agent{
 	
 	public static final double WIDTH=2.50;//2.5;
 	public static final double HEIGHT=1.5;//1.5;
-	public static final boolean WALLS=false;
+	public static final boolean WALLS=true;
 	
 	public static void main(String[] args){
 		try{
@@ -377,8 +390,8 @@ public class FishKNN implements Agent{
 				bodies[i].setAgent(agents[i]);
 			}
 			for(int i=numLeaderFish;i<agents.length;i++){
-				//agents[i] = new FishKNN(bodies[i],knn);
-				agents[i] = new FishKNNProx(bodies[i],knn);
+				agents[i] = new FishKNN(bodies[i],knn);
+				// agents[i] = new FishKNNProx(bodies[i],knn);
 				bodies[i].setAgent(agents[i]);
 			}
 			System.gc();
