@@ -7,6 +7,7 @@ public abstract class AbstractFish extends Body
 	implements	NearestSameTypeVec,
 				AverageSameTypeVec,
 				AverageRBFSameTypeVec,
+				AverageRBFOrientationSameTypeVec,
 				NearestObstacleVec,
 				Proximity,
 				ZoneCoMVecs,

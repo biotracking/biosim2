@@ -23,6 +23,8 @@ public class FishPortrayal extends OvalPortrayal2D implements Oriented2D{
 	public Simulation sim;
 	public Body body;
 	public static BufferedImage bi;
+	public static double AVG_DIST = -1.0;
+	public static double STD_DEV_DIST = -1.0;
 	static {
 		URL icnLoc = FishPortrayal.class.getResource("fishicn.png");
 		if(icnLoc != null){
@@ -88,8 +90,19 @@ public class FishPortrayal extends OvalPortrayal2D implements Oriented2D{
 				graphics.setColor(Color.blue);
 				graphics.fillOval(x-(int)(width/8),y-(int)(height/8),(int)(width/4),(int)(height/4));
 			}  else if(((NotemigonusCrysoleucas)body).getAvgDensity()>=0){
-				double howGreen = Math.exp(-((NotemigonusCrysoleucas)body).getAvgDensity());
-				graphics.setColor(new Color((float)(1.0f-howGreen), (float)howGreen, 0.0f));
+				Color c;
+				double avgDist = ((NotemigonusCrysoleucas)body).getAvgDensity();
+				// double howGreen = Math.exp(-((NotemigonusCrysoleucas)body).getAvgDensity());
+				// c = new Color((float)(1.0f-howGreen), (float)howGreen, 0.0f)
+				if(avgDist < AVG_DIST){
+					float howGreen = (float)Math.max(0.0, (avgDist-(AVG_DIST-STD_DEV_DIST))/(STD_DEV_DIST));
+					c = new Color(1.0f-howGreen, 1.0f, 1.0f-howGreen);
+				} else {
+					double max = AVG_DIST+STD_DEV_DIST;
+					float howRed = (float)Math.min(1.0,(avgDist - AVG_DIST)/(STD_DEV_DIST));
+					c = new Color(1.0f,1.0f-howRed,1.0f-howRed);
+				}
+				graphics.setColor(c);
 				graphics.fillOval(x-(int)(width/8),y-(int)(height/8),(int)(width/4),(int)(height/4));
 			}
 		}

@@ -20,6 +20,10 @@ import java.io.IOException;
 public class FishLR implements Agent{
 	AbstractFish fishBody;
 	FastKNN knn;
+	//so this toggles using the kNN result instead of LR
+	// VERY IMPORTANT: Set this to false if you want LR
+	public static final boolean USE_KNN_INSTEAD=true;
+
 	/*	
 	OLD LR DATA
 	Speedingforce and turning force:
@@ -191,9 +195,10 @@ public class FishLR implements Agent{
 		MutableDouble2D coh = new MutableDouble2D();
 		MutableDouble2D wall = new MutableDouble2D();
 		fishBody.getAverageRBFSameTypeVec(sep,SEP_SIGMA);
-		fishBody.getAverageRBFSameTypeVec(ori,ORI_SIGMA);
+		fishBody.getAverageRBFOrientationSameTypeVec(ori,ORI_SIGMA);
 		fishBody.getAverageRBFSameTypeVec(coh,COH_SIGMA);
 		fishBody.getNearestObstacleVec(wall);
+		wall.multiplyIn(Math.exp(-wall.lengthSq()/(2.0*Math.pow(OBS_SIGMA,2))));
 		double[] sensors = new double[X_COMPONENTS.length];
 		double[] features = new double[sensors.length-1];
 		sensors[0] = sep.x;
@@ -202,8 +207,8 @@ public class FishLR implements Agent{
 		sensors[3] = ori.y;
 		sensors[4] = coh.x;
 		sensors[5] = coh.y;
-		sensors[6] = wall.x * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(OBS_SIGMA,2)));
-		sensors[7] = wall.y * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(OBS_SIGMA,2)));
+		sensors[6] = wall.x;// * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(OBS_SIGMA,2)));
+		sensors[7] = wall.y;// * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(OBS_SIGMA,2)));
 		sensors[8] = 1.0;
 		double xvel = 0.0, yvel = 0.0, tvel = 0.0;
 		for(int i=0;i<sensors.length;i++){
@@ -224,6 +229,13 @@ public class FishLR implements Agent{
 			avgDist += Math.sqrt(tmpD);
 		}
 		avgDist = avgDist/(double)KNN_NEIGHBORS;
+		// Ok, next we're going to actually use kNN instead of LR, JUST BECAUSE
+		if(USE_KNN_INSTEAD){
+			int rnd_idx = fishBody.getRandom().nextInt(nearestK_classes.length);
+			xvel = nearestK_classes[rnd_idx][0];
+			yvel = nearestK_classes[rnd_idx][1];
+			tvel = nearestK_classes[rnd_idx][2];
+		}
 		// System.out.println(avgDist);
 		((NotemigonusCrysoleucas)fishBody).setAvgDensity(avgDist);
 		fishBody.setDesiredVelocity(xvel, yvel, tvel);
@@ -306,8 +318,13 @@ public class FishLR implements Agent{
 			
 			//env.runSimulation(args);
 			Simulation sim = env.newSimulation();
+			FishLRLogger logger = new FishLRLogger();
+			logger.setSigmas(SEP_SIGMA,ORI_SIGMA,COH_SIGMA,OBS_SIGMA);
+			sim.addLogger(logger);
 			GUISimulation gui = new GUISimulation(sim);
 			gui.setPortrayalClass(NotemigonusCrysoleucas.class, biosim.app.fishknn.FishPortrayal.class);
+			biosim.app.fishknn.FishPortrayal.AVG_DIST = 0.0449592693977;
+			biosim.app.fishknn.FishPortrayal.STD_DEV_DIST = 0.0235436856268;
 			gui.setDisplaySize((int)(WIDTH*500),(int)(HEIGHT*500));
 			gui.createController();
 		} catch(IOException ioe){
