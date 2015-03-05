@@ -4,7 +4,7 @@ import biosim.core.agent.Agent;
 import biosim.core.body.AbstractFish;
 import biosim.core.body.NotemigonusCrysoleucas;
 import biosim.core.gui.GUISimulation;
-import biosim.core.sim.Environment;
+import biosim.core.sim.InitiallyPlacedEnvironment;
 import biosim.core.sim.Simulation;
 import biosim.core.sim.RectObstacle;
 import biosim.core.util.FastKNN;
@@ -290,13 +290,14 @@ public class FishLR implements Agent{
 			//FastKNN[] knns = loadKNN(btf);
 			FastKNN knn = loadKNN(btf);
 			//set up the environment
-			int numFish = 30;
+			int numFish = 28; //30; //initial tracked number of fish is 28
 			int numLeaderFish = 0;//5;
-			Environment env = new Environment(WIDTH,HEIGHT,1.0/30.0);
+			InitiallyPlacedEnvironment env = new InitiallyPlacedEnvironment(WIDTH,HEIGHT,1.0/30.0);
 			env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall
 			env.addObstacle(new RectObstacle(0.01,HEIGHT),  0.0,  0.0);//west
 			env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0,  0.0);//north
 			env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0, HEIGHT-0.01);//south
+			env.parseInitialPoses(btf);
 			// env.setToroidal(true);
 			//add agents
 			NotemigonusCrysoleucas[] bodies = new NotemigonusCrysoleucas[numFish];
@@ -320,7 +321,7 @@ public class FishLR implements Agent{
 			Simulation sim = env.newSimulation();
 			FishLRLogger logger = new FishLRLogger();
 			logger.setSigmas(SEP_SIGMA,ORI_SIGMA,COH_SIGMA,OBS_SIGMA);
-			sim.addLogger(logger);
+			// sim.addLogger(logger);
 			GUISimulation gui = new GUISimulation(sim);
 			gui.setPortrayalClass(NotemigonusCrysoleucas.class, biosim.app.fishknn.FishPortrayal.class);
 			biosim.app.fishknn.FishPortrayal.AVG_DIST = 0.0449592693977;

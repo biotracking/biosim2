@@ -104,6 +104,7 @@ public class FishPortrayal extends OvalPortrayal2D implements Oriented2D{
 				}
 				graphics.setColor(c);
 				graphics.fillOval(x-(int)(width/8),y-(int)(height/8),(int)(width/4),(int)(height/4));
+				// System.out.println(avgDist+" "+AVG_DIST+" "+STD_DEV_DIST);
 			}
 		}
 	}
