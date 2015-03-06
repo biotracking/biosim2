@@ -9,7 +9,7 @@ endif
 #Linux
 ifeq ($(UNAME), Linux)
 LIBNAME := libannwrapper.so
-JNI_INC := -I/usr/lib/jvm/java-1.7.0-openjdk-amd64/include/
+JNI_INC := -I/usr/lib/jvm/java-1.8.0-openjdk-amd64/include/ -I/usr/lib/jvm/java-1.8.0-openjdk-amd64/include/linux/
 libannwrapper.so: simple_ann.o annwrapper_wrap.o  ann/src/*.o
 	g++ -O3 -shared simple_ann.o annwrapper_wrap.o ann/src/*.o -o libannwrapper.so
 endif

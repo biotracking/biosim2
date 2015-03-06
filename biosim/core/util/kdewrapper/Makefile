@@ -9,7 +9,7 @@ endif
 #Linux
 ifeq ($(UNAME), Linux)
 LIBNAME := libkdewrapper.so
-JNI_INC := -I/usr/lib/jvm/java-7-openjdk-amd64/include/
+JNI_INC := -I/usr/lib/jvm/java-8-openjdk-amd64/include/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/
 libannwrapper.so: simple_kde.o kdewrapper_wrap.o 
 	g++ -shared simple_kde.o kdewrapper_wrap.o -o libkdewrapper.so
 endif
