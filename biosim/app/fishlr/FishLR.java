@@ -5,6 +5,7 @@ import biosim.core.body.AbstractFish;
 import biosim.core.body.NotemigonusCrysoleucas;
 import biosim.core.gui.GUISimulation;
 import biosim.core.sim.InitiallyPlacedEnvironment;
+import biosim.core.sim.Environment;
 import biosim.core.sim.Simulation;
 import biosim.core.sim.RectObstacle;
 import biosim.core.util.FastKNN;
@@ -14,7 +15,10 @@ import sim.util.MutableDouble2D;
 import sim.util.Double3D;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.BufferedReader;
+import java.util.ArrayList;
 
 
 public class FishLR implements Agent{
@@ -22,7 +26,7 @@ public class FishLR implements Agent{
 	FastKNN knn;
 	//so this toggles using the kNN result instead of LR
 	// VERY IMPORTANT: Set this to false if you want LR
-	public static final boolean USE_KNN_INSTEAD=true;
+	public static boolean USE_KNN_INSTEAD=false;
 
 	/*	
 	OLD LR DATA
@@ -67,7 +71,9 @@ public class FishLR implements Agent{
 
     public static final int KNN_NEIGHBORS=10;
 
-    public static final double[] X_COMPONENTS = {
+
+    public static final int NUM_FEATURES=9;
+    public static double[] X_COMPONENTS = {
 		-2.02403982e-01,
  		 6.08884012e-02,
  		 4.41927515e-02,
@@ -88,7 +94,7 @@ public class FishLR implements Agent{
   		 // 3.89091469e-02
     };
 
-    public static final double[] Y_COMPONENTS = {
+    public static double[] Y_COMPONENTS = {
 		 8.93711402e-04,
 	     3.05827021e-03,
 	     4.43535998e-06,
@@ -109,7 +115,7 @@ public class FishLR implements Agent{
  		// -1.26449585e-05
     };
 
-    public static final double[] THETA_COMPONENTS = {
+    public static double[] THETA_COMPONENTS = {
     	3.52450984e+00,
        -1.37973827e+00,
         5.39823109e-02,
@@ -219,29 +225,51 @@ public class FishLR implements Agent{
 				features[i] = sensors[i];
 			}
 		}
-		knn.query(features,nearestK_classes,null,nearestK_features);
-		double avgDist = 0.0;
-		for(int i=0;i<KNN_NEIGHBORS;i++){
-			double tmpD = 0.0;
-			for(int j=0;j<X_COMPONENTS.length-1;j++){
-				tmpD += Math.pow(nearestK_features[i][j]-features[j],2);
+		if(knn != null || USE_KNN_INSTEAD){
+			knn.query(features,nearestK_classes,null,nearestK_features);
+			double avgDist = 0.0;
+			for(int i=0;i<KNN_NEIGHBORS;i++){
+				double tmpD = 0.0;
+				for(int j=0;j<X_COMPONENTS.length-1;j++){
+					tmpD += Math.pow(nearestK_features[i][j]-features[j],2);
+				}
+				avgDist += Math.sqrt(tmpD);
 			}
-			avgDist += Math.sqrt(tmpD);
+			avgDist = avgDist/(double)KNN_NEIGHBORS;
+			// Ok, next we're going to actually use kNN instead of LR, JUST BECAUSE
+			if(USE_KNN_INSTEAD){
+				int rnd_idx = fishBody.getRandom().nextInt(nearestK_classes.length);
+				xvel = nearestK_classes[rnd_idx][0];
+				yvel = nearestK_classes[rnd_idx][1];
+				tvel = nearestK_classes[rnd_idx][2];
+			}
+			// System.out.println(avgDist);
+			((NotemigonusCrysoleucas)fishBody).setAvgDensity(avgDist);
 		}
-		avgDist = avgDist/(double)KNN_NEIGHBORS;
-		// Ok, next we're going to actually use kNN instead of LR, JUST BECAUSE
-		if(USE_KNN_INSTEAD){
-			int rnd_idx = fishBody.getRandom().nextInt(nearestK_classes.length);
-			xvel = nearestK_classes[rnd_idx][0];
-			yvel = nearestK_classes[rnd_idx][1];
-			tvel = nearestK_classes[rnd_idx][2];
-		}
-		// System.out.println(avgDist);
-		((NotemigonusCrysoleucas)fishBody).setAvgDensity(avgDist);
 		fishBody.setDesiredVelocity(xvel, yvel, tvel);
 		oldTime = time;
 	}
 	
+	public static void loadLRCoeff(BufferedReader lrCoeffSrc) throws IOException {
+		ArrayList<String> coeffLines = new ArrayList<String>();
+		for(String line=null; lrCoeffSrc.ready();line = lrCoeffSrc.readLine()){
+			coeffLines.add(line);
+		}
+		int readNumCoeffs = coeffLines.size();
+		if(NUM_FEATURES != readNumCoeffs){
+			System.out.println("[FishLR] WARNING! Number of parsed LR coefficients ("+readNumCoeffs+") different from NUM_FEATURES ("+NUM_FEATURES+")");
+		}
+		X_COMPONENTS = new double[readNumCoeffs];
+		Y_COMPONENTS = new double[readNumCoeffs];
+		THETA_COMPONENTS = new double[readNumCoeffs];
+		for(int i=0;i<readNumCoeffs;i++){
+			String[] tmp = coeffLines.get(i).split(" ");
+			X_COMPONENTS[i] = Double.parseDouble(tmp[0]);
+			Y_COMPONENTS[i] = Double.parseDouble(tmp[1]);
+			THETA_COMPONENTS[i] = Double.parseDouble(tmp[2]);
+		}
+	}
+
 	public static FastKNN loadKNN(BTFData btf) throws IOException{
 		System.out.println("[FishLR] Loading BTF data...");
 		FastKNN knn = new FastKNN(X_COMPONENTS.length-1,3);
@@ -285,19 +313,50 @@ public class FishLR implements Agent{
 	
 	public static void main(String[] args){
 		try{
-			BTFData btf = new BTFData();
-			btf.loadDir(new File(args[0]));
-			//FastKNN[] knns = loadKNN(btf);
-			FastKNN knn = loadKNN(btf);
+			BTFData btf = null;
+			FastKNN knn = null;
+			Environment env = null;
+			boolean doKNNVis = false, initialPlacement = false, doGui = true, logging = false;
+			for(int i=0;i<args.length;i++){
+				if(args[i].equalsIgnoreCase("-btf")){
+					btf = new BTFData();
+					btf.loadDir(new File(args[i+1]));
+				}
+				else if(args[i].equalsIgnoreCase("-vis")){
+					doKNNVis=true;
+				}
+				else if(args[i].equalsIgnoreCase("-lr")){
+					loadLRCoeff(new BufferedReader(new FileReader(args[i+1])));
+				}
+				else if(args[i].equalsIgnoreCase("-placed")){
+					initialPlacement = true;
+				}
+				else if(args[i].equalsIgnoreCase("-nogui")){
+					doGui = false;
+				}
+				else if(args[i].equalsIgnoreCase("-logging")){
+					logging = true;
+				}
+				else if(args[i].equalsIgnoreCase("-knn")){
+					USE_KNN_INSTEAD = true;
+				}
+			}
+			if(initialPlacement){
+				env = new InitiallyPlacedEnvironment(WIDTH,HEIGHT,1.0/30.0);
+				((InitiallyPlacedEnvironment)env).parseInitialPoses(btf);
+			} else {
+				env = new Environment(WIDTH,HEIGHT,1.0/30.0);
+			}
+			if(doKNNVis || USE_KNN_INSTEAD){
+				knn = loadKNN(btf);
+			}
 			//set up the environment
 			int numFish = 28; //30; //initial tracked number of fish is 28
 			int numLeaderFish = 0;//5;
-			InitiallyPlacedEnvironment env = new InitiallyPlacedEnvironment(WIDTH,HEIGHT,1.0/30.0);
 			env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall
 			env.addObstacle(new RectObstacle(0.01,HEIGHT),  0.0,  0.0);//west
 			env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0,  0.0);//north
 			env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0, HEIGHT-0.01);//south
-			env.parseInitialPoses(btf);
 			// env.setToroidal(true);
 			//add agents
 			NotemigonusCrysoleucas[] bodies = new NotemigonusCrysoleucas[numFish];
@@ -315,19 +374,23 @@ public class FishLR implements Agent{
 				agents[i] = new FishLR(bodies[i],knn);
 				bodies[i].setAgent(agents[i]);
 			}
-			
-			
-			//env.runSimulation(args);
+						
 			Simulation sim = env.newSimulation();
-			FishLRLogger logger = new FishLRLogger();
-			logger.setSigmas(SEP_SIGMA,ORI_SIGMA,COH_SIGMA,OBS_SIGMA);
-			// sim.addLogger(logger);
-			GUISimulation gui = new GUISimulation(sim);
-			gui.setPortrayalClass(NotemigonusCrysoleucas.class, biosim.app.fishknn.FishPortrayal.class);
-			biosim.app.fishknn.FishPortrayal.AVG_DIST = 0.0449592693977;
-			biosim.app.fishknn.FishPortrayal.STD_DEV_DIST = 0.0235436856268;
-			gui.setDisplaySize((int)(WIDTH*500),(int)(HEIGHT*500));
-			gui.createController();
+			if(logging){
+				FishLRLogger logger = new FishLRLogger();
+				logger.setSigmas(SEP_SIGMA,ORI_SIGMA,COH_SIGMA,OBS_SIGMA);
+				sim.addLogger(logger);				
+			}
+			if(doGui){
+				GUISimulation gui = new GUISimulation(sim);
+				gui.setPortrayalClass(NotemigonusCrysoleucas.class, biosim.app.fishknn.FishPortrayal.class);
+				biosim.app.fishknn.FishPortrayal.AVG_DIST = 0.0449592693977;
+				biosim.app.fishknn.FishPortrayal.STD_DEV_DIST = 0.0235436856268;
+				gui.setDisplaySize((int)(WIDTH*500),(int)(HEIGHT*500));
+				gui.createController();				
+			} else {
+				env.runSimulation(args);
+			}
 		} catch(IOException ioe){
 			throw new RuntimeException(ioe);
 		}
