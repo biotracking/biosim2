@@ -24,6 +24,7 @@ public class Environment implements MakesSimState{
 	public ArrayList<Body> initialBodies;
 	public ArrayList<String> poi;
 	public ArrayList<Double2D> poiLocations;
+	public ArrayList<Logger> initialLoggers;
 	public double width, height, resolution;
 	double fieldDiscretizationSize;
 	boolean toroidal=false;
@@ -34,10 +35,15 @@ public class Environment implements MakesSimState{
 		obstacles = new ArrayList<Obstacle>();
 		obstacleLocations = new ArrayList<Double2D>();
 		initialBodies = new ArrayList<Body>();
+		initialLoggers = new ArrayList<Logger>();
 		this.width=width;
 		this.height=height;
 		this.resolution = resolution;
 		fieldDiscretizationSize = 0.0;
+	}
+
+	public void addLogger(Logger logger){
+		initialLoggers.add(logger);
 	}
 
 	public void setFieldDiscretizationSize(double d){ fieldDiscretizationSize = d; }
@@ -61,6 +67,7 @@ public class Environment implements MakesSimState{
 		Simulation sim = new Simulation(seed);
 		sim.env = this;
 		configSim(sim);
+		addLoggersToSim(sim);
 		return sim;
 	}
 
@@ -79,6 +86,7 @@ public class Environment implements MakesSimState{
 		Simulation sim = new Simulation(seed);
 		sim.env = this;
 		configSim(sim);
+		addLoggersToSim(sim);
 		return sim;
 	}
 
@@ -94,6 +102,12 @@ public class Environment implements MakesSimState{
 			initialBodies.get(i).init();
 		}
 	
+	}
+
+	protected void addLoggersToSim(Simulation sim){
+		for(int i=0;i<initialLoggers.size();i++){
+			sim.addLogger(initialLoggers.get(i));
+		}
 	}
 
 	/**

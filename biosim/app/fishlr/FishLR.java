@@ -375,13 +375,13 @@ public class FishLR implements Agent{
 				bodies[i].setAgent(agents[i]);
 			}
 						
-			Simulation sim = env.newSimulation();
 			if(logging){
 				FishLRLogger logger = new FishLRLogger();
 				logger.setSigmas(SEP_SIGMA,ORI_SIGMA,COH_SIGMA,OBS_SIGMA);
-				sim.addLogger(logger);				
+				env.addLogger(logger);				
 			}
 			if(doGui){
+				Simulation sim = env.newSimulation();
 				GUISimulation gui = new GUISimulation(sim);
 				gui.setPortrayalClass(NotemigonusCrysoleucas.class, biosim.app.fishknn.FishPortrayal.class);
 				biosim.app.fishknn.FishPortrayal.AVG_DIST = 0.0449592693977;
