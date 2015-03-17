@@ -351,7 +351,7 @@ public class FishLR implements Agent{
 				knn = loadKNN(btf);
 			}
 			//set up the environment
-			int numFish = 28; //30; //initial tracked number of fish is 28
+			int numFish = 27; //30; //initial tracked number of fish is 27
 			int numLeaderFish = 0;//5;
 			env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall
 			env.addObstacle(new RectObstacle(0.01,HEIGHT),  0.0,  0.0);//west
