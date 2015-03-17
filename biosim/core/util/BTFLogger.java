@@ -74,7 +74,9 @@ public class BTFLogger implements Logger{
 					ximgout.write(loc.x+"\n");
 					yimgout.write(loc.y+"\n");
 					timgout.write(dir.angle()+"\n");
-					idout.write(sim.bodyIDs.getOrDefault(i,""+i)+"\n");
+					String tmpid = sim.bodyIDs.get(i);
+					if(tmpid == null) tmpid = ""+i;
+					idout.write(tmpid+"\n");
 					timeout.write((sim.schedule.getSteps()*sim.resolution)+"\n");
 				} catch(IOException e){
 					System.err.println("[BTFLogger] Error writing to log files: "+e);
