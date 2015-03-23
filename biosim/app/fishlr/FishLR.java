@@ -252,7 +252,8 @@ public class FishLR implements Agent{
 	
 	public static void loadLRCoeff(BufferedReader lrCoeffSrc) throws IOException {
 		ArrayList<String> coeffLines = new ArrayList<String>();
-		for(String line=null; lrCoeffSrc.ready();line = lrCoeffSrc.readLine()){
+		for(String line=null; lrCoeffSrc.ready();){
+			line = lrCoeffSrc.readLine();
 			coeffLines.add(line);
 		}
 		int readNumCoeffs = coeffLines.size();
