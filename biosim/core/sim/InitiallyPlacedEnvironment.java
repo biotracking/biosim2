@@ -1,17 +1,20 @@
 package biosim.core.sim;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.io.IOException;
 
 import sim.util.Double2D;
 import sim.util.MutableDouble2D;
 
+import biosim.core.body.Body;
 import biosim.core.util.BTFData;
 
 public class InitiallyPlacedEnvironment extends Environment{
 	public ArrayList<Double2D> initialPositions = new ArrayList<Double2D>();
 	public ArrayList<Double2D> initialOrientations = new ArrayList<Double2D>();
 	public ArrayList<String> initialIDs = new ArrayList<String>();
+	public HashSet<String> usedIDs = new HashSet<String>();
 
 	public InitiallyPlacedEnvironment(double width, double height,double resolution){
 		super(width,height,resolution);
@@ -21,6 +24,22 @@ public class InitiallyPlacedEnvironment extends Environment{
 		initialOrientations.add(dir);
 		initialIDs.add(id);
 	}
+
+	public void addBody(Body b){
+		initialBodies.add(b);
+		int lastAddedIdx = initialBodies.size()-1;
+		if(lastAddedIdx<initialIDs.size()){
+			b.label = initialIDs.get(lastAddedIdx);
+		} else {
+			int newID = initialIDs.size();
+			while(usedIDs.contains(((Integer)newID).toString())){
+				newID++;
+			}
+			b.label = ((Integer)newID).toString();
+		}
+		usedIDs.add(b.label);
+	}
+
 	public void parseInitialPoses(BTFData btf) throws IOException{
 		String[] id = btf.loadColumn("id");
 		String[] xpos = btf.loadColumn("xpos");
@@ -48,9 +67,23 @@ public class InitiallyPlacedEnvironment extends Environment{
 			sim.setObjectLocation(poi.get(i),poiLocations.get(i));
 		}
 		for(int i=0;i<initialBodies.size();i++){
-			sim.setObjectLocation(initialBodies.get(i),initialPositions.get(i));
-			sim.bodyOrientations.add(initialOrientations.get(i));
-			sim.bodyIDs.put(i,initialIDs.get(i));
+			Body b = initialBodies.get(i);
+			Double2D pos = null, ori = null;
+			boolean found = false;
+			for(int j=0;j<initialBodies.size();j++){
+				if(initialIDs.get(i).equalsIgnoreCase(b.label)){
+					found = true;
+					pos = initialPositions.get(i);
+					ori = initialOrientations.get(i);
+					break;
+				}
+			}
+			if(!found){
+				placeRandomly(sim,b);
+			} else {
+				sim.setObjectLocation(b,pos);
+				sim.bodyOrientations.add(ori);
+			}
 		}
 	}
 }

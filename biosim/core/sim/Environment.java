@@ -61,6 +61,7 @@ public class Environment implements MakesSimState{
 
 	public void addBody(Body b){
 		initialBodies.add(b);
+		b.label = ((Integer)(initialBodies.size()-1)).toString();
 	}
 
 	public SimState newInstance(long seed,String[] args){
@@ -128,25 +129,43 @@ public class Environment implements MakesSimState{
 			sim.setObjectLocation(poi.get(i),poiLocations.get(i));
 		}
 		for(int i=0;i<initialBodies.size();i++){
-			Double2D tmp;
-			Body b = initialBodies.get(i);
-			boolean collides;
-			do{
-				tmp = new Double2D(sim.random.nextDouble()*width, sim.random.nextDouble()*height);
-				collides = false;
-				for(int j=0;j<obstacles.size();j++){
-					Double2D objLoc = obstacleLocations.get(j);
-					if(tmp.distance(obstacles.get(j).closestPoint(tmp,objLoc)) < b.getSize()){
-						collides = true;
-						break;
-					}
-				}
-			} while(collides);
-			sim.setObjectLocation(b,tmp);
-			tmp = new Double2D(sim.random.nextDouble(),sim.random.nextDouble()).normalize();
-			sim.bodyOrientations.add(tmp);
+			// Double2D tmp;
+			// Body b = initialBodies.get(i);
+			// boolean collides;
+			// do{
+			// 	tmp = new Double2D(sim.random.nextDouble()*width, sim.random.nextDouble()*height);
+			// 	collides = false;
+			// 	for(int j=0;j<obstacles.size();j++){
+			// 		Double2D objLoc = obstacleLocations.get(j);
+			// 		if(tmp.distance(obstacles.get(j).closestPoint(tmp,objLoc)) < b.getSize()){
+			// 			collides = true;
+			// 			break;
+			// 		}
+			// 	}
+			// } while(collides);
+			// sim.setObjectLocation(b,tmp);
+			// tmp = new Double2D(sim.random.nextDouble(),sim.random.nextDouble()).normalize();
+			// sim.bodyOrientations.add(tmp);
+			placeRandomly(sim,initialBodies.get(i));
 		}
-	
+	}
+	protected void placeRandomly(Simulation sim, Body b){
+		Double2D tmp;
+		boolean collides;
+		do{
+			tmp = new Double2D(sim.random.nextDouble()*width, sim.random.nextDouble()*height);
+			collides = false;
+			for(int j=0;j<obstacles.size();j++){
+				Double2D objLoc = obstacleLocations.get(j);
+				if(tmp.distance(obstacles.get(j).closestPoint(tmp,objLoc)) < b.getSize()){
+					collides = true;
+					break;
+				}
+			}
+		} while(collides);
+		sim.setObjectLocation(b,tmp);
+		tmp = new Double2D(sim.random.nextDouble(),sim.random.nextDouble()).normalize();
+		sim.bodyOrientations.add(tmp);
 	}
 	
 	/**

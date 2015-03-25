@@ -18,7 +18,7 @@ public class Simulation extends SimState{
 	public ArrayList<String> poi;
 	public ArrayList<Double2D> bodyOrientations;
 	public ArrayList<Logger> loggers;
-	public HashMap<Integer,String> bodyIDs;
+	// public HashMap<Integer,String> bodyIDs;
 	public double resolution;
 	public boolean toroidal = false;
 
@@ -29,7 +29,7 @@ public class Simulation extends SimState{
 		obstacles = new ArrayList<Obstacle>();
 		poi = new ArrayList<String>();
 		loggers = new ArrayList<Logger>();
-		bodyIDs = new HashMap<Integer,String>();
+		// bodyIDs = new HashMap<Integer,String>();
 		field2D = null;
 		env = null;
 		resolution = 0.0;
@@ -46,7 +46,7 @@ public class Simulation extends SimState{
 		bodyOrientations.clear();
 		obstacles.clear();
 		poi.clear();
-		bodyIDs.clear();
+		// bodyIDs.clear();
 		
 		env.configSim(this);
 		for(int i=0;i<bodies.size();i++){

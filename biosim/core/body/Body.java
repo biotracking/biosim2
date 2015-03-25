@@ -13,6 +13,8 @@ import sim.util.Double2D;
 public abstract class Body implements Steppable{
 	protected Agent agent;
 	protected Simulation sim;
+	public String label;
+	public String getLabel(){ return label; }
 	public boolean notFinished = false;
 	public void setAgent(Agent a){ agent = a; }
 	public Agent getAgent(){ return agent; }

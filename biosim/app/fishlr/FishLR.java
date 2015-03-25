@@ -277,9 +277,9 @@ public class FishLR implements Agent{
 		String[] wallVec = btf.loadColumn("rbfwallvec");
 		String[] dvel = btf.loadColumn("dvel");
 		String[] dbool = btf.loadColumn("dbool");
-		String[] sepvec = btf.loadColumn("sepvec");
-		String[] orivec = btf.loadColumn("orivec");
-		String[] cohvec = btf.loadColumn("cohvec");
+		String[] sepvec = btf.loadColumn("rbfsepvec");
+		String[] orivec = btf.loadColumn("rbforivec");
+		String[] cohvec = btf.loadColumn("rbfcohvec");
 		int numRows = dvel.length;
 		double[] sample = new double[X_COMPONENTS.length];
 		double[] classes = new double[3];
