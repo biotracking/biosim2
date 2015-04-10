@@ -64,10 +64,10 @@ public class FishLR implements Agent{
        [  3.89097362e-02,  -1.33854517e-05,  -3.36568323e-02]])
 	*/
 
-    public static final double SEP_SIGMA=0.1;
-    public static final double ORI_SIGMA=1.5;
-    public static final double COH_SIGMA=1.5;
-    public static final double OBS_SIGMA=1.5;
+    public static final double SEP_SIGMA=0.1;	//0.1;
+    public static final double ORI_SIGMA=0.2;	//1.5;
+    public static final double COH_SIGMA=1.0;	//1.5;
+    public static final double OBS_SIGMA=0.05;	//1.5;
 
     public static final int KNN_NEIGHBORS=10;
 
@@ -213,8 +213,8 @@ public class FishLR implements Agent{
 		sensors[3] = ori.y;
 		sensors[4] = coh.x;
 		sensors[5] = coh.y;
-		sensors[6] = wall.x;// * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(OBS_SIGMA,2)));
-		sensors[7] = wall.y;// * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(OBS_SIGMA,2)));
+		sensors[6] = wall.x * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(OBS_SIGMA,2)));
+		sensors[7] = wall.y * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(OBS_SIGMA,2)));
 		sensors[8] = 1.0;
 		double xvel = 0.0, yvel = 0.0, tvel = 0.0;
 		for(int i=0;i<sensors.length;i++){
@@ -246,6 +246,7 @@ public class FishLR implements Agent{
 			// System.out.println(avgDist);
 			((NotemigonusCrysoleucas)fishBody).setAvgDensity(avgDist);
 		}
+		// System.out.println("yvel:"+yvel);
 		fishBody.setDesiredVelocity(xvel, yvel, tvel);
 		oldTime = time;
 	}
@@ -317,7 +318,10 @@ public class FishLR implements Agent{
 			BTFData btf = null;
 			FastKNN knn = null;
 			Environment env = null;
-			boolean doKNNVis = false, initialPlacement = false, doGui = true, logging = false;
+			boolean doKNNVis = false, initialPlacement = false, doGui = true, logging = false, walls = true;
+			BufferedReader poseSrc = null;
+			File loggingDir = null;
+			int numFish = 27; //30; //initial tracked number of fish is 27
 			for(int i=0;i<args.length;i++){
 				if(args[i].equalsIgnoreCase("-btf")){
 					btf = new BTFData();
@@ -331,20 +335,28 @@ public class FishLR implements Agent{
 				}
 				else if(args[i].equalsIgnoreCase("-placed")){
 					initialPlacement = true;
+					poseSrc = new BufferedReader(new FileReader(args[i+1]));
 				}
 				else if(args[i].equalsIgnoreCase("-nogui")){
 					doGui = false;
 				}
 				else if(args[i].equalsIgnoreCase("-logging")){
 					logging = true;
+					if (i<args.length-1 && args[i+1].charAt(0)!='-'){
+						loggingDir = new File(args[i+1]);
+					}
 				}
 				else if(args[i].equalsIgnoreCase("-knn")){
 					USE_KNN_INSTEAD = true;
 				}
+				else if (args[i].equalsIgnoreCase("-nowalls")){
+					walls=false;
+				}
 			}
 			if(initialPlacement){
 				env = new InitiallyPlacedEnvironment(WIDTH,HEIGHT,1.0/30.0);
-				((InitiallyPlacedEnvironment)env).parseInitialPoses(btf);
+				// ((InitiallyPlacedEnvironment)env).parseInitialPoses(btf);
+				numFish = ((InitiallyPlacedEnvironment)env).parseInitialPoses(poseSrc);
 			} else {
 				env = new Environment(WIDTH,HEIGHT,1.0/30.0);
 			}
@@ -352,13 +364,15 @@ public class FishLR implements Agent{
 				knn = loadKNN(btf);
 			}
 			//set up the environment
-			int numFish = 27; //30; //initial tracked number of fish is 27
 			int numLeaderFish = 0;//5;
-			env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall
-			env.addObstacle(new RectObstacle(0.01,HEIGHT),  0.0,  0.0);//west
-			env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0,  0.0);//north
-			env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0, HEIGHT-0.01);//south
-			// env.setToroidal(true);
+			if(walls){
+				env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall
+				env.addObstacle(new RectObstacle(0.01,HEIGHT),  0.0,  0.0);//west
+				env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0,  0.0);//north
+				env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0, HEIGHT-0.01);//south
+			} else {
+				env.setToroidal(true);				
+			}
 			//add agents
 			NotemigonusCrysoleucas[] bodies = new NotemigonusCrysoleucas[numFish];
 			for(int i=0;i<bodies.length;i++){
@@ -377,7 +391,12 @@ public class FishLR implements Agent{
 			}
 						
 			if(logging){
-				FishLRLogger logger = new FishLRLogger();
+				FishLRLogger logger = null;
+				if(loggingDir == null){
+					logger = new FishLRLogger();
+				} else {
+					logger = new FishLRLogger(loggingDir);
+				}
 				logger.setSigmas(SEP_SIGMA,ORI_SIGMA,COH_SIGMA,OBS_SIGMA);
 				env.addLogger(logger);				
 			}
@@ -387,6 +406,8 @@ public class FishLR implements Agent{
 				gui.setPortrayalClass(NotemigonusCrysoleucas.class, biosim.app.fishknn.FishPortrayal.class);
 				biosim.app.fishknn.FishPortrayal.AVG_DIST = 0.0449592693977;
 				biosim.app.fishknn.FishPortrayal.STD_DEV_DIST = 0.0235436856268;
+				biosim.app.fishknn.FishPortrayal.bi=null;
+				// gui.setDisplaySize((int)(WIDTH*380),(int)(HEIGHT*380));
 				gui.setDisplaySize((int)(WIDTH*500),(int)(HEIGHT*500));
 				gui.createController();				
 			} else {

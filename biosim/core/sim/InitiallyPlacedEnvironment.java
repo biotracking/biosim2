@@ -2,6 +2,7 @@ package biosim.core.sim;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.io.BufferedReader;
 import java.io.IOException;
 
 import sim.util.Double2D;
@@ -58,6 +59,20 @@ public class InitiallyPlacedEnvironment extends Environment{
 		}
 
 	}
+
+	public int parseInitialPoses(BufferedReader poseSrc) throws IOException{
+		int count = 0;
+		while(poseSrc.ready()){
+			String[] line = poseSrc.readLine().split(" ");
+			String id = line[0];
+			Double2D p = new Double2D(Double.parseDouble(line[1]),Double.parseDouble(line[2]));
+			Double2D dir = (new Double2D(1,0)).rotate(Double.parseDouble(line[3]));
+			addInitialPose(p,dir,id);
+			count++;
+		}
+		return count;
+	}
+
 	protected void initSimField(Simulation sim){
 		for(int i=0;i<obstacles.size();i++){
 			Double2D tmp = obstacleLocations.get(i);

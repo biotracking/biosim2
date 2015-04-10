@@ -414,8 +414,8 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		MutableDouble2D curDir = new MutableDouble2D();
 		sim.getBodyOrientation(this,curDir);
 		tmp.rotate(curDir.angle());
-		xVel = (tmp.x<=MAX_VELOCITY_X)?tmp.x:MAX_VELOCITY_X;
-		yVel = (tmp.y<=MAX_VELOCITY_Y)?tmp.y:MAX_VELOCITY_Y;
+		xVel = (Math.abs(tmp.x)<=MAX_VELOCITY_X)?tmp.x:Math.signum(tmp.x)*MAX_VELOCITY_X;
+		yVel = (Math.abs(tmp.y)<=MAX_VELOCITY_Y)?tmp.y:Math.signum(tmp.y)*MAX_VELOCITY_Y;
 		tVel = (Math.abs(desiredVelXYT[2])<=MAX_VELOCITY_THETA)?desiredVelXYT[2]:Math.signum(desiredVelXYT[2])*MAX_VELOCITY_THETA;
 		Double2D oldPos = sim.field2D.getObjectLocation(this);
 		newPos.x = oldPos.x+(xVel*sim.resolution);
