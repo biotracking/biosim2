@@ -323,6 +323,7 @@ public class FishLR implements Agent{
 			File loggingDir = null;
 			int numFish = 27; //30; //initial tracked number of fish is 27
 			for(int i=0;i<args.length;i++){
+				//System.err.println(args[i]);
 				if(args[i].equalsIgnoreCase("-btf")){
 					btf = new BTFData();
 					btf.loadDir(new File(args[i+1]));

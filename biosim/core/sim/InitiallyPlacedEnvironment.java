@@ -32,6 +32,7 @@ public class InitiallyPlacedEnvironment extends Environment{
 		if(lastAddedIdx<initialIDs.size()){
 			b.label = initialIDs.get(lastAddedIdx);
 		} else {
+			System.err.println("Warning: default ID created");
 			int newID = initialIDs.size();
 			while(usedIDs.contains(((Integer)newID).toString())){
 				newID++;
@@ -95,6 +96,7 @@ public class InitiallyPlacedEnvironment extends Environment{
 			}
 			if(!found){
 				placeRandomly(sim,b);
+				System.err.println("Warning: Placing body randomly");
 			} else {
 				sim.setObjectLocation(b,pos);
 				sim.bodyOrientations.add(ori);
