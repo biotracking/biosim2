@@ -4,6 +4,7 @@ all:
 	make -C domworld/
 	make -C fishknn/
 	make -C fishlr/
+	make -C fishreynolds/
 	make -C learnedants/
 	make -C tutorial/
 	make -C twostateants/
