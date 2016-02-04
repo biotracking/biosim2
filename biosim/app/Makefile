@@ -14,6 +14,7 @@ clean:
 	make -C domworld/ clean
 	make -C fishknn/ clean
 	make -C fishlr/ clean
+	make -C fishreynolds/ clean
 	make -C learnedants/ clean
 	make -C tutorial/ clean
 	make -C twostateants/ clean
