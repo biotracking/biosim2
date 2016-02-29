@@ -29,10 +29,10 @@ public class FishReynolds implements Agent{
 
 	public static boolean USE_KNN_INSTEAD=false;
 
-    public static final double SEP_SIGMA=0.1;
-    public static final double ORI_SIGMA=1.0; //<- is from calculated features, this is what was simmed -> 0.2;
-    public static final double COH_SIGMA=1.0;
-    public static final double OBS_SIGMA=1.5; //<- calced, simmed -> 0.05;
+    public static double SEP_SIGMA=0.1;
+    public static double ORI_SIGMA=0.2; //These two features are different from the optimal computed LR sigmas, but look better in simulation
+    public static double COH_SIGMA=1.0;
+    public static double OBS_SIGMA=0.05; //These two features are different from the optimal computed LR sigmas, but look better in simulation
     public static final int NUM_FEATURES=8;
 
     public static int KNN_NEIGHBORS=10;
@@ -115,7 +115,7 @@ public class FishReynolds implements Agent{
 			coeffLines.add(line);
 		}
 		int readNumCoeffs = coeffLines.size();
-		if(NUM_FEATURES != readNumCoeffs){
+		if(NUM_FEATURES+1 != readNumCoeffs){
 			System.out.println("[FishReynolds] WARNING! Number of parsed LR coefficients ("+readNumCoeffs+") different from NUM_FEATURES ("+NUM_FEATURES+")");
 		}
 		X_COMPONENTS = new double[readNumCoeffs];
@@ -127,6 +127,22 @@ public class FishReynolds implements Agent{
 			Y_COMPONENTS[i] = Double.parseDouble(tmp[1]);
 			THETA_COMPONENTS[i] = Double.parseDouble(tmp[2]);
 		}
+	}
+
+	public static void loadFeatureSigma(BufferedReader featureSigmasSource) throws IOException {
+		ArrayList<String> sigmaLines = new ArrayList<String>();
+		for(String line=null; featureSigmasSource.ready();){
+			line = featureSigmasSource.readLine();
+			sigmaLines.add(line);
+		}
+		int readNumSigmas = sigmaLines.size();
+		if(NUM_FEATURES/2 != readNumSigmas){
+			System.out.println("[FishReynolds] WARNING! Number of parsed sigmas ("+readNumSigmas+") different from NUM_FEATURES/2 ("+NUM_FEATURES/2+")");
+		}
+		SEP_SIGMA = Double.parseDouble(sigmaLines.get(0));
+		ORI_SIGMA = Double.parseDouble(sigmaLines.get(1));
+		COH_SIGMA = Double.parseDouble(sigmaLines.get(2));
+		OBS_SIGMA = Double.parseDouble(sigmaLines.get(3));
 	}
 
 	public static FastKNN loadKNN(BufferedReader kNN_csv_data) throws IOException{
@@ -195,6 +211,9 @@ public class FishReynolds implements Agent{
 				}
 				else if(args[i].equalsIgnoreCase("-lr")){
 					loadLRCoeff(new BufferedReader(new FileReader(args[i+1])));
+				}
+				else if(args[i].equalsIgnoreCase("-sigmas")){
+					loadFeatureSigma(new BufferedReader(new FileReader(args[i+1])));
 				}
 				else if(args[i].equalsIgnoreCase("-placed")){
 					initialPlacement = true;
