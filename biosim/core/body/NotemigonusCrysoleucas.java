@@ -102,8 +102,8 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 			Bag nearest = sim.field2D.getAllObjects();//sim.field2D.getObjectsExactlyWithinDistance(loc,RANGE);
 			MutableDouble2D nearestLoc = null;
 			for(int i=0;i<nearest.numObjs;i++){
-				if(nearest.objs[i] instanceof NotemigonusCrysoleucas){
-					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
+				if(nearest.objs[i] instanceof AbstractFish){
+					AbstractFish tmpFish = (AbstractFish)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
 					if(tmpFish == this) continue;
 					MutableDouble2D mutTmp;
@@ -137,8 +137,8 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		if(sim.getBodyOrientation(this,dir)){
 			Bag nearest = sim.field2D.getAllObjects();
 			for(int i=0;i<nearest.numObjs;i++){
-				if(nearest.objs[i] instanceof NotemigonusCrysoleucas){
-					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
+				if(nearest.objs[i] instanceof AbstractFish){
+					AbstractFish tmpFish = (AbstractFish)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
 					if(tmpFish == this) continue;
 					MutableDouble2D mutTmp;
@@ -174,8 +174,8 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		if(sim.getBodyOrientation(this,dir)){
 			Bag nearest = sim.field2D.getAllObjects();//sim.field2D.getObjectsExactlyWithinDistance(loc,RANGE);
 			for(int i=0;i<nearest.numObjs;i++){
-				if(nearest.objs[i] instanceof NotemigonusCrysoleucas){
-					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
+				if(nearest.objs[i] instanceof AbstractFish){
+					AbstractFish tmpFish = (AbstractFish)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
 					if(tmpFish == this) continue;
 					MutableDouble2D mutTmp;
@@ -225,8 +225,8 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		if(sim.getBodyOrientation(this,dir)){
 			Bag nearest = sim.field2D.getAllObjects();//sim.field2D.getObjectsExactlyWithinDistance(loc,RANGE);
 			for(int i=0;i<nearest.numObjs;i++){
-				if(nearest.objs[i] instanceof NotemigonusCrysoleucas){
-					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
+				if(nearest.objs[i] instanceof AbstractFish){
+					AbstractFish tmpFish = (AbstractFish)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
 					if(tmpFish == this) continue;
 					MutableDouble2D mutTmp;
@@ -279,8 +279,8 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		if(sim.getBodyOrientation(this,dir)){
 			Bag nearest = sim.field2D.getAllObjects();//sim.field2D.getObjectsExactlyWithinDistance(loc,RANGE);
 			for(int i=0;i<nearest.numObjs;i++){
-				if(nearest.objs[i] instanceof NotemigonusCrysoleucas){
-					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
+				if(nearest.objs[i] instanceof AbstractFish){
+					AbstractFish tmpFish = (AbstractFish)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
 					if(tmpFish == this) continue;
 					MutableDouble2D mutTmp;
@@ -338,8 +338,8 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		if(sim.getBodyOrientation(this,dir)){
 			Bag nearest = sim.field2D.getAllObjects();
 			for(int i=0;i<nearest.numObjs;i++){
-				if(nearest.objs[i] instanceof NotemigonusCrysoleucas){
-					NotemigonusCrysoleucas tmpFish = (NotemigonusCrysoleucas)nearest.objs[i];
+				if(nearest.objs[i] instanceof AbstractFish){
+					AbstractFish tmpFish = (AbstractFish)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
 					if(tmpFish == this) continue;
 					MutableDouble2D mutTmp;
