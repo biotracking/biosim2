@@ -5,6 +5,7 @@ import biosim.app.fishlr.FishLRLogger;
 import biosim.core.agent.Agent;
 import biosim.core.body.AbstractFish;
 import biosim.core.body.NotemigonusCrysoleucas;
+import biosim.core.body.ReplayFish;
 import biosim.core.gui.GUISimulation;
 import biosim.core.sim.InitiallyPlacedEnvironment;
 import biosim.core.sim.Environment;
@@ -188,6 +189,43 @@ public class FishReynolds implements Agent{
 		}
 		System.out.println("[FishReynolds] Finished loading kNN.");
 		return knn;
+	}
+
+	public static ArrayList<ReplayFish> loadReplays(BTFData btf, ArrayList<Integer> ignoreTrackIDs) throws IOException{
+		ArrayList<ReplayFish> rv = new ArrayList<ReplayFish>();
+		String[] id = btf.loadColumn("id");
+		String[] xpos = btf.loadColumn("xpos");
+		String[] ypos = btf.loadColumn("ypos");
+		String[] tpos = btf.loadColumn("timage");
+		String[] time = btf.loadColumn("clocktime");
+		for(int t=0;t<id.length;t++){
+			if(t%(id.length/10)==0) System.out.println("Line #"+t);
+			if(ignoreTrackIDs.contains(Integer.parseInt(id[t].trim()))){
+				continue;
+			}
+			int trackIdx = -1;
+			for(int i=0;i<rv.size();i++){
+				if(rv.get(i).trackID == Integer.parseInt(id[t].trim())){
+					trackIdx = i;
+					break;
+				}
+			}
+			if(trackIdx == -1){
+				rv.add(new ReplayFish());
+				trackIdx = rv.size()-1;
+				rv.get(trackIdx).trackID = Integer.parseInt(id[t].trim());
+				rv.get(trackIdx).visible = false;
+				rv.get(trackIdx).size = NotemigonusCrysoleucas.SIZE;
+				rv.get(trackIdx).track = new ArrayList<double[]>();
+			}
+			double[] tmp = new double[4];
+			tmp[0] = Double.parseDouble(xpos[t].trim());
+			tmp[1] = Double.parseDouble(ypos[t].trim());
+			tmp[2] = Double.parseDouble(tpos[t].trim());
+			tmp[3] = Double.parseDouble(time[t].trim());
+			rv.get(trackIdx).track.add(tmp);
+		}
+		return rv;
 	}
 
 	public static final double WIDTH=2.5;//2.5;
