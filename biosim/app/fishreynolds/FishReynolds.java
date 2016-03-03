@@ -22,6 +22,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 
 public class FishReynolds implements Agent{
@@ -200,7 +201,7 @@ public class FishReynolds implements Agent{
 		String[] time = btf.loadColumn("clocktime");
 		for(int t=0;t<id.length;t++){
 			if(t%(id.length/10)==0) System.out.println("Line #"+t);
-			if(ignoreTrackIDs.contains(Integer.parseInt(id[t].trim()))){
+			if(ignoreTrackIDs != null && ignoreTrackIDs.contains(Integer.parseInt(id[t].trim()))){
 				continue;
 			}
 			int trackIdx = -1;
@@ -239,6 +240,9 @@ public class FishReynolds implements Agent{
 			BufferedReader poseSrc = null;
 			File loggingDir = null;
 			int numFish = 27; //30; //initial tracked number of fish is 27
+			ArrayList<ReplayFish> replayFish = null;
+			ArrayList<Integer> ignoreTrackIDs = null;
+			BTFData replayBTF=null;
 			for(int i=0;i<args.length;i++){
 				//System.err.println(args[i]);
 				if(args[i].equalsIgnoreCase("-vis")){
@@ -275,6 +279,17 @@ public class FishReynolds implements Agent{
 				else if (args[i].equalsIgnoreCase("-nowalls")){
 					walls=false;
 				}
+				else if(args[i].equalsIgnoreCase("-replay")){
+					replayBTF = new BTFData();
+					replayBTF.loadDir(new File(args[i+1]));
+				}
+				else if(args[i].equalsIgnoreCase("-ignoreTrackIDs")){
+					String[] ids = args[i+1].split(",");
+					ignoreTrackIDs = new ArrayList<Integer>();
+					for(int jay=0;jay<ids.length;jay++){
+						ignoreTrackIDs.add(Integer.parseInt(ids[jay]));
+					}
+				}
 			}
 			if(initialPlacement){
 				env = new InitiallyPlacedEnvironment(WIDTH,HEIGHT,1.0/30.0);
@@ -293,18 +308,40 @@ public class FishReynolds implements Agent{
 				env.setToroidal(true);				
 			}
 			//add agents
-			NotemigonusCrysoleucas[] bodies = new NotemigonusCrysoleucas[numFish];
-			for(int i=0;i<bodies.length;i++){
-				bodies[i] = new NotemigonusCrysoleucas();
-				env.addBody(bodies[i]);
+			if(replayBTF==null){
+				NotemigonusCrysoleucas[] bodies = new NotemigonusCrysoleucas[numFish];
+				for(int i=0;i<bodies.length;i++){
+					bodies[i] = new NotemigonusCrysoleucas();
+					env.addBody(bodies[i]);
+				}
+			
+				Agent[] agents = new Agent[numFish];
+				for(int i=0; i< numFish;i++){
+					agents[i] = new FishReynolds(bodies[i],knn);
+					bodies[i].setAgent(agents[i]);
+				}
+			} else {
+				ArrayList<Integer> allIDs = new ArrayList<Integer>();
+				String[] idCol = replayBTF.loadColumn("id");
+				for(int i=0;i<idCol.length;i++){
+					int foo = Integer.parseInt(idCol[i]);
+					if(allIDs.contains(foo)){
+						continue;
+					} else {
+						allIDs.add(foo);
+					}
+				}
+				replayFish = loadReplays(replayBTF,ignoreTrackIDs);
+				for(int i=0;i<ignoreTrackIDs.size();i++){
+					NotemigonusCrysoleucas body = new NotemigonusCrysoleucas();
+					env.addBody(body);
+					Agent agent = new FishReynolds(body,knn);
+					body.setAgent(agent);
+				}
+				for(int i=0;i<replayFish.size();i++){
+					env.addBody(replayFish.get(i));
+				}
 			}
-		
-			Agent[] agents = new Agent[numFish];
-			for(int i=0; i< numFish;i++){
-				agents[i] = new FishReynolds(bodies[i],knn);
-				bodies[i].setAgent(agents[i]);
-			}
-						
 			if(logging){
 				FishLRLogger logger = null;
 				if(loggingDir == null){
