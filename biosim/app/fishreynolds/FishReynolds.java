@@ -201,9 +201,9 @@ public class FishReynolds implements Agent{
 		String[] time = btf.loadColumn("clocktime");
 		for(int t=0;t<id.length;t++){
 			if(t%(id.length/10)==0) System.out.println("Line #"+t);
-			if(ignoreTrackIDs != null && ignoreTrackIDs.contains(Integer.parseInt(id[t].trim()))){
-				continue;
-			}
+			// if(ignoreTrackIDs.contains(Integer.parseInt(id[t].trim()))){
+			// 	continue;
+			// }
 			int trackIdx = -1;
 			for(int i=0;i<rv.size();i++){
 				if(rv.get(i).trackID == Integer.parseInt(id[t].trim())){
@@ -215,6 +215,7 @@ public class FishReynolds implements Agent{
 				rv.add(new ReplayFish());
 				trackIdx = rv.size()-1;
 				rv.get(trackIdx).trackID = Integer.parseInt(id[t].trim());
+				rv.get(trackIdx).label = id[t].trim();
 				rv.get(trackIdx).visible = false;
 				rv.get(trackIdx).size = NotemigonusCrysoleucas.SIZE;
 				rv.get(trackIdx).track = new ArrayList<double[]>();
@@ -241,7 +242,7 @@ public class FishReynolds implements Agent{
 			File loggingDir = null;
 			int numFish = 27; //30; //initial tracked number of fish is 27
 			ArrayList<ReplayFish> replayFish = null;
-			ArrayList<Integer> ignoreTrackIDs = null;
+			ArrayList<Integer> ignoreTrackIDs = new ArrayList<Integer>();
 			BTFData replayBTF=null;
 			for(int i=0;i<args.length;i++){
 				//System.err.println(args[i]);
@@ -285,7 +286,6 @@ public class FishReynolds implements Agent{
 				}
 				else if(args[i].equalsIgnoreCase("-ignoreTrackIDs")){
 					String[] ids = args[i+1].split(",");
-					ignoreTrackIDs = new ArrayList<Integer>();
 					for(int jay=0;jay<ids.length;jay++){
 						ignoreTrackIDs.add(Integer.parseInt(ids[jay]));
 					}
@@ -334,6 +334,7 @@ public class FishReynolds implements Agent{
 				replayFish = loadReplays(replayBTF,ignoreTrackIDs);
 				for(int i=0;i<ignoreTrackIDs.size();i++){
 					NotemigonusCrysoleucas body = new NotemigonusCrysoleucas();
+					body.label = ignoreTrackIDs.get(i).toString();
 					env.addBody(body);
 					Agent agent = new FishReynolds(body,knn);
 					body.setAgent(agent);
@@ -356,6 +357,7 @@ public class FishReynolds implements Agent{
 				Simulation sim = env.newSimulation();
 				GUISimulation gui = new GUISimulation(sim);
 				gui.setPortrayalClass(NotemigonusCrysoleucas.class, biosim.app.fishknn.FishPortrayal.class);
+				gui.setPortrayalClass(ReplayFish.class, ReplayPortrayal.class);
 				biosim.app.fishknn.FishPortrayal.AVG_DIST = 0.0449592693977;
 				biosim.app.fishknn.FishPortrayal.STD_DEV_DIST = 0.0235436856268;
 				biosim.app.fishknn.FishPortrayal.bi=null;

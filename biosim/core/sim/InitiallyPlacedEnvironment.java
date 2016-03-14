@@ -28,18 +28,37 @@ public class InitiallyPlacedEnvironment extends Environment{
 
 	public void addBody(Body b){
 		initialBodies.add(b);
-		int lastAddedIdx = initialBodies.size()-1;
-		if(lastAddedIdx<initialIDs.size()){
-			b.label = initialIDs.get(lastAddedIdx);
-		} else {
-			System.err.println("Warning: default ID created");
-			int newID = initialIDs.size();
-			while(usedIDs.contains(((Integer)newID).toString())){
-				newID++;
+		if(b.label.equals("")){
+			boolean foundID = false;
+			for(int i=0;i<initialIDs.size();i++){
+				if(!usedIDs.contains(initialIDs.get(i))){
+					b.label = initialIDs.get(i);
+					foundID = true;
+					break;
+				}
 			}
-			b.label = ((Integer)newID).toString();
+			if (!foundID){
+				System.err.println("Warning: default ID created");
+				int newID = initialIDs.size();
+				while(usedIDs.contains(((Integer)newID).toString())){
+					newID++;
+				}
+				b.label = ((Integer)newID).toString();
+			}
 		}
 		usedIDs.add(b.label);
+		// int lastAddedIdx = initialBodies.size()-1;
+		// if(lastAddedIdx<initialIDs.size()){
+		// 	b.label = initialIDs.get(lastAddedIdx);
+		// } else {
+		// 	System.err.println("Warning: default ID created");
+		// 	int newID = initialIDs.size();
+		// 	while(usedIDs.contains(((Integer)newID).toString())){
+		// 		newID++;
+		// 	}
+		// 	b.label = ((Integer)newID).toString();
+		// }
+		// usedIDs.add(b.label);
 	}
 
 	public void parseInitialPoses(BTFData btf) throws IOException{
@@ -86,11 +105,11 @@ public class InitiallyPlacedEnvironment extends Environment{
 			Body b = initialBodies.get(i);
 			Double2D pos = null, ori = null;
 			boolean found = false;
-			for(int j=0;j<initialBodies.size();j++){
-				if(initialIDs.get(i).equalsIgnoreCase(b.label)){
+			for(int j=0;j<initialIDs.size();j++){
+				if(initialIDs.get(j).equalsIgnoreCase(b.label)){
 					found = true;
-					pos = initialPositions.get(i);
-					ori = initialOrientations.get(i);
+					pos = initialPositions.get(j);
+					ori = initialOrientations.get(j);
 					break;
 				}
 			}

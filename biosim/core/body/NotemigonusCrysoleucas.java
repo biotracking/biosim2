@@ -43,6 +43,18 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	public double getAvgDensity(){ return avgDensity; }
 	public void setAvgDensity(double ad){ avgDensity = ad; }
 
+	public boolean sameAsMe(AbstractFish other){
+		if(super.sameAsMe(other)){
+			return true;
+		}
+		else if(other instanceof ReplayFish){
+			boolean res = this.label.equals( ((Integer)((ReplayFish)other).trackID).toString() );
+			return res;
+		} else {
+			return false;
+		}
+	}
+
 	public boolean getSelfVelXYT(double[] rv){
 		if(rv == null || rv.length != 3) return false;
 		rv[0] = xVel;
@@ -105,7 +117,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 				if(nearest.objs[i] instanceof AbstractFish){
 					AbstractFish tmpFish = (AbstractFish)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
-					if(tmpFish == this) continue;
+					if(this.sameAsMe(tmpFish)) continue;
 					MutableDouble2D mutTmp;
 					if(sim.toroidal){
 						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
@@ -140,7 +152,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 				if(nearest.objs[i] instanceof AbstractFish){
 					AbstractFish tmpFish = (AbstractFish)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
-					if(tmpFish == this) continue;
+					if(this.sameAsMe(tmpFish)) continue;
 					MutableDouble2D mutTmp;
 					if(sim.toroidal){
 						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
@@ -177,7 +189,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 				if(nearest.objs[i] instanceof AbstractFish){
 					AbstractFish tmpFish = (AbstractFish)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
-					if(tmpFish == this) continue;
+					if(this.sameAsMe(tmpFish)) continue;
 					MutableDouble2D mutTmp;
 					if(sim.toroidal){
 						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
@@ -228,7 +240,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 				if(nearest.objs[i] instanceof AbstractFish){
 					AbstractFish tmpFish = (AbstractFish)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
-					if(tmpFish == this) continue;
+					if(this.sameAsMe(tmpFish)) continue;
 					MutableDouble2D mutTmp;
 					if(sim.toroidal){
 						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
@@ -282,7 +294,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 				if(nearest.objs[i] instanceof AbstractFish){
 					AbstractFish tmpFish = (AbstractFish)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
-					if(tmpFish == this) continue;
+					if(this.sameAsMe(tmpFish)) continue;
 					MutableDouble2D mutTmp;
 					if(sim.toroidal){
 						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
@@ -341,7 +353,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 				if(nearest.objs[i] instanceof AbstractFish){
 					AbstractFish tmpFish = (AbstractFish)nearest.objs[i];
 					Double2D tmpLoc = sim.field2D.getObjectLocation(tmpFish);
-					if(tmpFish == this) continue;
+					if(this.sameAsMe(tmpFish)) continue;
 					MutableDouble2D mutTmp;
 					if(sim.toroidal){
 						mutTmp = new MutableDouble2D(sim.field2D.tv(tmpLoc,loc));
