@@ -332,15 +332,15 @@ public class FishReynolds implements Agent{
 					}
 				}
 				replayFish = loadReplays(replayBTF,ignoreTrackIDs);
+				for(int i=0;i<replayFish.size();i++){
+					env.addBody(replayFish.get(i));
+				}
 				for(int i=0;i<ignoreTrackIDs.size();i++){
 					NotemigonusCrysoleucas body = new NotemigonusCrysoleucas();
 					body.label = ignoreTrackIDs.get(i).toString();
 					env.addBody(body);
 					Agent agent = new FishReynolds(body,knn);
 					body.setAgent(agent);
-				}
-				for(int i=0;i<replayFish.size();i++){
-					env.addBody(replayFish.get(i));
 				}
 			}
 			if(logging){
