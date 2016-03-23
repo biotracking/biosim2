@@ -16,6 +16,11 @@ public class ReplayBody extends Body{
 	public ArrayList<double[]> track;
 	private int lastTrackIdx = 0;
 	public int trackID;
+
+	public ReplayBody(){
+		doNotLog = true;
+	}
+
 	public MersenneTwisterFast getRandom(){
 		return null;
 	}

@@ -16,6 +16,7 @@ public abstract class Body implements Steppable{
 	public String label;
 	public String getLabel(){ return label; }
 	public boolean notFinished = false;
+	public boolean doNotLog = false;
 	public void setAgent(Agent a){ agent = a; }
 	public Agent getAgent(){ return agent; }
 	public abstract MersenneTwisterFast getRandom();

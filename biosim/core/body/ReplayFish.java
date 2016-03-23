@@ -16,6 +16,11 @@ public class ReplayFish extends AbstractFish{
 	public ArrayList<double[]> track;
 	private int lastTrackIdx = 0;
 	public int trackID;
+
+	public ReplayFish(){
+		doNotLog = true;
+	}
+
 	public MersenneTwisterFast getRandom(){
 		return null;
 	}

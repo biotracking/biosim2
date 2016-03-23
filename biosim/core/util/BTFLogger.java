@@ -68,6 +68,7 @@ public class BTFLogger implements Logger{
 		if(simstate instanceof Simulation){
 			Simulation sim = (Simulation)simstate;
 			for(int i=0;i<sim.bodies.size();i++){
+				if(sim.bodies.get(i).doNotLog) continue;
 				Double2D loc = sim.field2D.getObjectLocation(sim.bodies.get(i));
 				MutableDouble2D dir = new MutableDouble2D(sim.bodyOrientations.get(i));
 				try{
