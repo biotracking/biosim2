@@ -24,6 +24,8 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.HashMap;
 import java.lang.reflect.InvocationTargetException;
+import java.io.File;
+import java.io.IOException;
 public class GUISimulation extends GUIState {
 	public static String getName() { return "BioSim"; }
 	public static Object getInfo(){
@@ -36,6 +38,8 @@ public class GUISimulation extends GUIState {
 	public JFrame displayFrame;
 	public int displayWidthPixels = 500;
 	public int displayHeightPixels = 500;
+	public String screenshotDir = null;
+	public long sscounter = 0;
 	public void setDisplaySize(int width, int height){ displayWidthPixels = width; displayHeightPixels = height; }
 	public ContinuousPortrayal2D field2DPortrayal = new ContinuousPortrayal2D(){
 		final SimplePortrayal2D EMPTY_PORTRAYAL = new SimplePortrayal2D();
@@ -129,5 +133,20 @@ public class GUISimulation extends GUIState {
 		} else{
 			throw new RuntimeException("!(state instanceof Simulation)");
 		}
+	}
+
+	public boolean step(){
+		boolean rv = super.step();
+		if(screenshotDir!=null){
+			File outf = new File(screenshotDir,"sshot"+(sscounter++)+".png");
+			try{
+				display.takeSnapshot(outf,display.TYPE_PNG);
+			} catch (IOException ioe){
+				System.err.println("Error saving screenshot to "+outf);
+				//welp, that didn't work, lets not keep trying
+				screenshotDir = null;
+			}
+		}
+		return rv;
 	}
 }

@@ -18,6 +18,8 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	
 	private double xVel, yVel, tVel;
 
+	private double xVelObserved, yVelObserved, tVelObserved;
+
 	public double[] desiredVelXYT = new double[3];
 
 	public static final double SIZE=0.05; //7.5 to 12.5 cm...paper says they were bought at 5cm long on average
@@ -57,9 +59,9 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 
 	public boolean getSelfVelXYT(double[] rv){
 		if(rv == null || rv.length != 3) return false;
-		rv[0] = xVel;
-		rv[1] = yVel;
-		rv[2] = tVel;
+		rv[0] = xVelObserved;
+		rv[1] = yVelObserved;
+		rv[2] = tVelObserved;
 		return true;
 	}
 
@@ -440,6 +442,41 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 			}
 		}
 		return true;
+	}
+
+	public void step(SimState simstate){
+		MutableDouble2D oldPos=null, oldDir=null;
+		if(simstate instanceof Simulation){
+			Simulation sim = (Simulation)(simstate);
+			oldPos = new MutableDouble2D(sim.field2D.getObjectLocation(this));
+			for(int i=0;i<sim.bodies.size();i++){
+				if(sim.bodies.get(i)==this){
+					oldDir = new MutableDouble2D(sim.bodyOrientations.get(i));
+					break;
+				}
+			}
+		}
+		super.step(simstate);
+		if(simstate instanceof Simulation){
+			Simulation sim = (Simulation)(simstate);
+			MutableDouble2D newPos = new MutableDouble2D(sim.field2D.getObjectLocation(this));
+			MutableDouble2D newDir = null;
+			for(int i=0;i<sim.bodies.size();i++){
+				if(sim.bodies.get(i)==this){
+					newDir = new MutableDouble2D(sim.bodyOrientations.get(i));
+					break;
+				}
+			}
+			xVelObserved = (oldPos.x-newPos.x)/sim.resolution;
+			yVelObserved = (oldPos.y-newPos.y)/sim.resolution;
+			double tDelta = newDir.angle()-oldDir.angle();
+			if(tDelta > Math.PI){
+				tDelta = tDelta-(2.0*Math.PI);
+			} else if(tDelta < -Math.PI){
+				tDelta = tDelta+(2.0*Math.PI);
+			}
+			tVelObserved = tDelta/sim.resolution;
+		}
 	}
 
 	/*

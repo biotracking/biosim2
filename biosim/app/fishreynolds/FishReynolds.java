@@ -244,6 +244,7 @@ public class FishReynolds implements Agent{
 			ArrayList<ReplayFish> replayFish = null;
 			ArrayList<Integer> ignoreTrackIDs = new ArrayList<Integer>();
 			BTFData replayBTF=null;
+			String sshotdir = null;
 			for(int i=0;i<args.length;i++){
 				//System.err.println(args[i]);
 				if(args[i].equalsIgnoreCase("-vis")){
@@ -289,6 +290,8 @@ public class FishReynolds implements Agent{
 					for(int jay=0;jay<ids.length;jay++){
 						ignoreTrackIDs.add(Integer.parseInt(ids[jay]));
 					}
+				} else if(args[i].equalsIgnoreCase("-screenshotDir")){
+					sshotdir = args[i+1];
 				}
 			}
 			if(initialPlacement){
@@ -356,6 +359,7 @@ public class FishReynolds implements Agent{
 			if(doGui){
 				Simulation sim = env.newSimulation();
 				GUISimulation gui = new GUISimulation(sim);
+				gui.screenshotDir = sshotdir;
 				gui.setPortrayalClass(NotemigonusCrysoleucas.class, biosim.app.fishknn.FishPortrayal.class);
 				gui.setPortrayalClass(ReplayFish.class, ReplayPortrayal.class);
 				biosim.app.fishknn.FishPortrayal.AVG_DIST = 0.0449592693977;
@@ -363,7 +367,7 @@ public class FishReynolds implements Agent{
 				biosim.app.fishknn.FishPortrayal.bi=null;
 				// gui.setDisplaySize((int)(WIDTH*380),(int)(HEIGHT*380));
 				gui.setDisplaySize((int)(WIDTH*500),(int)(HEIGHT*500));
-				gui.createController();				
+				gui.createController();
 			} else {
 				env.runSimulation(args);
 			}

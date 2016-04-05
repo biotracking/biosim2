@@ -28,7 +28,7 @@ public class InitiallyPlacedEnvironment extends Environment{
 
 	public void addBody(Body b){
 		initialBodies.add(b);
-		if(b.label.equals("")){
+		if(b.label == null || b.label.equals("")){
 			boolean foundID = false;
 			for(int i=0;i<initialIDs.size();i++){
 				if(!usedIDs.contains(initialIDs.get(i))){
