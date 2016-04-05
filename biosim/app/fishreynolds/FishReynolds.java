@@ -28,6 +28,7 @@ import java.util.Arrays;
 public class FishReynolds implements Agent{
 	AbstractFish fishBody;
 	FastKNN knn;
+	FishSigmaLinregModel lrmodel;
 
 	public static boolean USE_KNN_INSTEAD=false;
 
@@ -35,7 +36,7 @@ public class FishReynolds implements Agent{
     public static double ORI_SIGMA=0.2; //These two features are different from the optimal computed LR sigmas, but look better in simulation
     public static double COH_SIGMA=1.0;
     public static double OBS_SIGMA=0.05; //These two features are different from the optimal computed LR sigmas, but look better in simulation
-    public static final int NUM_FEATURES=8;
+    public static final int NUM_FEATURES=8;//sepX, sepY, oriX, oriY, cohX, cohY, wallX, wallY
 
     public static int KNN_NEIGHBORS=10;
     public static double[] X_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
@@ -43,9 +44,10 @@ public class FishReynolds implements Agent{
     public static double[] THETA_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
 
 	public double oldTime = 0.0;
-	public FishReynolds(AbstractFish b, FastKNN knn){
+	public FishReynolds(AbstractFish b, FastKNN knn, FishSigmaLinregModel fslrm){
 		fishBody = b;
 		this.knn = knn;
+		this.lrmodel = fslrm;
 	}
 	public void init(){
 	}
@@ -55,35 +57,42 @@ public class FishReynolds implements Agent{
 		double[][] nearestK_classes = new double[KNN_NEIGHBORS][3];
 		double[][] nearestK_features = new double[KNN_NEIGHBORS][NUM_FEATURES];
 		// order of sensors: sep, ori, coh, obs, bias
-		MutableDouble2D sep = new MutableDouble2D();
-		MutableDouble2D ori = new MutableDouble2D();
-		MutableDouble2D coh = new MutableDouble2D();
-		MutableDouble2D wall = new MutableDouble2D();
-		fishBody.getAverageRBFSameTypeVec(sep,SEP_SIGMA);
-		fishBody.getAverageRBFOrientationSameTypeVec(ori,ORI_SIGMA);
-		fishBody.getAverageRBFSameTypeVec(coh,COH_SIGMA);
-		fishBody.getNearestObstacleVec(wall);
-		wall.multiplyIn(Math.exp(-wall.lengthSq()/(2.0*Math.pow(OBS_SIGMA,2))));
-		double[] sensors = new double[NUM_FEATURES+1]; // +1 for bias
+		// MutableDouble2D sep = new MutableDouble2D();
+		// MutableDouble2D ori = new MutableDouble2D();
+		// MutableDouble2D coh = new MutableDouble2D();
+		// MutableDouble2D wall = new MutableDouble2D();
+		// fishBody.getAverageRBFSameTypeVec(sep,SEP_SIGMA);
+		// fishBody.getAverageRBFOrientationSameTypeVec(ori,ORI_SIGMA);
+		// fishBody.getAverageRBFSameTypeVec(coh,COH_SIGMA);
+		// fishBody.getNearestObstacleVec(wall);
+		// wall.multiplyIn(Math.exp(-wall.lengthSq()/(2.0*Math.pow(OBS_SIGMA,2))));
+		// double[] sensors = new double[NUM_FEATURES+1]; // +1 for bias
+		// double[] features = new double[NUM_FEATURES];
+		// sensors[0] = sep.x;
+		// sensors[1] = sep.y;
+		// sensors[2] = ori.x;
+		// sensors[3] = ori.y;
+		// sensors[4] = coh.x;
+		// sensors[5] = coh.y;
+		// sensors[6] = wall.x * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(OBS_SIGMA,2)));
+		// sensors[7] = wall.y * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(OBS_SIGMA,2)));
+		// sensors[8] = 1.0;
+		// double xvel = 0.0, yvel = 0.0, tvel = 0.0;
+		// for(int i=0;i<sensors.length;i++){
+		// 	xvel += X_COMPONENTS[i]*sensors[i];
+		// 	yvel += Y_COMPONENTS[i]*sensors[i];
+		// 	tvel += THETA_COMPONENTS[i]*sensors[i];
+		// 	if(i<features.length){
+		// 		features[i] = sensors[i];
+		// 	}
+		// }
+		double[] sensors = lrmodel.computeFeatures(fishBody);
 		double[] features = new double[NUM_FEATURES];
-		sensors[0] = sep.x;
-		sensors[1] = sep.y;
-		sensors[2] = ori.x;
-		sensors[3] = ori.y;
-		sensors[4] = coh.x;
-		sensors[5] = coh.y;
-		sensors[6] = wall.x * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(OBS_SIGMA,2)));
-		sensors[7] = wall.y * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(OBS_SIGMA,2)));
-		sensors[8] = 1.0;
-		double xvel = 0.0, yvel = 0.0, tvel = 0.0;
-		for(int i=0;i<sensors.length;i++){
-			xvel += X_COMPONENTS[i]*sensors[i];
-			yvel += Y_COMPONENTS[i]*sensors[i];
-			tvel += THETA_COMPONENTS[i]*sensors[i];
-			if(i<features.length){
-				features[i] = sensors[i];
-			}
-		}
+		System.arraycopy(sensors,0,features,0,features.length);
+		double[] lroutput = lrmodel.computeOutputs(sensors,null);
+		double xvel = lroutput[0];
+		double yvel = lroutput[1];
+		double tvel = lroutput[2];
 		if(knn != null || USE_KNN_INSTEAD){
 			knn.query(features,nearestK_classes,null,nearestK_features);
 			double avgDist = 0.0;
@@ -110,42 +119,42 @@ public class FishReynolds implements Agent{
 		oldTime = time;
 	}
 	
-	public static void loadLRCoeff(BufferedReader lrCoeffSrc) throws IOException {
-		ArrayList<String> coeffLines = new ArrayList<String>();
-		for(String line=null; lrCoeffSrc.ready();){
-			line = lrCoeffSrc.readLine();
-			coeffLines.add(line);
-		}
-		int readNumCoeffs = coeffLines.size();
-		if(NUM_FEATURES+1 != readNumCoeffs){
-			System.out.println("[FishReynolds] WARNING! Number of parsed LR coefficients ("+readNumCoeffs+") different from NUM_FEATURES ("+NUM_FEATURES+")");
-		}
-		X_COMPONENTS = new double[readNumCoeffs];
-		Y_COMPONENTS = new double[readNumCoeffs];
-		THETA_COMPONENTS = new double[readNumCoeffs];
-		for(int i=0;i<readNumCoeffs;i++){
-			String[] tmp = coeffLines.get(i).split(" ");
-			X_COMPONENTS[i] = Double.parseDouble(tmp[0]);
-			Y_COMPONENTS[i] = Double.parseDouble(tmp[1]);
-			THETA_COMPONENTS[i] = Double.parseDouble(tmp[2]);
-		}
-	}
+	// public static void loadLRCoeff(BufferedReader lrCoeffSrc) throws IOException {
+	// 	ArrayList<String> coeffLines = new ArrayList<String>();
+	// 	for(String line=null; lrCoeffSrc.ready();){
+	// 		line = lrCoeffSrc.readLine();
+	// 		coeffLines.add(line);
+	// 	}
+	// 	int readNumCoeffs = coeffLines.size();
+	// 	if(NUM_FEATURES+1 != readNumCoeffs){
+	// 		System.out.println("[FishReynolds] WARNING! Number of parsed LR coefficients ("+readNumCoeffs+") different from NUM_FEATURES ("+NUM_FEATURES+")");
+	// 	}
+	// 	X_COMPONENTS = new double[readNumCoeffs];
+	// 	Y_COMPONENTS = new double[readNumCoeffs];
+	// 	THETA_COMPONENTS = new double[readNumCoeffs];
+	// 	for(int i=0;i<readNumCoeffs;i++){
+	// 		String[] tmp = coeffLines.get(i).split(" ");
+	// 		X_COMPONENTS[i] = Double.parseDouble(tmp[0]);
+	// 		Y_COMPONENTS[i] = Double.parseDouble(tmp[1]);
+	// 		THETA_COMPONENTS[i] = Double.parseDouble(tmp[2]);
+	// 	}
+	// }
 
-	public static void loadFeatureSigma(BufferedReader featureSigmasSource) throws IOException {
-		ArrayList<String> sigmaLines = new ArrayList<String>();
-		for(String line=null; featureSigmasSource.ready();){
-			line = featureSigmasSource.readLine();
-			sigmaLines.add(line);
-		}
-		int readNumSigmas = sigmaLines.size();
-		if(NUM_FEATURES/2 != readNumSigmas){
-			System.out.println("[FishReynolds] WARNING! Number of parsed sigmas ("+readNumSigmas+") different from NUM_FEATURES/2 ("+NUM_FEATURES/2+")");
-		}
-		SEP_SIGMA = Double.parseDouble(sigmaLines.get(0));
-		ORI_SIGMA = Double.parseDouble(sigmaLines.get(1));
-		COH_SIGMA = Double.parseDouble(sigmaLines.get(2));
-		OBS_SIGMA = Double.parseDouble(sigmaLines.get(3));
-	}
+	// public static void loadFeatureSigma(BufferedReader featureSigmasSource) throws IOException {
+	// 	ArrayList<String> sigmaLines = new ArrayList<String>();
+	// 	for(String line=null; featureSigmasSource.ready();){
+	// 		line = featureSigmasSource.readLine();
+	// 		sigmaLines.add(line);
+	// 	}
+	// 	int readNumSigmas = sigmaLines.size();
+	// 	if(NUM_FEATURES/2 != readNumSigmas){
+	// 		System.out.println("[FishReynolds] WARNING! Number of parsed sigmas ("+readNumSigmas+") different from NUM_FEATURES/2 ("+NUM_FEATURES/2+")");
+	// 	}
+	// 	SEP_SIGMA = Double.parseDouble(sigmaLines.get(0));
+	// 	ORI_SIGMA = Double.parseDouble(sigmaLines.get(1));
+	// 	COH_SIGMA = Double.parseDouble(sigmaLines.get(2));
+	// 	OBS_SIGMA = Double.parseDouble(sigmaLines.get(3));
+	// }
 
 	public static FastKNN loadKNN(BufferedReader kNN_csv_data) throws IOException{
 		System.out.println("[FishReynolds] Loading kNN data...");
@@ -245,6 +254,7 @@ public class FishReynolds implements Agent{
 			ArrayList<Integer> ignoreTrackIDs = new ArrayList<Integer>();
 			BTFData replayBTF=null;
 			String sshotdir = null;
+			FishSigmaLinregModel fslrm = new FishSigmaLinregModel();
 			for(int i=0;i<args.length;i++){
 				//System.err.println(args[i]);
 				if(args[i].equalsIgnoreCase("-vis")){
@@ -254,10 +264,12 @@ public class FishReynolds implements Agent{
 					}
 				}
 				else if(args[i].equalsIgnoreCase("-lr")){
-					loadLRCoeff(new BufferedReader(new FileReader(args[i+1])));
+					fslrm.loadParameters(new BufferedReader(new FileReader(args[i+1])));
+					// loadLRCoeff(new BufferedReader(new FileReader(args[i+1])));
 				}
 				else if(args[i].equalsIgnoreCase("-sigmas")){
-					loadFeatureSigma(new BufferedReader(new FileReader(args[i+1])));
+					fslrm.loadFeatureSigma(new BufferedReader(new FileReader(args[i+1])));
+					// loadFeatureSigma(new BufferedReader(new FileReader(args[i+1])));
 				}
 				else if(args[i].equalsIgnoreCase("-placed")){
 					initialPlacement = true;
@@ -320,7 +332,7 @@ public class FishReynolds implements Agent{
 			
 				Agent[] agents = new Agent[numFish];
 				for(int i=0; i< numFish;i++){
-					agents[i] = new FishReynolds(bodies[i],knn);
+					agents[i] = new FishReynolds(bodies[i],knn,fslrm);
 					bodies[i].setAgent(agents[i]);
 				}
 			} else {
@@ -342,7 +354,7 @@ public class FishReynolds implements Agent{
 					NotemigonusCrysoleucas body = new NotemigonusCrysoleucas();
 					body.label = ignoreTrackIDs.get(i).toString();
 					env.addBody(body);
-					Agent agent = new FishReynolds(body,knn);
+					Agent agent = new FishReynolds(body,knn,fslrm);
 					body.setAgent(agent);
 				}
 			}
