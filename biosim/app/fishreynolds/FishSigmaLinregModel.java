@@ -15,7 +15,7 @@ public class FishSigmaLinregModel extends LinregModel{
     public static double ORI_SIGMA=0.2; //These two features are different from the optimal computed LR sigmas, but look better in simulation
     public static double COH_SIGMA=1.0;
     public static double OBS_SIGMA=0.05; //These two features are different from the optimal computed LR sigmas, but look better in simulation
-    public static final int NUM_FEATURES=8;//sepX, sepY, oriX, oriY, cohX, cohY, wallX, wallY
+    public static int NUM_FEATURES=8;//sepX, sepY, oriX, oriY, cohX, cohY, wallX, wallY
 
 	public static void loadFeatureSigma(BufferedReader featureSigmasSource) throws IOException {
 		ArrayList<String> sigmaLines = new ArrayList<String>();
@@ -34,7 +34,11 @@ public class FishSigmaLinregModel extends LinregModel{
 	}
 
 	public FishSigmaLinregModel(){
-		super(NUM_FEATURES,3);
+		this(NUM_FEATURES,3);
+	}
+
+	public FishSigmaLinregModel(int i, int j){
+		super(i,j);
 	}
 
 	public double[] computeFeatures(AbstractFish fishBody){

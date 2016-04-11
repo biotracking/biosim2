@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class FishLRLogger extends BTFLogger {
-	public BufferedWriter sepout, oriout, cohout, wwallout, desiredout, desiredboolout;
+	public BufferedWriter sepout, oriout, cohout, wwallout, pvelout, desiredout, desiredboolout;
 	double sepSigma, cohSigma, oriSigma, obsSigma;
 
 	public void setSigmas(double sep, double ori, double coh, double obs){
@@ -39,13 +39,14 @@ public class FishLRLogger extends BTFLogger {
 		oriout = new BufferedWriter(new FileWriter(new File(tmpDir,"rbforivec.btf")));
 		cohout = new BufferedWriter(new FileWriter(new File(tmpDir,"rbfcohvec.btf")));
 		wwallout = new BufferedWriter(new FileWriter(new File(tmpDir,"rbfwallvec.btf")));
+		pvelout = new BufferedWriter(new FileWriter(new File(tmpDir,"pvel.btf")));
 		desiredout = new BufferedWriter(new FileWriter(new File(tmpDir,"dvel.btf")));
 		desiredboolout = new BufferedWriter(new FileWriter(new File(tmpDir,"dbool.btf")));
 	}
 
 	public void nullFiles(){
 		super.nullFiles();
-		wwallout = cohout = oriout = sepout = desiredout = desiredboolout = null;
+		wwallout = cohout = oriout = sepout = pvelout = desiredout = desiredboolout = null;
 	}
 
 	public void closeFiles() throws IOException{
@@ -54,6 +55,7 @@ public class FishLRLogger extends BTFLogger {
 		cohout.close();
 		oriout.close();
 		wwallout.close();
+		pvelout.close();
 		desiredout.close();
 		desiredboolout.close();
 	}
@@ -76,6 +78,8 @@ public class FishLRLogger extends BTFLogger {
 					fish.getAverageRBFSameTypeVec(cohSensorVec, cohSigma);
 					fish.getNearestObstacleVec(wwallSensorVec);
 					wwallSensorVec.multiplyIn(Math.exp(-wwallSensorVec.lengthSq()/(2.0*Math.pow(obsSigma,2))));
+					double[] pvel = {0.0, 0.0, 0.0};
+					fish.getSelfVelXYT(pvel);
 					double[] foo = {0.0, 0.0, 0.0};
 					boolean bar = false;
 					System.arraycopy(fish.desiredVelXYT,0,foo,0,3);
@@ -84,7 +88,8 @@ public class FishLRLogger extends BTFLogger {
 						sepout.write(sepSensorVec.x+" "+sepSensorVec.y+"\n");
 						oriout.write(oriSensorVec.x+" "+oriSensorVec.y+"\n");
 						cohout.write(cohSensorVec.x+" "+cohSensorVec.y+"\n");
-						wwallout.write(wwallSensorVec.x+" "+wwallSensorVec.y+"\n");						
+						wwallout.write(wwallSensorVec.x+" "+wwallSensorVec.y+"\n");
+						pvelout.write(pvel[0]+" "+pvel[1]+" "+pvel[2]+"\n");
 						desiredout.write(foo[0]+" "+foo[1]+" "+foo[2]+"\n");
 						desiredboolout.write(bar+"\n");
 					} catch(IOException ioe){

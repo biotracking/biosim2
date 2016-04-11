@@ -254,7 +254,7 @@ public class FishReynolds implements Agent{
 			ArrayList<Integer> ignoreTrackIDs = new ArrayList<Integer>();
 			BTFData replayBTF=null;
 			String sshotdir = null;
-			FishSigmaLinregModel fslrm = new FishSigmaLinregModel();
+			FishSigmaLinregModel fslrm = new FSLRMVelocityFeatures();
 			for(int i=0;i<args.length;i++){
 				//System.err.println(args[i]);
 				if(args[i].equalsIgnoreCase("-vis")){
