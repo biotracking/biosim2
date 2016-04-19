@@ -16,7 +16,7 @@ import java.util.ArrayList;
 
 public class BTFLogger implements Logger{
 	//public ArrayList<String> ximage, yimage, timage, id, timestamp;
-	public BufferedWriter ximgout, yimgout, timgout, idout, timeout;
+	public BufferedWriter ximgout, yimgout, timgout, idout, timeout, timestampout;
 	public File parentDirectory, tmpDir;
 	public String tmpFilePrefix;
 	public int runCtr = 0;
@@ -34,9 +34,10 @@ public class BTFLogger implements Logger{
 		timgout = new BufferedWriter(new FileWriter(new File(tmpDir, "timage.btf")));
 		idout = new BufferedWriter(new FileWriter(new File(tmpDir, "id.btf")));
 		timeout = new BufferedWriter(new FileWriter(new File(tmpDir, "clocktime.btf")));		
+		timestampout = new BufferedWriter(new FileWriter(new File(tmpDir, "timestamp.btf")));		
 	}
 	public void nullFiles(){
-		ximgout = yimgout = timgout = idout = null;
+		ximgout = yimgout = timgout = idout = timeout = timestampout = null;
 	}
 	public void closeFiles() throws IOException{
 		ximgout.close();
@@ -44,6 +45,7 @@ public class BTFLogger implements Logger{
 		timgout.close();
 		idout.close();
 		timeout.close();
+		timestampout.close();
 	}
 	
 	public void init(){
@@ -78,6 +80,7 @@ public class BTFLogger implements Logger{
 					String tmpid = sim.bodies.get(i).label;
 					idout.write(tmpid+"\n");
 					timeout.write((sim.schedule.getSteps()*sim.resolution)+"\n");
+					timestampout.write(sim.schedule.getSteps()+"\n");
 				} catch(IOException e){
 					System.err.println("[BTFLogger] Error writing to log files: "+e);
 				}
