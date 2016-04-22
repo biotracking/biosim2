@@ -1,0 +1,25 @@
+<project name="biosim2" basedir="." default="dist">
+	<property name="src" location="."/>
+	<property name="build" location="build"/>
+	<property name="dist" location="dist"/>
+	<target name="init">
+		<tstamp/>
+		<mkdir dir="${build}"/>
+	</target>
+
+	<target name="clean">
+		<delete dir="${build}"/>
+		<delete file="biosim2.jar"/>
+	</target>
+
+	<target name="compile" depends="init">
+		<javac srcdir="${src}" destdir="${build}"/>
+	</target>
+
+	<target name="dist" depends="compile">
+		<mkdir dir="${dist}"/>
+		<jar jarfile="${dist}/biosim2.jar" basedir="${build}">
+		</jar>
+	</target>
+
+</project>

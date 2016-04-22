@@ -7,6 +7,7 @@ import biosim.core.body.AbstractFish;
 import biosim.core.body.NotemigonusCrysoleucas;
 import biosim.core.body.ReplayFish;
 import biosim.core.gui.GUISimulation;
+import biosim.core.learning.LearnerAgent;
 import biosim.core.sim.InitiallyPlacedEnvironment;
 import biosim.core.sim.Environment;
 import biosim.core.sim.Simulation;
@@ -28,7 +29,7 @@ import java.util.Arrays;
 public class FishReynolds implements Agent{
 	AbstractFish fishBody;
 	FastKNN knn;
-	FishSigmaLinregModel lrmodel;
+	LearnerAgent learner;
 
 	public static boolean USE_KNN_INSTEAD=false;
 
@@ -44,10 +45,10 @@ public class FishReynolds implements Agent{
     public static double[] THETA_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
 
 	public double oldTime = 0.0;
-	public FishReynolds(AbstractFish b, FastKNN knn, FishSigmaLinregModel fslrm){
+	public FishReynolds(AbstractFish b, FastKNN knn, LearnerAgent l){
 		fishBody = b;
 		this.knn = knn;
-		this.lrmodel = fslrm;
+		this.learner = l;
 	}
 	public void init(){
 	}
@@ -86,10 +87,10 @@ public class FishReynolds implements Agent{
 		// 		features[i] = sensors[i];
 		// 	}
 		// }
-		double[] sensors = lrmodel.computeFeatures(fishBody);
+		double[] sensors = learner.computeFeatures(fishBody);
 		double[] features = new double[NUM_FEATURES];
 		System.arraycopy(sensors,0,features,0,features.length);
-		double[] lroutput = lrmodel.computeOutputs(sensors,null);
+		double[] lroutput = learner.computeOutputs(sensors,null);
 		double xvel = lroutput[0];
 		double yvel = lroutput[1];
 		double tvel = lroutput[2];

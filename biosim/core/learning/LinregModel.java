@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 
-public class LinregModel{
+public abstract class LinregModel implements LearnerAgent{
 	protected double[][] parameters;
 
 	public LinregModel(){
@@ -66,32 +66,32 @@ public class LinregModel{
 		parameters = newParameters;
 	}
 
-	public static void main(String[] args){
-		LinregModel lrm = new LinregModel(3,3);
-		double[][] params = {{.5,0.,0.},{0.,.5,0.},{0.,0.,.5}};
-		double[][] tmp = new double[params.length][params[0].length];
-		lrm.setParameters(params);
-		lrm.getParameters(tmp);
-		System.out.println("Parameters:");
-		for(int i=0;i<tmp.length;i++){
-			System.out.print("[ ");
-			for(int j=0;j<tmp[0].length;j++){
-				System.out.print(tmp[i][j]+" ");
-			}
-			System.out.println("]");
-		}
-		double[] feats = {4.,2.,1.};
-		System.out.print("\nFeatures: [");
-		for(int i=0;i<feats.length;i++){
-			System.out.print(feats[i]+" ");
-		}
-		System.out.println("]");
+	// public static void main(String[] args){
+	// 	LinregModel lrm = new LinregModel(3,3);
+	// 	double[][] params = {{.5,0.,0.},{0.,.5,0.},{0.,0.,.5}};
+	// 	double[][] tmp = new double[params.length][params[0].length];
+	// 	lrm.setParameters(params);
+	// 	lrm.getParameters(tmp);
+	// 	System.out.println("Parameters:");
+	// 	for(int i=0;i<tmp.length;i++){
+	// 		System.out.print("[ ");
+	// 		for(int j=0;j<tmp[0].length;j++){
+	// 			System.out.print(tmp[i][j]+" ");
+	// 		}
+	// 		System.out.println("]");
+	// 	}
+	// 	double[] feats = {4.,2.,1.};
+	// 	System.out.print("\nFeatures: [");
+	// 	for(int i=0;i<feats.length;i++){
+	// 		System.out.print(feats[i]+" ");
+	// 	}
+	// 	System.out.println("]");
 
-		double[] outs = lrm.computeOutputs(feats,null);
-		System.out.print("\nOutput: [ ");
-		for(int i=0;i<outs.length;i++){
-			System.out.print(outs[i]+" ");
-		}
-		System.out.println("]");
-	}
+	// 	double[] outs = lrm.computeOutputs(feats,null);
+	// 	System.out.print("\nOutput: [ ");
+	// 	for(int i=0;i<outs.length;i++){
+	// 		System.out.print(outs[i]+" ");
+	// 	}
+	// 	System.out.println("]");
+	// }
 }
