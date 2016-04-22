@@ -9,7 +9,7 @@
 
 	<target name="clean">
 		<delete dir="${build}"/>
-		<delete file="biosim2.jar"/>
+		<delete dir="${dist}"/>
 	</target>
 
 	<target name="compile" depends="init">
