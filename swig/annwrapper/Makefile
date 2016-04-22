@@ -23,4 +23,4 @@ annwrapper_wrap.o: annwrapper_wrap.cxx
 annwrapper_wrap.cxx: annwrapper.i
 	swig -c++ -java -package biosim.core.util.annwrapper annwrapper.i
 clean:
-	rm *.o annwrapper_wrap.cxx annwrapper.java annwrapperJNI.java SimpleANN.java 
+	rm *.o *.class annwrapper_wrap.cxx annwrapper.java annwrapperJNI.java SimpleANN.java 
