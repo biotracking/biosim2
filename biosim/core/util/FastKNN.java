@@ -29,7 +29,9 @@ public class FastKNN{
 		featureWeights = new double[sample_dim];
 		for(int i=0;i<featureWeights.length;i++) featureWeights[i] = 1.0;
 	}
-
+	
+	public int getSampleDim(){return sample_dim;}
+	public int getClassDim(){return class_dim;}
 	public void add(double[] sample, double[] class_vec){
 		add(sample,class_vec,1.0);
 	}

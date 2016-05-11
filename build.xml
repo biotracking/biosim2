@@ -2,6 +2,7 @@
 	<property name="src" location="."/>
 	<property name="build" location="build"/>
 	<property name="dist" location="dist"/>
+	<property name="build.sysclasspath" value="last"/>
 	<target name="init">
 		<tstamp/>
 		<mkdir dir="${build}"/>
