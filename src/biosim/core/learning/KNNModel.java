@@ -89,12 +89,11 @@ public class KNNModel implements LearnerAgent{
 				sample[i] = Double.parseDouble(splitLine[i]);
 			}
 			for(int i=0;i<classes.length;i++){
-				classes[i] = Double.parseDouble(splitLine[i+NUM_FEATURES]);
+				classes[i] = Double.parseDouble(splitLine[i+sample.length]);
 			}
 			knn.add(sample,classes);
 			line = kNN_csv_data.readLine();
 		}
 		System.out.println("[KNNModel] Finished loading kNN.");
-		return knn;
 	}
 }

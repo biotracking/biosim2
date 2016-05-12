@@ -7,7 +7,9 @@ import biosim.core.body.AbstractFish;
 import biosim.core.body.NotemigonusCrysoleucas;
 import biosim.core.body.ReplayFish;
 import biosim.core.gui.GUISimulation;
+import biosim.core.learning.KNNModel;
 import biosim.core.learning.LearnerAgent;
+import biosim.core.learning.LinregModel;
 import biosim.core.learning.ProblemSpec;
 import biosim.core.sim.InitiallyPlacedEnvironment;
 import biosim.core.sim.Environment;
@@ -375,7 +377,7 @@ public class FishReynolds implements Agent{
 				} else {
 					logger = new FishLRLogger(loggingDir);
 				}
-				logger.setSigmas(SEP_SIGMA,ORI_SIGMA,COH_SIGMA,OBS_SIGMA);
+				logger.setSigmas(reynoldsSpec.sep_sigma,reynoldsSpec.ori_sigma,reynoldsSpec.coh_sigma,reynoldsSpec.obs_sigma);
 				env.addLogger(logger);				
 			}
 			if(doGui){
