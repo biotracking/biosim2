@@ -8,6 +8,7 @@ import biosim.core.body.NotemigonusCrysoleucas;
 import biosim.core.body.ReplayFish;
 import biosim.core.gui.GUISimulation;
 import biosim.core.learning.LearnerAgent;
+import biosim.core.learning.ProblemSpec;
 import biosim.core.sim.InitiallyPlacedEnvironment;
 import biosim.core.sim.Environment;
 import biosim.core.sim.Simulation;
@@ -28,35 +29,38 @@ import java.util.Arrays;
 
 public class FishReynolds implements Agent{
 	AbstractFish fishBody;
-	FastKNN knn;
+	// FastKNN knn;
 	LearnerAgent learner;
+	ProblemSpec probSpec;
 
 	public static boolean USE_KNN_INSTEAD=false;
 
-    public static double SEP_SIGMA=0.1;
-    public static double ORI_SIGMA=0.2; //These two features are different from the optimal computed LR sigmas, but look better in simulation
-    public static double COH_SIGMA=1.0;
-    public static double OBS_SIGMA=0.05; //These two features are different from the optimal computed LR sigmas, but look better in simulation
-    public static final int NUM_FEATURES=8;//sepX, sepY, oriX, oriY, cohX, cohY, wallX, wallY
+    // public static double SEP_SIGMA=0.1;
+    // public static double ORI_SIGMA=0.2; //These two features are different from the optimal computed LR sigmas, but look better in simulation
+    // public static double COH_SIGMA=1.0;
+    // public static double OBS_SIGMA=0.05; //These two features are different from the optimal computed LR sigmas, but look better in simulation
+    // public static final int NUM_FEATURES=8;//sepX, sepY, oriX, oriY, cohX, cohY, wallX, wallY
 
-    public static int KNN_NEIGHBORS=10;
-    public static double[] X_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
-    public static double[] Y_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
-    public static double[] THETA_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
+    // public static int KNN_NEIGHBORS=10;
+    // public static double[] X_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
+    // public static double[] Y_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
+    // public static double[] THETA_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
 
 	public double oldTime = 0.0;
-	public FishReynolds(AbstractFish b, FastKNN knn, LearnerAgent l){
+	// public FishReynolds(AbstractFish b, FastKNN knn, LearnerAgent l, ProblemSpec p){
+	public FishReynolds(AbstractFish b, LearnerAgent l, ProblemSpec p){
 		fishBody = b;
-		this.knn = knn;
+		// this.knn = knn;
 		this.learner = l;
+		this.probSpec = p;
 	}
 	public void init(){
 	}
 	public void finish(){
 	}
 	public void act(double time){
-		double[][] nearestK_classes = new double[KNN_NEIGHBORS][3];
-		double[][] nearestK_features = new double[KNN_NEIGHBORS][NUM_FEATURES];
+		// double[][] nearestK_classes = new double[KNN_NEIGHBORS][3];
+		// double[][] nearestK_features = new double[KNN_NEIGHBORS][NUM_FEATURES];
 		// order of sensors: sep, ori, coh, obs, bias
 		// MutableDouble2D sep = new MutableDouble2D();
 		// MutableDouble2D ori = new MutableDouble2D();
@@ -87,36 +91,36 @@ public class FishReynolds implements Agent{
 		// 		features[i] = sensors[i];
 		// 	}
 		// }
-		double[] sensors = learner.computeFeatures(fishBody);
-		double[] features = new double[NUM_FEATURES];
-		System.arraycopy(sensors,0,features,0,features.length);
-		double[] lroutput = learner.computeOutputs(sensors,null);
-		double xvel = lroutput[0];
-		double yvel = lroutput[1];
-		double tvel = lroutput[2];
-		if(knn != null || USE_KNN_INSTEAD){
-			knn.query(features,nearestK_classes,null,nearestK_features);
-			double avgDist = 0.0;
-			for(int i=0;i<KNN_NEIGHBORS;i++){
-				double tmpD = 0.0;
-				for(int j=0;j<X_COMPONENTS.length-1;j++){
-					tmpD += Math.pow(nearestK_features[i][j]-features[j],2);
-				}
-				avgDist += Math.sqrt(tmpD);
-			}
-			avgDist = avgDist/(double)KNN_NEIGHBORS;
-			// Ok, next we're going to actually use kNN instead of LR, JUST BECAUSE
-			if(USE_KNN_INSTEAD){
-				int rnd_idx = fishBody.getRandom().nextInt(nearestK_classes.length);
-				xvel = nearestK_classes[rnd_idx][0];
-				yvel = nearestK_classes[rnd_idx][1];
-				tvel = nearestK_classes[rnd_idx][2];
-			}
-			// System.out.println(avgDist);
-			((NotemigonusCrysoleucas)fishBody).setAvgDensity(avgDist);
-		}
+		double[] sensors = probSpec.computeFeatures(fishBody);
+		// double[] features = new double[NUM_FEATURES];
+		// System.arraycopy(sensors,0,features,0,features.length);
+		double[] learner_output = learner.computeOutputs(sensors,null);
+		// double xvel = lroutput[0];
+		// double yvel = lroutput[1];
+		// double tvel = lroutput[2];
+		// if(knn != null || USE_KNN_INSTEAD){
+		// 	knn.query(features,nearestK_classes,null,nearestK_features);
+		// 	double avgDist = 0.0;
+		// 	for(int i=0;i<KNN_NEIGHBORS;i++){
+		// 		double tmpD = 0.0;
+		// 		for(int j=0;j<X_COMPONENTS.length-1;j++){
+		// 			tmpD += Math.pow(nearestK_features[i][j]-features[j],2);
+		// 		}
+		// 		avgDist += Math.sqrt(tmpD);
+		// 	}
+		// 	avgDist = avgDist/(double)KNN_NEIGHBORS;
+		// 	// Ok, next we're going to actually use kNN instead of LR, JUST BECAUSE
+		// 	if(USE_KNN_INSTEAD){
+		// 		int rnd_idx = fishBody.getRandom().nextInt(nearestK_classes.length);
+		// 		xvel = nearestK_classes[rnd_idx][0];
+		// 		yvel = nearestK_classes[rnd_idx][1];
+		// 		tvel = nearestK_classes[rnd_idx][2];
+		// 	}
+		// 	// System.out.println(avgDist);
+		// 	((NotemigonusCrysoleucas)fishBody).setAvgDensity(avgDist);
+		// }
 		// System.out.println("yvel:"+yvel);
-		fishBody.setDesiredVelocity(xvel, yvel, tvel);
+		fishBody.setDesiredVelocity(learner_output[0], learner_output[1], learner_output[2]);
 		oldTime = time;
 	}
 	
@@ -157,50 +161,50 @@ public class FishReynolds implements Agent{
 	// 	OBS_SIGMA = Double.parseDouble(sigmaLines.get(3));
 	// }
 
-	public static FastKNN loadKNN(BufferedReader kNN_csv_data) throws IOException{
-		System.out.println("[FishReynolds] Loading kNN data...");
-		FastKNN knn = new FastKNN(NUM_FEATURES,3);
-		String[] loadedNames = kNN_csv_data.readLine().split(",");
-		//these should match the order of the features used in .act(...) and end with dvel's
-		String[] featNames = {	"sepX", "sepY",
-								"oriX","oriY",
-								"cohX","cohY",
-								"wallX","wallY",
-								"dvelX","dvelY","dvelT"};
-		if(featNames.length != loadedNames.length){
-			System.out.println("[FishReynolds] WARNING! Unexpected number of features: "+loadedNames.length+" (expected "+featNames.length+")");
-		}
-		int[] featIndexes = new int[featNames.length];
-		for(int i =0; i<featNames.length;i++){
-			boolean found = false;
-			for(int j=0; j<loadedNames.length;j++){
-				if(loadedNames[j].equalsIgnoreCase(featNames[i])){
-					featIndexes[i] = j;
-					found = true;
-					break;
-				}
-			}
-			if(!found){
-				throw new RuntimeException("[FishReynolds] Could not find feature named ["+featNames[i]+"] while loading kNN data.");
-			}
-		}
-		double[] sample = new double[NUM_FEATURES];
-		double[] classes = new double[3];
-		String line = kNN_csv_data.readLine();
-		while(line != null){
-			String[] splitLine = line.split(",");
-			for(int i=0;i<NUM_FEATURES;i++){
-				sample[i] = Double.parseDouble(splitLine[featIndexes[i]]);
-			}
-			for(int i=0;i<3;i++){
-				classes[i] = Double.parseDouble(splitLine[featIndexes[i+NUM_FEATURES]]);
-			}
-			knn.add(sample,classes);
-			line = kNN_csv_data.readLine();
-		}
-		System.out.println("[FishReynolds] Finished loading kNN.");
-		return knn;
-	}
+	// public static FastKNN loadKNN(BufferedReader kNN_csv_data) throws IOException{
+	// 	System.out.println("[FishReynolds] Loading kNN data...");
+	// 	FastKNN knn = new FastKNN(NUM_FEATURES,3);
+	// 	String[] loadedNames = kNN_csv_data.readLine().split(",");
+	// 	//these should match the order of the features used in .act(...) and end with dvel's
+	// 	String[] featNames = {	"sepX", "sepY",
+	// 							"oriX","oriY",
+	// 							"cohX","cohY",
+	// 							"wallX","wallY",
+	// 							"dvelX","dvelY","dvelT"};
+	// 	if(featNames.length != loadedNames.length){
+	// 		System.out.println("[FishReynolds] WARNING! Unexpected number of features: "+loadedNames.length+" (expected "+featNames.length+")");
+	// 	}
+	// 	int[] featIndexes = new int[featNames.length];
+	// 	for(int i =0; i<featNames.length;i++){
+	// 		boolean found = false;
+	// 		for(int j=0; j<loadedNames.length;j++){
+	// 			if(loadedNames[j].equalsIgnoreCase(featNames[i])){
+	// 				featIndexes[i] = j;
+	// 				found = true;
+	// 				break;
+	// 			}
+	// 		}
+	// 		if(!found){
+	// 			throw new RuntimeException("[FishReynolds] Could not find feature named ["+featNames[i]+"] while loading kNN data.");
+	// 		}
+	// 	}
+	// 	double[] sample = new double[NUM_FEATURES];
+	// 	double[] classes = new double[3];
+	// 	String line = kNN_csv_data.readLine();
+	// 	while(line != null){
+	// 		String[] splitLine = line.split(",");
+	// 		for(int i=0;i<NUM_FEATURES;i++){
+	// 			sample[i] = Double.parseDouble(splitLine[featIndexes[i]]);
+	// 		}
+	// 		for(int i=0;i<3;i++){
+	// 			classes[i] = Double.parseDouble(splitLine[featIndexes[i+NUM_FEATURES]]);
+	// 		}
+	// 		knn.add(sample,classes);
+	// 		line = kNN_csv_data.readLine();
+	// 	}
+	// 	System.out.println("[FishReynolds] Finished loading kNN.");
+	// 	return knn;
+	// }
 
 	public static ArrayList<ReplayFish> loadReplays(BTFData btf, ArrayList<Integer> ignoreTrackIDs) throws IOException{
 		ArrayList<ReplayFish> rv = new ArrayList<ReplayFish>();
@@ -245,9 +249,9 @@ public class FishReynolds implements Agent{
 	
 	public static void main(String[] args){
 		try{
-			FastKNN knn = null;
+			// FastKNN knn = null;
 			Environment env = null;
-			boolean doKNNVis = false, initialPlacement = false, doGui = true, logging = false, walls = true;
+			boolean initialPlacement = false, doGui = true, logging = false, walls = true; //doKNNVis = false;
 			BufferedReader poseSrc = null;
 			File loggingDir = null;
 			int numFish = 27; //30; //initial tracked number of fish is 27
@@ -255,21 +259,27 @@ public class FishReynolds implements Agent{
 			ArrayList<Integer> ignoreTrackIDs = new ArrayList<Integer>();
 			BTFData replayBTF=null;
 			String sshotdir = null;
-			FishSigmaLinregModel fslrm = new FSLRMVelocityFeatures();
+			LinregModel lrm = null;//new FSLRMVelocityFeatures();
+			KNNModel knn_model = null;
+			LearnerAgent learner_to_use = null;
+			ReynoldsFeatures reynoldsSpec = new ReynoldsFeatures();
 			for(int i=0;i<args.length;i++){
 				//System.err.println(args[i]);
-				if(args[i].equalsIgnoreCase("-vis")){
-					doKNNVis=true;
-					if(knn == null){
-						knn = loadKNN(new BufferedReader(new FileReader(args[i+1])));
-					}
-				}
-				else if(args[i].equalsIgnoreCase("-lr")){
-					fslrm.loadParameters(new BufferedReader(new FileReader(args[i+1])));
+				// if(args[i].equalsIgnoreCase("-vis")){
+				// 	doKNNVis=true;
+				// 	if(knn == null){
+				// 		knn = loadKNN(new BufferedReader(new FileReader(args[i+1])));
+				// 	}
+				// }
+				// else if(args[i].equalsIgnoreCase("-lr")){
+				if(args[i].equalsIgnoreCase("-lr")){
+					lrm = new LinregModel();
+					lrm.loadParameters(new BufferedReader(new FileReader(args[i+1])));
+					learner_to_use = lrm;
 					// loadLRCoeff(new BufferedReader(new FileReader(args[i+1])));
 				}
-				else if(args[i].equalsIgnoreCase("-sigmas")){
-					fslrm.loadFeatureSigma(new BufferedReader(new FileReader(args[i+1])));
+				else if(args[i].equalsIgnoreCase("-spec")){
+					reynoldsSpec.loadFeatureSigma(new BufferedReader(new FileReader(args[i+1])));
 					// loadFeatureSigma(new BufferedReader(new FileReader(args[i+1])));
 				}
 				else if(args[i].equalsIgnoreCase("-placed")){
@@ -286,10 +296,9 @@ public class FishReynolds implements Agent{
 					}
 				}
 				else if(args[i].equalsIgnoreCase("-knn")){
-					USE_KNN_INSTEAD = true;
-					if(knn == null){
-						knn = loadKNN(new BufferedReader(new FileReader(args[i+1])));
-					}
+					knn_model = new KNNModel(reynoldsSpec.getNumFeatures(),reynoldsSpec.getNumOutputs());
+					knn_model.loadParameters(new BufferedReader(new FileReader(args[i+1])));
+					learner_to_use = knn_model;
 				}
 				else if (args[i].equalsIgnoreCase("-nowalls")){
 					walls=false;
@@ -333,7 +342,7 @@ public class FishReynolds implements Agent{
 			
 				Agent[] agents = new Agent[numFish];
 				for(int i=0; i< numFish;i++){
-					agents[i] = new FishReynolds(bodies[i],knn,fslrm);
+					agents[i] = new FishReynolds(bodies[i],learner_to_use,reynoldsSpec);
 					bodies[i].setAgent(agents[i]);
 				}
 			} else {
@@ -355,7 +364,7 @@ public class FishReynolds implements Agent{
 					NotemigonusCrysoleucas body = new NotemigonusCrysoleucas();
 					body.label = ignoreTrackIDs.get(i).toString();
 					env.addBody(body);
-					Agent agent = new FishReynolds(body,knn,fslrm);
+					Agent agent = new FishReynolds(body,learner_to_use,reynoldsSpec);
 					body.setAgent(agent);
 				}
 			}

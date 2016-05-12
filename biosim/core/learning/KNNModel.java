@@ -10,7 +10,7 @@ import ec.util.MersenneTwisterFast;
 
 import biosim.core.util.FastKNN;
 
-public abstract class KNNModel implements LearnerAgent{
+public class KNNModel implements LearnerAgent{
 	protected FastKNN knn;
 	public FastKNN getKNN(){
 		return knn;
@@ -68,5 +68,33 @@ public abstract class KNNModel implements LearnerAgent{
 				break;
 		}
 		return outputs;
+	}
+
+	public void loadParameters(BufferedReader kNN_csv_data) throws IOException{
+		System.out.println("[KNNModel] Loading kNN data...");
+		if(knn == null){
+			throw new RuntimeException("knn not initialized! (knn==null) Aborting.");
+		}
+		String[] loadedNames = kNN_csv_data.readLine().split(",");
+		//loadedNames should match the order of the features used in .act(...) and end with outputs
+		if(knn.getSampleDim()+knn.getClassDim() != loadedNames.length){
+			System.out.println("[KNNModel] WARNING! Unexpected number of features: "+loadedNames.length+" (expected "+(knn.getSampleDim()+knn.getClassDim())+")");
+		}
+		double[] sample = new double[knn.getSampleDim()];
+		double[] classes = new double[knn.getClassDim()];
+		String line = kNN_csv_data.readLine();
+		while(line != null){
+			String[] splitLine = line.split(",");
+			for(int i=0;i<sample.length;i++){
+				sample[i] = Double.parseDouble(splitLine[i]);
+			}
+			for(int i=0;i<classes.length;i++){
+				classes[i] = Double.parseDouble(splitLine[i+NUM_FEATURES]);
+			}
+			knn.add(sample,classes);
+			line = kNN_csv_data.readLine();
+		}
+		System.out.println("[KNNModel] Finished loading kNN.");
+		return knn;
 	}
 }
