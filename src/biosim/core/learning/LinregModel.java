@@ -10,6 +10,10 @@ import java.util.ArrayList;
 public class LinregModel implements LearnerAgent{
 	protected double[][] parameters;
 
+	protected boolean useBias=true;
+	public boolean getBias(){return useBias;}
+	public void setBias(boolean p){useBias=p;}
+
 	public LinregModel(){
 		parameters = null;
 	}
@@ -36,13 +40,22 @@ public class LinregModel implements LearnerAgent{
 	}
 
 	public double[] computeOutputs(double[] features,double[] outputs){
+		double[] realFeatures = features;
 		if(outputs == null){
 			outputs = new double[parameters[0].length];
+		}
+		if(useBias){
+			if(features.length != parameters.length-1){
+				throw new RuntimeException("Bias enabled, but features.length != parameters.length-1! Aborting");
+			}
+			realFeatures = new double[features.length+1];
+			System.arraycopy(features,0,realFeatures,0,features.length);
+			realFeatures[features.length] = 1.0;
 		}
 		for(int out=0; out<outputs.length;out++){
 			outputs[out] = 0.0;
 			for(int feat=0; feat<parameters.length; feat++){
-				outputs[out] += features[feat]*parameters[feat][out];
+				outputs[out] += realFeatures[feat]*parameters[feat][out];
 			}
 		}
 		return outputs;
