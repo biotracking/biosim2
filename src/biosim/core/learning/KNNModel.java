@@ -45,8 +45,11 @@ public class KNNModel implements LearnerAgent{
 	}
 
 	public double[] computeOutputs(double[] features, double[] outputs){
+		if(knn == null){
+			throw new RuntimeException("knn uninitialized!");
+		}
 		if(outputs==null){
-			outputs = new double[knn.getSampleDim()];
+			outputs = new double[knn.getClassDim()];
 			for(int i=0;i<outputs.length;i++) outputs[i]=0.0;
 		}
 		double[][] neighbors = new double[k][knn.getClassDim()];
@@ -54,6 +57,7 @@ public class KNNModel implements LearnerAgent{
 		switch(method){
 			case SAMPLE:
 				int n_index = random.nextInt(k);
+				// System.out.println(n_index+" "+neighbors[0].length+" "+neighbors.length+" "+outputs.length);
 				System.arraycopy(neighbors[n_index],0,outputs,0,outputs.length);
 				break;
 			case AVERAGE:
@@ -74,6 +78,9 @@ public class KNNModel implements LearnerAgent{
 		System.out.println("[KNNModel] Loading kNN data...");
 		if(knn == null){
 			throw new RuntimeException("knn not initialized! (knn==null) Aborting.");
+		}
+		if(kNN_csv_data == null){
+			throw new RuntimeException("kNN_csv_data not initialized! (kNN_csv_data==null) Aborting.");
 		}
 		String[] loadedNames = kNN_csv_data.readLine().split(",");
 		//loadedNames should match the order of the features used in .act(...) and end with outputs

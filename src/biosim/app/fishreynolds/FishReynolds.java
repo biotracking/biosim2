@@ -96,6 +96,11 @@ public class FishReynolds implements Agent{
 		double[] sensors = probSpec.computeFeatures(fishBody);
 		// double[] features = new double[NUM_FEATURES];
 		// System.arraycopy(sensors,0,features,0,features.length);
+		if(learner instanceof KNNModel){
+			if(((KNNModel)learner).getRandom()==null){
+				((KNNModel)learner).setRandom(fishBody.getRandom());
+			}
+		}
 		double[] learner_output = learner.computeOutputs(sensors,null);
 		// double xvel = lroutput[0];
 		// double yvel = lroutput[1];
