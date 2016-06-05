@@ -26,6 +26,14 @@ public class InitiallyPlacedEnvironment extends Environment{
 		initialIDs.add(id);
 	}
 
+	public void clearBodies(){
+		super.clearBodies();
+		initialPositions.clear();
+		initialOrientations.clear();
+		initialIDs.clear();
+		usedIDs.clear();
+	}
+
 	public void addBody(Body b){
 		initialBodies.add(b);
 		if(b.label == null || b.label.equals("")){
@@ -66,7 +74,7 @@ public class InitiallyPlacedEnvironment extends Environment{
 		String[] xpos = btf.loadColumn("xpos");
 		String[] ypos = btf.loadColumn("ypos");
 		String[] timage = btf.loadColumn("timage");
-		String[] clocktime = btf.loadColumn("clocktime");
+		String[] clocktime = btf.loadColumn("timestamp");
 		String[] dbool = btf.loadColumn("dbool");
 		double firstTime = Double.parseDouble(clocktime[0]);
 		for(int i=0; Double.parseDouble(clocktime[i]) == firstTime; i++){
@@ -115,7 +123,7 @@ public class InitiallyPlacedEnvironment extends Environment{
 			}
 			if(!found){
 				placeRandomly(sim,b);
-				System.err.println("Warning: Placing body randomly");
+				System.err.println("Warning: Placing body randomly. ID:["+b.label+"]");
 			} else {
 				sim.setObjectLocation(b,pos);
 				sim.bodyOrientations.add(ori);

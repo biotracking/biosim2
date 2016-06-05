@@ -3,8 +3,11 @@
 package biosim.core.learning;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+
+import org.apache.commons.math.linear.*;
 
 
 public class LinregModel implements LearnerAgent{
@@ -77,5 +80,37 @@ public class LinregModel implements LearnerAgent{
 			}
 		}
 		parameters = newParameters;
+	}
+
+	public void saveParameters(BufferedWriter outf) throws IOException {
+		for(int i=0;i<parameters.length;i++){
+			for(int j=0;j<parameters[0].length;j++){
+				String spacer=" ";
+				if(j==parameters[0].length-1) spacer="";
+				outf.write(parameters[i][j]+spacer);
+			}
+			if(i!=parameters.length-1){
+				outf.write("\n");
+			}
+		}
+	}
+
+	public void train(double[][] inputs, double[][] outputs){
+		RealMatrix ins = MatrixUtils.createRealMatrix(inputs);
+		RealMatrix outs = MatrixUtils.createRealMatrix(outputs);
+		DecompositionSolver solver = new SingularValueDecompositionImpl(ins).getSolver();
+		RealMatrix coeffs = solver.solve(outs);
+		parameters = coeffs.getData();
+	}
+
+	public static void main(String[] args){
+		double[][] inputs = {{1.,2.,3.}, {4.,5.,6.}, {7.,8.,9.}};
+		double[][] outputs = {{1.,2.,3.}, {4.,5.,6.}, {7.,8.,9.}};
+		LinregModel lrm = new LinregModel();
+		lrm.setBias(false);
+		lrm.train(inputs,outputs);
+		double[] test_out = null;
+		test_out = lrm.computeOutputs(inputs[0],test_out);
+		System.out.println("["+test_out[0]+", "+test_out[1]+", "+test_out[2]+"]");
 	}
 }

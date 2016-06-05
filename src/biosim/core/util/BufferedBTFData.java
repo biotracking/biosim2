@@ -8,7 +8,8 @@ import java.util.Arrays;
 public class BufferedBTFData extends BTFData{
 	public HashMap<String,ArrayList<String> > data;
 	public BufferedBTFData(BTFData backing){
-		this.columns = backing.columns;
+		data = new HashMap<String, ArrayList<String> >();
+		if(backing != null) this.columns = backing.columns;
 	}
 	public String[] loadColumn(String columnName) throws IOException{
 		ArrayList<String> rv = data.get(columnName);

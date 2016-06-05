@@ -8,6 +8,8 @@ import java.io.BufferedReader;
 
 public class FastKNN{
 	private ArrayList<double[]> samples,classes;
+	public ArrayList<double[]> getSamples(){return samples;}
+	public ArrayList<double[]> getClasses(){return classes;}
 	private ArrayList<Double> weights;
 	private SimpleANN kdann;
 	private int sample_dim, class_dim;

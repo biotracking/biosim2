@@ -3,6 +3,7 @@
 package biosim.core.learning;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -34,14 +35,23 @@ public class KNNModel implements LearnerAgent{
 	public MersenneTwisterFast getRandom(){return random;}
 	public void setRandom(MersenneTwisterFast r){random=r;}
 
+	protected String[] featureNames, outputNames;
+	public void setFeatureNames(String[] names){ featureNames = names;}
+	public String[] getFeatureNames(){ return featureNames;}
+	public void setOutputNames(String[] names){ outputNames = names;}
+	public String[] getOutputNames(){ return outputNames;}
+
 	public KNNModel(){
 		knn = null;
+		featureNames = outputNames = null;
 	}
 	public KNNModel(int numFeatures, int numOutputs){
 		knn = new FastKNN(numFeatures,numOutputs);
+		featureNames = outputNames = null;
 	}
 	public KNNModel(FastKNN knn){
 		this.knn=knn;
+		featureNames = outputNames = null;
 	}
 
 	public double[] computeOutputs(double[] features, double[] outputs){
@@ -102,5 +112,82 @@ public class KNNModel implements LearnerAgent{
 			line = kNN_csv_data.readLine();
 		}
 		System.out.println("[KNNModel] Finished loading kNN.");
+	}
+
+	public void saveParameters(BufferedWriter outf) throws IOException{
+		if(featureNames == null){
+			featureNames = new String[knn.getSampleDim()];
+			for(int i=0;i<featureNames.length;i++){
+				featureNames[i] = "feat"+(i+1);
+			}
+		}
+		if(outputNames == null){
+			outputNames = new String[knn.getClassDim()];
+			for(int i=0;i<outputNames.length;i++){
+				outputNames[i] = "out"+(i+1);
+			}
+		}
+		for(int i=0;i<featureNames.length;i++){
+			outf.write(featureNames[i]);
+			outf.write(",");
+		}
+		for(int i=0;i<outputNames.length;i++){
+			outf.write(outputNames[i]);
+			if(i!=outputNames.length-1){
+				outf.write(",");
+			}
+		}
+		outf.write("\n");
+		ArrayList<double[]> samples = knn.getSamples();
+		ArrayList<double[]> classes = knn.getClasses();
+		double[] samp, outs;
+		for(int i=0;i<samples.size();i++){
+			samp = samples.get(i);
+			outs = classes.get(i);
+			for(int j=0;j<samp.length;j++){
+				outf.write(samp[j]+",");
+			}
+			for(int j=0;j<outs.length;j++){
+				outf.write(outs[j]+"");
+				if(j!=outs.length-1){
+					outf.write(",");
+				}
+			}
+			if(i!=samples.size()-1){
+				outf.write("\n");
+			}
+		}
+	}
+	public void train(double[][] inputs, double[][] outputs){
+		knn = new FastKNN(inputs[0].length,outputs[0].length);
+		for(int i=0;i<inputs.length;i++){
+			knn.add(inputs[i],outputs[i]);
+		}
+	}
+
+	public static void main(String[] args){
+		long maxMem, allocd, freed;
+		Runtime runtime = Runtime.getRuntime();		
+		KNNModel knnm = new KNNModel();
+		knnm.setRandom(new MersenneTwisterFast());
+		double[][] inputs = {{1.,2.,3.},{4.,5.,6.},{7.,8.,9.},{1.,2.,3.},{4.,5.,6.},{7.,8.,9.},{1.,2.,3.},{4.,5.,6.},{7.,8.,9.}};
+		double[][] outputs = {{1.,2.,3.},{4.,5.,6.},{7.,8.,9.},{1.,2.,3.},{4.,5.,6.},{7.,8.,9.},{1.,2.,3.},{4.,5.,6.},{7.,8.,9.}};
+		maxMem = runtime.maxMemory();
+		allocd = runtime.totalMemory();
+		freed = runtime.freeMemory();
+		System.out.println(maxMem+" "+allocd+" "+freed);
+		knnm.train(inputs,outputs);
+		System.out.println(maxMem+" "+allocd+" "+freed);
+		knnm.train(inputs,outputs);
+		System.out.println(maxMem+" "+allocd+" "+freed);
+		knnm.train(inputs,outputs);
+		System.out.println(maxMem+" "+allocd+" "+freed);
+		knnm.train(inputs,outputs);
+		double[] test_out = knnm.computeOutputs(inputs[0],null);
+		System.out.println("["+test_out[0]+", "+test_out[1]+", "+test_out[2]+"]");
+		maxMem = runtime.maxMemory();
+		allocd = runtime.totalMemory();
+		freed = runtime.freeMemory();
+		System.out.println(maxMem+" "+allocd+" "+freed);
 	}
 }

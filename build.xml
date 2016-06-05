@@ -14,15 +14,15 @@
 	</target>
 
 	<target name="compile-ann-wrapper">
-		<javac srcdir="swig/annwrapper" destdir="${build}"/>
+		<javac srcdir="swig/annwrapper" destdir="${build}" debug="on"/>
 	</target>
 
 	<target name="compile-kde-wrapper">
-		<javac srcdir="swig/kdewrapper" destdir="${build}"/>
+		<javac srcdir="swig/kdewrapper" destdir="${build}" debug="on"/>
 	</target>
 
 	<target name="compile" depends="init, compile-ann-wrapper, compile-kde-wrapper">
-		<javac srcdir="${src}" destdir="${build}"/>
+		<javac srcdir="${src}" destdir="${build}" debug="on"/>
 	</target>
 
 	<target name="dist" depends="compile">

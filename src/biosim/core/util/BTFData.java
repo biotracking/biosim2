@@ -48,6 +48,71 @@ public class BTFData{
 		}
 		return data.toArray(rv);
 	}
+
+	public double[][] columnAsDoubles(String columnName) throws IOException{
+		String[] colStrings = loadColumn(columnName);
+		String[] splt;
+		int width = colStrings[0].split(" ").length;
+		double[][] rv = new double[colStrings.length][width];
+		for(int row=0;row<colStrings.length;row++){
+			splt = colStrings[row].split(" ");
+			for(int col=0;col<width;col++){
+				rv[row][col] = Double.parseDouble(splt[col]);
+			}
+		}
+		return rv;
+	}
+
+	public int numUniqueFrames(){
+		int rv = 1;
+		try{
+			String[] timestamps = loadColumn("timestamp");
+			for(int i=1;i<timestamps.length;i++){
+				if(!(timestamps[i].equals(timestamps[i-1]))){
+					rv++;
+				}
+			}
+		} catch(IOException ioe){
+			throw new RuntimeException("[BTFData] error parsing for unique frames: "+ioe);
+		}
+		return rv;
+	}
+
+	public ArrayList<Integer> getUniqueIDs(){
+		ArrayList<Integer> rv = new ArrayList<Integer>();
+		try{
+			String[] idCol = loadColumn("id");
+			for(int i=0;i<idCol.length;i++){
+				int foo = Integer.parseInt(idCol[i]);
+				if(rv.contains(foo)){
+					continue;
+				} else {
+					rv.add(foo);
+				}
+			}
+		} catch(IOException ioe){
+			throw new RuntimeException("[BTFData] error parsing for unique IDs: "+ioe);
+		}
+		return rv;
+	}
+
+	public ArrayList<Integer> rowIndexForID(int id){
+		ArrayList<Integer> rv = new ArrayList<Integer>();
+
+		String[] ids;
+		try{
+			ids = loadColumn("id");
+		} catch(IOException ioe){
+			throw new RuntimeException("[BTFData] error loading id column");
+		}
+		for(int i=0;i<ids.length;i++){
+			if(ids[i].equals(""+id)){
+				rv.add(i);
+			}
+		}
+		return rv;
+	}
+
 	public HashMap<String,String[]> loadAllColumns() throws IOException{
 		HashMap<String,String[]> rv = new HashMap<String,String[]>();
 		for(String name : columns.keySet()){

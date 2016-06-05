@@ -37,16 +37,16 @@ public class FishReynolds implements Agent{
 
 	public static boolean USE_KNN_INSTEAD=false;
 
-    // public static double SEP_SIGMA=0.1;
-    // public static double ORI_SIGMA=0.2; //These two features are different from the optimal computed LR sigmas, but look better in simulation
-    // public static double COH_SIGMA=1.0;
-    // public static double OBS_SIGMA=0.05; //These two features are different from the optimal computed LR sigmas, but look better in simulation
-    // public static final int NUM_FEATURES=8;//sepX, sepY, oriX, oriY, cohX, cohY, wallX, wallY
+	// public static double SEP_SIGMA=0.1;
+	// public static double ORI_SIGMA=0.2; //These two features are different from the optimal computed LR sigmas, but look better in simulation
+	// public static double COH_SIGMA=1.0;
+	// public static double OBS_SIGMA=0.05; //These two features are different from the optimal computed LR sigmas, but look better in simulation
+	// public static final int NUM_FEATURES=8;//sepX, sepY, oriX, oriY, cohX, cohY, wallX, wallY
 
-    // public static int KNN_NEIGHBORS=10;
-    // public static double[] X_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
-    // public static double[] Y_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
-    // public static double[] THETA_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
+	// public static int KNN_NEIGHBORS=10;
+	// public static double[] X_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
+	// public static double[] Y_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
+	// public static double[] THETA_COMPONENTS = new double[NUM_FEATURES+1]; // +1 for bias
 
 	public double oldTime = 0.0;
 	// public FishReynolds(AbstractFish b, FastKNN knn, LearnerAgent l, ProblemSpec p){

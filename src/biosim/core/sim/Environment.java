@@ -64,6 +64,10 @@ public class Environment implements MakesSimState{
 		b.label = ((Integer)(initialBodies.size()-1)).toString();
 	}
 
+	public void clearBodies(){
+		initialBodies.clear();
+	}
+
 	public SimState newInstance(long seed,String[] args){
 		Simulation sim = new Simulation(seed);
 		sim.env = this;
