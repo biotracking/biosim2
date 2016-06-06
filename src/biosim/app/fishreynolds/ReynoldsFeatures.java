@@ -101,7 +101,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		}
 	}
 
-	private static final void copyInto(double[][] from,double[][] to, int offset){
+	public static final void copyInto(double[][] from,double[][] to, int offset){
 		for(int i=0;i<from.length;i++){
 			System.arraycopy(from[i],0,to[i],offset,from[0].length);
 		}
