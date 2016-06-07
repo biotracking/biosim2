@@ -41,6 +41,23 @@ public class KNNModel implements LearnerAgent{
 	public void setOutputNames(String[] names){ outputNames = names;}
 	public String[] getOutputNames(){ return outputNames;}
 
+	public synchronized LearnerAgent deepCopy(){
+		KNNModel rv = new KNNModel();
+		if(knn!=null){
+			rv.knn = new FastKNN(knn);
+		}
+		rv.k = k;
+		rv.method = method;
+		if(random != null){
+			rv.random = (MersenneTwisterFast)(random.clone());
+		}
+		rv.featureNames = new String[featureNames.length];
+		System.arraycopy(featureNames,0,rv.featureNames,0,featureNames.length);
+		rv.outputNames = new String[outputNames.length];
+		System.arraycopy(outputNames,0,rv.outputNames,0,outputNames.length);
+		return rv;
+	}
+
 	public KNNModel(){
 		knn = null;
 		featureNames = outputNames = null;

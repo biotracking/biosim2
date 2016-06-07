@@ -14,7 +14,9 @@ import biosim.core.body.AbstractFish;
 import biosim.core.body.Body;
 import biosim.core.body.NotemigonusCrysoleucas;
 import biosim.core.body.ReplayFish;
+import biosim.core.learning.KNNModel;
 import biosim.core.learning.LearnerAgent;
+import biosim.core.learning.LinregModel;
 import biosim.core.learning.ProblemSpec;
 import biosim.core.sim.Environment;
 import biosim.core.sim.InitiallyPlacedEnvironment;
@@ -35,6 +37,8 @@ public class ReynoldsFeatures implements ProblemSpec{
 
 	public double sep_sigma, ori_sigma, coh_sigma, obs_sigma;
 
+	public String learner;
+
 	public static Properties defaults(){
 		Properties defaultProps = new Properties();
 		defaultProps.setProperty("SEP_SIGMA","0.1");
@@ -42,6 +46,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		defaultProps.setProperty("COH_SIGMA","1.0");
 		defaultProps.setProperty("OBS_SIGMA","0.05");
 		defaultProps.setProperty("TIMEOUT","5000"); //timeout is in milliseconds
+		defaultProps.setProperty("LEARNER","KNN");
 		return defaultProps;
 	}
 
@@ -61,6 +66,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		coh_sigma = Double.parseDouble(props.getProperty("COH_SIGMA"));
 		obs_sigma = Double.parseDouble(props.getProperty("OBS_SIGMA"));
 		timeout = Long.parseLong(props.getProperty("TIMEOUT"));
+		learner = props.getProperty("LEARNER");
 	}
 
 	public int getNumFeatures(){ return NUM_FEATURES;}
@@ -100,10 +106,12 @@ public class ReynoldsFeatures implements ProblemSpec{
 			throw new RuntimeException(b+" is not an AbstractFish");
 		}
 	}
-
-	public static final void copyInto(double[][] from,double[][] to, int offset){
+	public static final void copyInto(double[][] from, double[][] to, int colOffset){
+		copyInto(from,to,colOffset,0);
+	}
+	public static final void copyInto(double[][] from,double[][] to, int colOffset, int rowOffset){
 		for(int i=0;i<from.length;i++){
-			System.arraycopy(from[i],0,to[i],offset,from[0].length);
+			System.arraycopy(from[i],0,to[rowOffset+i],colOffset,from[0].length);
 		}
 	}
 
@@ -211,6 +219,20 @@ public class ReynoldsFeatures implements ProblemSpec{
 			throw new RuntimeException("[ReynoldsFeatures] could not initialize environment: "+ioe);
 		}
 		return env;
+	}
+
+	public LearnerAgent makeLearner(){
+		LearnerAgent rv = null;
+		if(learner.equalsIgnoreCase("KNN")){
+			KNNModel knnm = new KNNModel();
+			knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY","pvelX","pvelY","pvelT"});
+			knnm.setOutputNames(new String[] {"dvelX","dvelY","dvelT"});
+			rv = knnm;
+		} else if(learner.equalsIgnoreCase("LINREG")){
+			LinregModel lrm = new LinregModel(11,3);
+			rv = lrm;
+		}
+		return rv;
 	}
 
 	public BTFDataLogger getLogger(){

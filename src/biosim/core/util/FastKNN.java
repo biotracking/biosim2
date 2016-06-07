@@ -17,6 +17,19 @@ public class FastKNN{
 	private double[] featureWeights;
 	private double eps=0.0;
 	
+	public FastKNN(FastKNN copyFrom){
+		//DEEEEEEEEP COPYYYYYYYY
+		this.samples = new ArrayList<double[]>(copyFrom.samples);
+		this.classes = new ArrayList<double[]>(copyFrom.classes);
+		this.weights = new ArrayList<Double>(copyFrom.weights);
+		kdann = new SimpleANN(copyFrom.kdann);
+		sample_dim = copyFrom.sample_dim;
+		class_dim = copyFrom.class_dim;
+		featureWeights = new double[copyFrom.featureWeights.length];
+		System.arraycopy(copyFrom.featureWeights,0,featureWeights,0,featureWeights.length);
+		eps = copyFrom.eps;
+	}
+
 	public FastKNN(int sample_dim,int class_dim){
 		if(!libLoaded){
 			System.loadLibrary("annwrapper");
@@ -65,13 +78,13 @@ public class FastKNN{
 
 	public void setEps(double eps){ 
 		this.eps = eps;
-		kdann.setEpsilon(eps); 
+		// kdann.setEpsilon(eps); 
 	}
 
 	public void setFeatureWeights(double[] f_w){
 		for(int i=0;i<sample_dim;i++) featureWeights[i] = f_w[i];
 		kdann = new SimpleANN(sample_dim);
-		kdann.setEpsilon(eps);
+		// kdann.setEpsilon(eps);
 		for(int i=0;i<samples.size();i++){
 			double[] tmp_s = new double[sample_dim];
 			for(int j=0;j<sample_dim;j++){
@@ -176,6 +189,7 @@ public class FastKNN{
 		System.out.println("\nTesting set:");
 		System.out.println(testing);
 		FastKNN knn = new FastKNN(2,1);
+		System.out.println("KNN created");
 		double[] clsses = new double[1];
 		double[] foo = new double[2];
 		double[][] neighbors = new double[10][1];

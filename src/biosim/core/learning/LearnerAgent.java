@@ -12,4 +12,5 @@ public interface LearnerAgent{
 	public double[] computeOutputs(double[] features, double[] outputs);
 	public void loadParameters(BufferedReader source) throws IOException;
 	public void saveParameters(BufferedWriter outf) throws IOException;
+	public LearnerAgent deepCopy();
 }

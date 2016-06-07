@@ -17,6 +17,16 @@ public class LinregModel implements LearnerAgent{
 	public boolean getBias(){return useBias;}
 	public void setBias(boolean p){useBias=p;}
 
+	public LearnerAgent deepCopy(){
+		LinregModel rv = new LinregModel();
+		rv.useBias = useBias;
+		rv.parameters = new double[parameters.length][parameters[0].length];
+		for(int i=0;i<parameters.length;i++){
+			System.arraycopy(parameters[i],0,rv.parameters[i],0,parameters[0].length);
+		}
+		return rv;
+	}
+
 	public LinregModel(){
 		parameters = null;
 	}

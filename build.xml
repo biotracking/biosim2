@@ -22,7 +22,9 @@
 	</target>
 
 	<target name="compile" depends="init, compile-ann-wrapper, compile-kde-wrapper">
-		<javac srcdir="${src}" destdir="${build}" debug="on"/>
+		<javac srcdir="${src}" destdir="${build}" debug="on">
+			<compilerarg value="-Xlint:unchecked"/>
+		</javac>
 	</target>
 
 	<target name="dist" depends="compile">

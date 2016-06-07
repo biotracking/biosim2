@@ -18,4 +18,5 @@ public interface ProblemSpec{
 	public Dataset btf2array(BTFData btf);
 	public Environment getEnvironment(LearnerAgent la, BTFData btf, Integer ignoredID);
 	public BTFDataLogger getLogger();
+	public LearnerAgent makeLearner();
 }
