@@ -1,6 +1,5 @@
-#include <vector>
-// #include "ANN/ANN.h"
 #include <flann/flann.hpp>
+#include <vector>
 
 class SimpleANN {
 	public:
@@ -10,10 +9,8 @@ class SimpleANN {
 		void add(const double feats[]);
 		bool query(const double feats[], int index[], int k);
 		SimpleANN& operator=(const SimpleANN& rhs);
-		// void setEpsilon(double epsilon){ epsilon = eps; }
 	private:
-		std::vector<double*> dataset;
 		int dim;
-		// ANNkd_tree *kdTree;
-		// double eps;
+		flann::Index<flann::L2<double> > *searchIndex;
+		std::vector<flann::Matrix<double> > cleanup;
 };
