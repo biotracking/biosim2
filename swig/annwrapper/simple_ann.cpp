@@ -35,7 +35,8 @@ SimpleANN::~SimpleANN(){
 		searchIndex = NULL;
 	}
 	for(unsigned int i=0;i<cleanup.size();i++){
-		delete[] cleanup[i].ptr();
+		delete[] cleanup[i];
+		// delete cleanup[i];
 	}
 }
 
@@ -48,7 +49,8 @@ void SimpleANN::add(const double feats[]){
 	} else {
 		searchIndex->addPoints(row);
 	}
-	cleanup.push_back(row);
+	// delete[] tmp;
+	cleanup.push_back(tmp);
 }
 
 

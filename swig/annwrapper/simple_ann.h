@@ -12,5 +12,5 @@ class SimpleANN {
 	private:
 		int dim;
 		flann::Index<flann::L2<double> > *searchIndex;
-		std::vector<flann::Matrix<double> > cleanup;
+		std::vector<double*> cleanup;
 };
