@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -32,6 +33,31 @@ public class BTFData{
 			}
 		}
 	}
+
+	public void writeBTF(File parentDirectory,String cName) throws IOException{
+		writeBTF(parentDirectory,cName,0,-1);
+	}
+	public void writeBTF(File parentDirectory, String cName, int start, int end) throws IOException{
+		String[] colData = loadColumn(cName);
+		if(end <0 || end > colData.length){
+			end = colData.length;
+		}
+		FileWriter writer = new FileWriter(new File(parentDirectory,cName+".btf"));
+		for(int i=start;i<end;i++){
+			writer.write(colData+"\n");
+		}
+		writer.close();
+	}
+
+	public void writeDir(File parentDirectory) throws IOException{
+		writeDir(parentDirectory,0,-1);
+	}
+	public void writeDir(File parentDirectory, int start, int end) throws IOException{
+		for(String cname:columns.keySet()){
+			writeBTF(parentDirectory,cname, start, end);
+		}
+	}
+
 	public String[] loadColumn(String columnName) throws IOException{
 		String[] rv = new String[0];
 		ArrayList<String> data = new ArrayList<String>();
@@ -79,19 +105,25 @@ public class BTFData{
 	}
 
 	public ArrayList<Integer> getUniqueIDs(){
-		ArrayList<Integer> rv = new ArrayList<Integer>();
+		return getUniqueIDs(0,-1);
+	}
+	public ArrayList<Integer> getUniqueIDs(int start, int end){
 		try{
-			String[] idCol = loadColumn("id");
-			for(int i=0;i<idCol.length;i++){
-				int foo = Integer.parseInt(idCol[i]);
-				if(rv.contains(foo)){
-					continue;
-				} else {
-					rv.add(foo);
-				}
-			}
+			return getUniqueIDs(start,end,loadColumn("id"));
 		} catch(IOException ioe){
-			throw new RuntimeException("[BTFData] error parsing for unique IDs: "+ioe);
+			throw new RuntimeException("[BTFData] parsing for unique IDs: "+ioe);
+		}
+	}
+	public ArrayList<Integer> getUniqueIDs(int start, int end, String[] idCol){
+		ArrayList<Integer> rv = new ArrayList<Integer>();
+		if(end<0||end>idCol.length) end = idCol.length;
+		for(int i=start;i<end;i++){
+			int foo = Integer.parseInt(idCol[i]);
+			if(rv.contains(foo)){
+				continue;
+			} else {
+				rv.add(foo);
+			}
 		}
 		return rv;
 	}
@@ -120,6 +152,37 @@ public class BTFData{
 		}
 		return rv;
 	}
+
+	public class  BTFDataFrame{
+		public int start, len;
+		public BTFData parentObj;
+		public BTFDataFrame(int start, int len, BTFData parentObj){
+			this.start = start;
+			this.len = len;
+			this.parentObj = parentObj;
+		}
+	}
+
+	public ArrayList<BTFDataFrame> splitIntoFrames() throws IOException{
+		return splitIntoFrames("timestamp");
+	}
+	public ArrayList<BTFDataFrame> splitIntoFrames(String frameColName) throws IOException{
+		String[] frames = loadColumn(frameColName);
+		ArrayList<BTFDataFrame> rv = new ArrayList<BTFDataFrame>();
+		int currentBlockStart=0;
+		while(currentBlockStart<frames.length){
+			int blockLen;
+			for(blockLen=1;blockLen+currentBlockStart<frames.length;blockLen++){
+				if(!(frames[currentBlockStart].equals(frames[currentBlockStart+blockLen]))){
+					break;
+				}
+			}
+			rv.add(new BTFDataFrame(currentBlockStart,blockLen,this));
+			currentBlockStart = currentBlockStart+blockLen;
+		}
+		return rv;
+	}
+
 	public static void main(String[] args){
 		if(args.length == 1){
 			BTFData btf = new BTFData();

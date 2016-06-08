@@ -1,7 +1,9 @@
 package biosim.core.util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.File;
+import java.io.IOException;
 
 public class BTFSequences{
 	public HashMap<String,BTFData> sequences;
@@ -22,5 +24,50 @@ public class BTFSequences{
 				sequences.put(seqName,seq);
 			}
 		}
+	}
+
+	public void writeDir(File parentDirectory) throws IOException{
+		for(String seqName : sequences.keySet()){
+			File seqDir = new File(parentDirectory,seqName);
+			if(!seqDir.exists()){
+				seqDir.mkdir();
+				BTFData btf = sequences.get(seqName);
+				btf.writeDir(seqDir);
+			}
+		}
+	}
+
+	public static void splitToSequences(File parentDirectory, BTFData originalBTF, int framesPerSeq) throws IOException{
+		ArrayList<BTFData.BTFDataFrame> frames = originalBTF.splitIntoFrames();
+		BTFSequences rv = new BTFSequences();
+		String seqPrefix = "seq_";
+		int seqCtr = 0;
+		int curStartFrame = 0;
+		while(curStartFrame<frames.size()){
+			int frameEnd=curStartFrame+1;
+			BTFData.BTFDataFrame startFrame = frames.get(curStartFrame);
+			ArrayList<Integer> startIDs = startFrame.parentObj.getUniqueIDs(startFrame.start,startFrame.start+startFrame.len);
+			while(frameEnd<frames.size() && (frameEnd-curStartFrame)<framesPerSeq){
+				BTFData.BTFDataFrame tmp = frames.get(frameEnd);
+				ArrayList<Integer> frameEndIDs = tmp.parentObj.getUniqueIDs(tmp.start,tmp.start+tmp.len);
+				if((frameEndIDs.size() != startIDs.size())||!(startIDs.containsAll(frameEndIDs))){
+					break;
+				}
+				frameEnd++;
+			}
+			if((frameEnd-curStartFrame)<framesPerSeq){
+				continue;
+			} else {
+				File seqDir = new File(parentDirectory,seqPrefix+seqCtr);
+				if(!seqDir.exists()){
+					seqDir.mkdir();
+				}
+				BTFData.BTFDataFrame endFrame = frames.get(curStartFrame+framesPerSeq);
+				originalBTF.writeDir(seqDir,startFrame.start,endFrame.start);
+				seqCtr++;
+			}
+			curStartFrame = frameEnd;
+		}
+		System.out.println("Split "+seqCtr+" frames");
 	}
 }
