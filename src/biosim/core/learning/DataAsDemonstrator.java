@@ -1,7 +1,9 @@
 //DataAsDemonstrator.java
 package biosim.core.learning;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -222,9 +224,33 @@ public class DataAsDemonstrator{
 		ProblemSpec pspec = new ReynoldsFeatures();
 		int maxIterations = -1;
 		int maxThreads = Integer.MAX_VALUE;
+		File outputDirectory = null;
+		for(int i=1;i<args.length;i++){
+			if(args[i].equalsIgnoreCase("--threads")){
+				maxThreads = Integer.parseInt(args[i+1]);
+			} else if(args[i].equalsIgnoreCase("--iterations")){
+				maxIterations = Integer.parseInt(args[i+1]);
+			} else if(args[i].equalsIgnoreCase("--output")){
+				outputDirectory = new File(args[i+1]);
+			} else if(args[i].startsWith("--")) {
+				System.out.println("Unrecognized argument: "+args[i]);
+				System.out.println("Usage: java biosim.core.learning.DataAsDemonstrator <btfSequenceDir> [--threads <int>] [--iterations <int>] [--output <dir>]");
+				System.exit(1);
+			}
+		}
 		ArrayList<LearnerAgent> learners = dad.train(seqs,pspec,maxIterations,maxThreads);
 		System.out.println("#of models: "+learners.size());
 		System.out.println("Free memory: " + Runtime.getRuntime().freeMemory());
 		System.out.println("Allocated memory: "+ Runtime.getRuntime().totalMemory());
+		if(outputDirectory != null){
+			try{
+				for(int i=0;i<learners.size();i++){
+					LearnerAgent learner = learners.get(i);
+					learner.saveParameters(new BufferedWriter(new FileWriter(new File(outputDirectory,"learner_"+i+".txt"))));
+				}
+			} catch(IOException ioe){
+				throw new RuntimeException("[DataAsDemonstrator] Failed to write trained models: "+ioe);
+			}
+		}
 	}
 }
