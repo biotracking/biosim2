@@ -37,7 +37,7 @@ public class BTFSequences{
 		}
 	}
 
-	public static void splitToSequences(File parentDirectory, BTFData originalBTF, int framesPerSeq) throws IOException{
+	public static void splitIntoSequences(File parentDirectory, BTFData originalBTF, int framesPerSeq) throws IOException{
 		ArrayList<BTFData.BTFDataFrame> frames = originalBTF.splitIntoFrames();
 		BTFSequences rv = new BTFSequences();
 		String seqPrefix = "seq_";
@@ -69,5 +69,26 @@ public class BTFSequences{
 			curStartFrame = frameEnd;
 		}
 		System.out.println("Split "+seqCtr+" frames");
+	}
+
+	public static void main(String[] args){
+		if(args.length != 3){
+			System.out.println("Usage: java BTFSequences <BTFFile> <saveDir> <framesPerSeq>");
+			System.out.print("Args:");
+			for(int i=0;i<args.length;i++){
+				System.out.print(" "+args[i]);
+			}
+			System.out.println();
+		} else{
+			BTFData btf = new BTFData();
+			btf.loadDir(new File(args[0]));
+			File saveDir = new File(args[1]);
+			int framesPerSeq = Integer.parseInt(args[2]);
+			try{
+				splitIntoSequences(saveDir,new BufferedBTFData(btf), framesPerSeq);
+			} catch(IOException ioe){
+				throw new RuntimeException("[BTFSequences] Error splitting into sequences: "+ioe);
+			}
+		}
 	}
 }
