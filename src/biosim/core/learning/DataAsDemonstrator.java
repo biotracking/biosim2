@@ -42,11 +42,14 @@ public class DataAsDemonstrator{
 	public static final double[][] aDoubleArray = new double[0][0];
 	public static final ExecutorService pool = Executors.newFixedThreadPool(4);
 
-	public ArrayList<LearnerAgent> train(BTFSequences data, ProblemSpec pspec, int maxIterations, int maxThreads){
+	public ArrayList<LearnerAgent> train(BTFSequences data, ProblemSpec pspec, int maxIterations, int maxThreads, File outputDirectory){
 		ArrayList<double[]> dad_training_inputs = new ArrayList<double[]>();
 		ArrayList<double[]> dad_training_outputs = new ArrayList<double[]>();
 		ArrayList<BTFData> activeRealTrainingSequences = new ArrayList<BTFData>();
-		ArrayList<LearnerAgent> rv = new ArrayList<LearnerAgent>();
+		ArrayList<LearnerAgent> rv = null;
+		if(outputDirectory == null){
+			rv = new ArrayList<LearnerAgent>();
+		}
 		final ExecutorService pool = Executors.newFixedThreadPool(Math.min(maxThreads,Runtime.getRuntime().availableProcessors()));
 		Iterator<BTFData> seqIterator = data.sequences.values().iterator();
 		activeRealTrainingSequences.add(seqIterator.next());
@@ -101,8 +104,19 @@ public class DataAsDemonstrator{
 			}
 			LearnerAgent learner = pspec.makeLearner();
 			learner.train(combinedFeatures,combinedOutputs);
-			rv.add(learner);
-
+			if(outputDirectory == null){
+				rv.add(learner);
+			} else {
+				try{
+					File saveTo = new File(outputDirectory,"learner_"+iterationCounter+".txt");
+					System.out.print("Writting learner to: "+saveTo);
+					System.out.flush();
+					learner.saveParameters(new BufferedWriter(new FileWriter(saveTo)));
+					System.out.println(" done");
+				} catch(IOException ioe){
+					throw new RuntimeException("[DataAsDemonstrator] Failed writting learner: "+ioe);
+				}
+			}
 			//2. Kick off simulation threads
 			HashSet<Callable<ArrayListDataset> > tasks = new HashSet<Callable<ArrayListDataset> >();
 			// HashSet<RunSim> tasks = new HashSet<RunSim>();
@@ -238,19 +252,19 @@ public class DataAsDemonstrator{
 				System.exit(1);
 			}
 		}
-		ArrayList<LearnerAgent> learners = dad.train(seqs,pspec,maxIterations,maxThreads);
-		System.out.println("#of models: "+learners.size());
+		ArrayList<LearnerAgent> learners = dad.train(seqs,pspec,maxIterations,maxThreads,outputDirectory);
+		// System.out.println("#of models: "+learners.size());
 		System.out.println("Free memory: " + Runtime.getRuntime().freeMemory());
 		System.out.println("Allocated memory: "+ Runtime.getRuntime().totalMemory());
-		if(outputDirectory != null){
-			try{
-				for(int i=0;i<learners.size();i++){
-					LearnerAgent learner = learners.get(i);
-					learner.saveParameters(new BufferedWriter(new FileWriter(new File(outputDirectory,"learner_"+i+".txt"))));
-				}
-			} catch(IOException ioe){
-				throw new RuntimeException("[DataAsDemonstrator] Failed to write trained models: "+ioe);
-			}
-		}
+		// if(outputDirectory != null){
+		// 	try{
+		// 		for(int i=0;i<learners.size();i++){
+		// 			LearnerAgent learner = learners.get(i);
+		// 			learner.saveParameters(new BufferedWriter(new FileWriter(new File(outputDirectory,"learner_"+i+".txt"))));
+		// 		}
+		// 	} catch(IOException ioe){
+		// 		throw new RuntimeException("[DataAsDemonstrator] Failed to write trained models: "+ioe);
+		// 	}
+		// }
 	}
 }
