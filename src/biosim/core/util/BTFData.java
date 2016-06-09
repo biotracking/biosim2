@@ -11,6 +11,7 @@ import java.util.ArrayList;
 
 public class BTFData{
 	public HashMap<String,File> columns;
+	public static long timeout=10000; //10 seconds
 	public BTFData(){
 		columns = new HashMap<String,File>();
 	}
@@ -170,9 +171,15 @@ public class BTFData{
 		String[] frames = loadColumn(frameColName);
 		ArrayList<BTFDataFrame> rv = new ArrayList<BTFDataFrame>();
 		int currentBlockStart=0;
+		long lastTime = System.currentTimeMillis();
 		while(currentBlockStart<frames.length){
 			int blockLen;
 			for(blockLen=1;blockLen+currentBlockStart<frames.length;blockLen++){
+				long curTime = System.currentTimeMillis();
+				if(curTime-lastTime > timeout){
+					System.out.println("Line: "+(blockLen+currentBlockStart)+" ("+ 100*((blockLen+currentBlockStart)/(double)frames.length)+"%)");
+					lastTime = curTime;
+				}
 				if(!(frames[currentBlockStart].equals(frames[currentBlockStart+blockLen]))){
 					break;
 				}
