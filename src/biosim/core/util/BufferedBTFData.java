@@ -19,4 +19,9 @@ public class BufferedBTFData extends BTFData{
 		}
 		return rv.toArray(new String[rv.size()]);
 	}
+	public void loadBuffer() throws IOException{
+		for(String cname : columns.keySet()){
+			loadColumn(cname);
+		}
+	}
 }

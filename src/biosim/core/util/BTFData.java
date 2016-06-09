@@ -39,13 +39,14 @@ public class BTFData{
 		writeBTF(parentDirectory,cName,0,-1);
 	}
 	public void writeBTF(File parentDirectory, String cName, int start, int end) throws IOException{
+		//System.out.println("Writting "+cName+" to "+parentDirectory);
 		String[] colData = loadColumn(cName);
 		if(end <0 || end > colData.length){
 			end = colData.length;
 		}
 		FileWriter writer = new FileWriter(new File(parentDirectory,cName+".btf"));
 		for(int i=start;i<end;i++){
-			writer.write(colData+"\n");
+			writer.write(colData[i]+"\n");
 		}
 		writer.close();
 	}
