@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class BTFSequences{
 	public HashMap<String,BTFData> sequences;
-
+	public static long timeout=10000; //10 seconds
 	public BTFSequences(){
 		sequences = new HashMap<String,BTFData>();
 	}
@@ -43,6 +43,8 @@ public class BTFSequences{
 		String seqPrefix = "seq_";
 		int seqCtr = 0;
 		int curStartFrame = 0;
+		long lastTime = System.currentTimeMillis();
+		double lastLine = frames.get(frames.size()-1).start + frames.get(frames.size()-1).len;
 		while(curStartFrame<frames.size()){
 			int frameEnd=curStartFrame+1;
 			BTFData.BTFDataFrame startFrame = frames.get(curStartFrame);
@@ -54,6 +56,11 @@ public class BTFSequences{
 					break;
 				}
 				frameEnd++;
+				long curTime = System.currentTimeMillis();
+				if( (curTime - lastTime) > timeout){
+					System.out.println("Frame: "+frameEnd+" ("+(100*tmp.start/lastLine)+"%)");
+					lastTime = curTime;
+				}
 			}
 			if((frameEnd-curStartFrame)<framesPerSeq){
 				continue;
