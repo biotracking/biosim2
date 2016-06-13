@@ -111,7 +111,9 @@ public class DataAsDemonstrator{
 					File saveTo = new File(outputDirectory,"learner_"+iterationCounter+".txt");
 					System.out.print("Writting learner to: "+saveTo);
 					System.out.flush();
-					learner.saveParameters(new BufferedWriter(new FileWriter(saveTo)));
+					BufferedWriter saveFile = new BufferedWriter(new FileWriter(saveTo));
+					learner.saveParameters(saveFile);
+					saveFile.close();
 					System.out.println(" done");
 				} catch(IOException ioe){
 					throw new RuntimeException("[DataAsDemonstrator] Failed writting learner: "+ioe);

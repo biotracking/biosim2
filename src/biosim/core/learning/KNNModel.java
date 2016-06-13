@@ -117,8 +117,12 @@ public class KNNModel implements LearnerAgent{
 		double[] sample = new double[knn.getSampleDim()];
 		double[] classes = new double[knn.getClassDim()];
 		String line = kNN_csv_data.readLine();
+		int lnCtr = 2;
 		while(line != null){
 			String[] splitLine = line.split(",");
+			if(splitLine.length != sample.length+classes.length){
+				throw new RuntimeException("[KNNModel] Invalid line. Columns: "+splitLine.length+" Expected "+(sample.length+classes.length)+" for line #"+lnCtr+"\nLine:\n"+line);
+			}
 			for(int i=0;i<sample.length;i++){
 				sample[i] = Double.parseDouble(splitLine[i]);
 			}
@@ -127,6 +131,7 @@ public class KNNModel implements LearnerAgent{
 			}
 			knn.add(sample,classes);
 			line = kNN_csv_data.readLine();
+			lnCtr++;
 		}
 		System.out.println("[KNNModel] Finished loading kNN.");
 	}
