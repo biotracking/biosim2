@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -42,7 +43,7 @@ public class DataAsDemonstrator{
 	public static final double[][] aDoubleArray = new double[0][0];
 	public static final ExecutorService pool = Executors.newFixedThreadPool(4);
 
-	public ArrayList<LearnerAgent> train(BTFSequences data, ProblemSpec pspec, int maxIterations, int maxThreads, File outputDirectory){
+	public ArrayList<LearnerAgent> train(BTFSequences data, ProblemSpec pspec, int maxIterations, int maxThreads, File outputDirectory, double cvRatio){
 		ArrayList<double[]> dad_training_inputs = new ArrayList<double[]>();
 		ArrayList<double[]> dad_training_outputs = new ArrayList<double[]>();
 		ArrayList<BTFData> activeRealTrainingSequences = new ArrayList<BTFData>();
@@ -50,8 +51,19 @@ public class DataAsDemonstrator{
 		if(outputDirectory == null){
 			rv = new ArrayList<LearnerAgent>();
 		}
+		//create thread pool
 		final ExecutorService pool = Executors.newFixedThreadPool(Math.min(maxThreads,Runtime.getRuntime().availableProcessors()));
-		Iterator<BTFData> seqIterator = data.sequences.values().iterator();
+		List<BTFData> btfValues = new ArrayList<BTFData>(data.sequences.values());
+		//shuffle data 
+		Collections.shuffle(btfValues);
+		Iterator<BTFData> seqIterator = btfValues.iterator();//data.sequences.values().iterator();
+		//pull out cross validation samples
+		int numCVSeqs = (int)(data.sequences.size()*cvRatio);
+		ArrayList<ProblemSpec.Dataset> cvData = new ArrayList<ProblemSpec.Dataset>();
+		for(int i=0;i<numCVSeqs;i++){
+			cvData.add(pspec.btf2array(seqIterator.next()));
+		}
+		//add initial data
 		activeRealTrainingSequences.add(seqIterator.next());
 		boolean outOfData = false;
 		int numRealDataPoints;
@@ -104,6 +116,9 @@ public class DataAsDemonstrator{
 			}
 			LearnerAgent learner = pspec.makeLearner();
 			learner.train(combinedFeatures,combinedOutputs);
+			if(cvData.size()>0){
+				System.out.println("Average error per sequence: "+pspec.computeError(cvData,learner)/(double)cvData.size());
+			}
 			if(outputDirectory == null){
 				rv.add(learner);
 			} else {
@@ -241,6 +256,7 @@ public class DataAsDemonstrator{
 		int maxIterations = -1;
 		int maxThreads = Integer.MAX_VALUE;
 		File outputDirectory = null;
+		double cvRatio = 0.1;
 		for(int i=1;i<args.length;i++){
 			if(args[i].equalsIgnoreCase("--threads")){
 				maxThreads = Integer.parseInt(args[i+1]);
@@ -248,25 +264,17 @@ public class DataAsDemonstrator{
 				maxIterations = Integer.parseInt(args[i+1]);
 			} else if(args[i].equalsIgnoreCase("--output")){
 				outputDirectory = new File(args[i+1]);
+			} else if(args[i].equalsIgnoreCase("--cvRatio")){
+				cvRatio = Double.parseDouble(args[i+1]);
 			} else if(args[i].startsWith("--")) {
 				System.out.println("Unrecognized argument: "+args[i]);
 				System.out.println("Usage: java biosim.core.learning.DataAsDemonstrator <btfSequenceDir> [--threads <int>] [--iterations <int>] [--output <dir>]");
 				System.exit(1);
 			}
 		}
-		ArrayList<LearnerAgent> learners = dad.train(seqs,pspec,maxIterations,maxThreads,outputDirectory);
+		ArrayList<LearnerAgent> learners = dad.train(seqs,pspec,maxIterations,maxThreads,outputDirectory,cvRatio);
 		// System.out.println("#of models: "+learners.size());
 		System.out.println("Free memory: " + Runtime.getRuntime().freeMemory());
 		System.out.println("Allocated memory: "+ Runtime.getRuntime().totalMemory());
-		// if(outputDirectory != null){
-		// 	try{
-		// 		for(int i=0;i<learners.size();i++){
-		// 			LearnerAgent learner = learners.get(i);
-		// 			learner.saveParameters(new BufferedWriter(new FileWriter(new File(outputDirectory,"learner_"+i+".txt"))));
-		// 		}
-		// 	} catch(IOException ioe){
-		// 		throw new RuntimeException("[DataAsDemonstrator] Failed to write trained models: "+ioe);
-		// 	}
-		// }
 	}
 }

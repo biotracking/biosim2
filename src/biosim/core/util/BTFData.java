@@ -1,6 +1,7 @@
 package biosim.core.util;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileReader;
@@ -49,6 +50,20 @@ public class BTFData{
 			writer.write(colData[i]+"\n");
 		}
 		writer.close();
+	}
+
+	public void writeInitialPose(BufferedWriter outputWriter) throws IOException{
+		String[] timestamp = loadColumn("timestamp");
+		String[] id = loadColumn("id");
+		String[] xPos = loadColumn("xpos");
+		String[] yPos = loadColumn("ypos");
+		String[] theta = loadColumn("timage");
+		for(int i=0;i<timestamp.length;i++){
+			if(!timestamp[i].equals(timestamp[0])){
+				break;
+			}
+			outputWriter.write(id[i]+" "+xPos[i]+" "+yPos[i]+" "+theta[i]+"\n");
+		}
 	}
 
 	public void writeDir(File parentDirectory) throws IOException{
@@ -192,9 +207,9 @@ public class BTFData{
 	}
 
 	public static void main(String[] args){
-		if(args.length == 1){
+		if((args.length > 0)&&(args.length<3)){
 			BTFData btf = new BTFData();
-			btf.loadBTF(new File(args[0]));
+			btf.loadDir(new File(args[0]));
 			System.out.println("Loaded");
 			for(String name : btf.columns.keySet()){
 				System.out.println(name+" -> "+btf.columns.get(name));
@@ -202,12 +217,18 @@ public class BTFData{
 			try{
 				HashMap<String,String[]> data = btf.loadAllColumns();
 				System.out.println(data);
+				if(args.length > 1){
+					System.out.println("Writing initial placement to "+args[1]);
+					BufferedWriter outputWriter = new BufferedWriter(new FileWriter(args[1]));
+					btf.writeInitialPose(outputWriter);
+					outputWriter.close();
+				}
 			} catch(IOException ioe){
 				System.out.println(ioe);
 				throw new RuntimeException(ioe);
 			}
 		} else {
-			System.out.println("java biosim.core.util.BTFData <btfDirectory>");
+			System.out.println("java biosim.core.util.BTFData <btfDirectory> [initialPlacementOutput]");
 		}
 	}
 }

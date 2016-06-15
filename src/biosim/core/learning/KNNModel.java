@@ -133,6 +133,7 @@ public class KNNModel implements LearnerAgent{
 			line = kNN_csv_data.readLine();
 			lnCtr++;
 		}
+		knn.sigmaNormalize();
 		System.out.println("[KNNModel] Finished loading kNN.");
 	}
 
@@ -185,6 +186,7 @@ public class KNNModel implements LearnerAgent{
 		for(int i=0;i<inputs.length;i++){
 			knn.add(inputs[i],outputs[i]);
 		}
+		knn.sigmaNormalize();
 	}
 
 	public static void main(String[] args){
