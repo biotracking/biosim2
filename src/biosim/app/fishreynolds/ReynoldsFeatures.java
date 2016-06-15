@@ -8,6 +8,7 @@ import java.util.Properties;
 
 import sim.util.MutableDouble2D;
 import sim.engine.SimState;
+import ec.util.MersenneTwisterFast;
 
 import biosim.core.agent.Agent;
 import biosim.core.body.AbstractFish;
@@ -227,6 +228,8 @@ public class ReynoldsFeatures implements ProblemSpec{
 			KNNModel knnm = new KNNModel();
 			knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY","pvelX","pvelY","pvelT"});
 			knnm.setOutputNames(new String[] {"dvelX","dvelY","dvelT"});
+			//TODO: Fix random to be consistant with seed
+			knnm.setRandom(new MersenneTwisterFast(System.currentTimeMillis()));
 			rv = knnm;
 		} else if(learner.equalsIgnoreCase("LINREG")){
 			LinregModel lrm = new LinregModel(11,3);
