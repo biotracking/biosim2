@@ -133,7 +133,7 @@ public class DataAsDemonstrator{
 						for(int idIdx=0;idIdx<idList.size();idIdx++){
 							int activeID = idList.get(idIdx);
 							ArrayList<Integer> activeIDRows = seq.rowIndexForID(activeID);
-							Environment env = pspec.getEnvironment(learner.deepCopy(),seq,activeID);
+							Environment env = pspec.getEnvironment(learner,seq,activeID);
 							BTFDataLogger logs = pspec.getLogger();
 							env.addLogger(logs);
 							Simulation sim = env.newSimulation();
