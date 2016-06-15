@@ -234,7 +234,21 @@ public class ReynoldsFeatures implements ProblemSpec{
 		}
 		return rv;
 	}
-
+	public double computeError(ArrayList<Dataset> testSet, LearnerAgent learner){
+		double[] learnerOuts = new double[getNumOutputs()];
+		double rv = 0.0;
+		for(Dataset testD: testSet){
+			for(int row=0;row<testD.features.length;row++){
+				learner.computeOutputs(testD.features[row],learnerOuts);
+				double mse = 0.0;
+				for(int col=0;col<learnerOuts.length;col++){
+					mse += Math.pow(learnerOuts[col]-testD.outputs[row][col],2);
+				}
+				rv += Math.sqrt(mse);
+			}
+		}
+		return rv;
+	}
 	public BTFDataLogger getLogger(){
 		return new BTFDataLogger(){
 			public LinkedList<String> rbfsepvec, rbforivec, rbfcohvec, rbfwallvec, pvel, dvel, dbool;
