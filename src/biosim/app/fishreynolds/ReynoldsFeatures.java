@@ -132,7 +132,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 			column = btf.columnAsDoubles("rbfwallvec");
 			copyInto(column,rv.features,6);
 			column = btf.columnAsDoubles("pvel");
-			copyInto(column,rv.features,8)
+			copyInto(column,rv.features,8);
 			//dvelX, dvelY, dvelT
 			column = btf.columnAsDoubles("dvel");
 			copyInto(column,rv.outputs,0);
