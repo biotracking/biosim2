@@ -234,6 +234,8 @@ public class ReynoldsFeatures implements ProblemSpec{
 		} else if(learner.equalsIgnoreCase("LINREG")){
 			LinregModel lrm = new LinregModel(11,3);
 			rv = lrm;
+		} else {
+			throw new RuntimeException("[ReynoldsFeatures] Unknown learner: "+learner);
 		}
 		return rv;
 	}

@@ -7,8 +7,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.apache.commons.math.linear.*;
-
+// import org.apache.commons.math.linear.*;
+import org.jblas.*;
 
 public class LinregModel implements LearnerAgent{
 	protected double[][] parameters;
@@ -59,7 +59,7 @@ public class LinregModel implements LearnerAgent{
 		}
 		if(useBias){
 			if(features.length != parameters.length-1){
-				throw new RuntimeException("Bias enabled, but features.length != parameters.length-1! Aborting");
+				throw new RuntimeException("Bias enabled, but features.length ("+features.length+") != parameters.length-1 ("+(parameters.length-1)+")! Aborting");
 			}
 			realFeatures = new double[features.length+1];
 			System.arraycopy(features,0,realFeatures,0,features.length);
@@ -106,11 +106,20 @@ public class LinregModel implements LearnerAgent{
 	}
 
 	public void train(double[][] inputs, double[][] outputs){
-		RealMatrix ins = MatrixUtils.createRealMatrix(inputs);
-		RealMatrix outs = MatrixUtils.createRealMatrix(outputs);
-		DecompositionSolver solver = new SingularValueDecompositionImpl(ins).getSolver();
-		RealMatrix coeffs = solver.solve(outs);
-		parameters = coeffs.getData();
+		double[][] realInputs = inputs;
+		if(useBias){
+			realInputs = new double[inputs.length][inputs[0].length+1];
+			for(int row=0;row<inputs.length;row++){
+				System.arraycopy(inputs[row],0,realInputs[row],0,inputs[row].length);
+				realInputs[row][inputs[row].length] = 1.0;
+			}
+		}
+		// RealMatrix ins = MatrixUtils.createRealMatrix(realInputs);
+		// RealMatrix outs = MatrixUtils.createRealMatrix(outputs);
+		// DecompositionSolver solver = new SingularValueDecompositionImpl(ins).getSolver();
+		// RealMatrix coeffs = solver.solve(outs);
+		// parameters = coeffs.getData();
+		parameters = Solve.solveLeastSquares(new DoubleMatrix(realInputs), new DoubleMatrix(outputs)).toArray2();
 	}
 
 	public static void main(String[] args){

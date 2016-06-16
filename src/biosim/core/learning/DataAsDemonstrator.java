@@ -252,7 +252,7 @@ public class DataAsDemonstrator{
 		DataAsDemonstrator dad = new DataAsDemonstrator();
 		BTFSequences seqs = new BTFSequences();
 		seqs.loadDir(new File(args[0]));
-		ProblemSpec pspec = new ReynoldsFeatures();
+		ReynoldsFeatures pspec = new ReynoldsFeatures();
 		int maxIterations = -1;
 		int maxThreads = Integer.MAX_VALUE;
 		File outputDirectory = null;
@@ -266,6 +266,8 @@ public class DataAsDemonstrator{
 				outputDirectory = new File(args[i+1]);
 			} else if(args[i].equalsIgnoreCase("--cvRatio")){
 				cvRatio = Double.parseDouble(args[i+1]);
+			} else if (args[i].equalsIgnoreCase("--learner")){
+				pspec.learner = args[i+1];
 			} else if(args[i].startsWith("--")) {
 				System.out.println("Unrecognized argument: "+args[i]);
 				System.out.println("Usage: java biosim.core.learning.DataAsDemonstrator <btfSequenceDir> [--threads <int>] [--iterations <int>] [--output <dir>]");
