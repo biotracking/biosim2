@@ -113,10 +113,19 @@ public class FastKNN{
 				sigma[j] += Math.pow(samples.get(i)[j]-sampleAvg[j],2);
 			}
 		}
-		for(int i=0;i<sample_dim;i++) sigma[i] = (sigma[i]==0.0)? 1.0:1.0/Math.sqrt(sigma[i]/samples.size());
-		//System.out.print("Sigma weights: [");
-		//for(int i=0;i<sample_dim;i++) System.out.print(" "+sigma[i]);
-		//System.out.println(" ]");
+		boolean sigmaWasZero = false;
+		for(int i=0;i<sample_dim;i++) {
+			if(sigma[i]==0.0){
+				sigmaWasZero = true;
+			}
+			sigma[i] = (sigma[i]==0.0)? 1.0:1.0/Math.sqrt(sigma[i]/samples.size());
+		}
+		if(sigmaWasZero){
+			System.err.println("[FastKNN] WARNING: ignoring zero variance normalization");
+			System.err.print("normalizing weights: [");
+			for(int i=0;i<sample_dim;i++) System.err.print(" "+sigma[i]);
+			System.err.println(" ]");
+		}
 		setFeatureWeights(sigma);
 	}
 	
