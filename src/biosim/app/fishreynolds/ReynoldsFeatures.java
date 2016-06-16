@@ -29,7 +29,8 @@ import biosim.core.util.BTFDataLogger;
 
 public class ReynoldsFeatures implements ProblemSpec{
 
-	//sepX,sepY,oriX,oriY,cohX,cohY,obsX,obsY,pvelX,pvelY,pvelT
+	// WITH PVEL: sepX,sepY,oriX,oriY,cohX,cohY,obsX,obsY,pvelX,pvelY,pvelT
+	// NO PVEL:   sepX,sepY,oriX,oriY,cohX,cohY,obsX,obsY
 	public static final int NUM_FEATURES=11;
 	//X, Y, T
 	public static final int NUM_OUTPUTS=3;
@@ -86,9 +87,9 @@ public class ReynoldsFeatures implements ProblemSpec{
 			fishBody.getAverageRBFSameTypeVec(coh,coh_sigma);
 			fishBody.getNearestObstacleVec(wall);
 			wall.multiplyIn(Math.exp(-wall.lengthSq()/(2.0*Math.pow(obs_sigma,2))));
-			double[] pvel = new double[NUM_OUTPUTS];
+			double[] pvel = new double[3];
 			fishBody.getSelfVelXYT(pvel);
-			double[] sensors = new double[NUM_FEATURES];
+			double[] sensors = new double[getNumFeatures()];
 			sensors[0] = sep.x;
 			sensors[1] = sep.y;
 			sensors[2] = ori.x;
@@ -100,8 +101,6 @@ public class ReynoldsFeatures implements ProblemSpec{
 			sensors[8] = pvel[0];
 			sensors[9] = pvel[1];
 			sensors[10] = pvel[2];
-			// let linreg do it's own thing re: bias
-			// sensors[11] = 1.0;
 			return sensors;
 		} else {
 			throw new RuntimeException(b+" is not an AbstractFish");
@@ -120,9 +119,10 @@ public class ReynoldsFeatures implements ProblemSpec{
 		Dataset rv = new Dataset();
 		try{
 			int numRows = btf.loadColumn("id").length;
-			rv.features = new double[numRows][NUM_FEATURES];
-			rv.outputs = new double[numRows][NUM_OUTPUTS];
-			//sepX,sepY,oriX,oriY,cohX,cohY,obsX,obsY,pvelX,pvelY,pvelT
+			rv.features = new double[numRows][getNumFeatures()];
+			rv.outputs = new double[numRows][getNumOutputs()];
+			// WITH PVEL: sepX,sepY,oriX,oriY,cohX,cohY,obsX,obsY,pvelX,pvelY,pvelT
+			// NO PVEL: sepX,sepY,oriX,oriY,cohX,cohY,obsX,obsY
 			double[][] column = btf.columnAsDoubles("rbfsepvec");
 			copyInto(column,rv.features,0);
 			column = btf.columnAsDoubles("rbforivec");
@@ -132,6 +132,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 			column = btf.columnAsDoubles("rbfwallvec");
 			copyInto(column,rv.features,6);
 			column = btf.columnAsDoubles("pvel");
+			copyInto(column,rv.features,8)
 			//dvelX, dvelY, dvelT
 			column = btf.columnAsDoubles("dvel");
 			copyInto(column,rv.outputs,0);
@@ -226,13 +227,14 @@ public class ReynoldsFeatures implements ProblemSpec{
 		LearnerAgent rv = null;
 		if(learner.equalsIgnoreCase("KNN")){
 			KNNModel knnm = new KNNModel();
-			knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY","pvelX","pvelY","pvelT"});
+			knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY","pvelX","pvelY","pvelT"}); //WITH PVEL
+			// knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY"}); //NO PVEL
 			knnm.setOutputNames(new String[] {"dvelX","dvelY","dvelT"});
 			//TODO: Fix random to be consistant with seed
 			knnm.setRandom(new MersenneTwisterFast(System.currentTimeMillis()));
 			rv = knnm;
 		} else if(learner.equalsIgnoreCase("LINREG")){
-			LinregModel lrm = new LinregModel(11,3);
+			LinregModel lrm = new LinregModel(getNumFeatures(),getNumOutputs());
 			rv = lrm;
 		} else {
 			throw new RuntimeException("[ReynoldsFeatures] Unknown learner: "+learner);
