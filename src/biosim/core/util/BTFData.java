@@ -88,6 +88,7 @@ public class BTFData{
 					line = buf.readLine();
 				else line = null;
 			}
+			buf.close();
 		}
 		return data.toArray(rv);
 	}
