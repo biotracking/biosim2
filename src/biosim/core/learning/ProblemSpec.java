@@ -19,5 +19,5 @@ public interface ProblemSpec{
 	public Environment getEnvironment(LearnerAgent la, BTFData btf, Integer ignoredID);
 	public BTFDataLogger getLogger();
 	public LearnerAgent makeLearner();
-	public double computeError(ArrayList<Dataset> testSet, LearnerAgent learner);
+	public ArrayList<PerformanceMetric> evaluate(ArrayList<Dataset> testSet, LearnerAgent learner);
 }

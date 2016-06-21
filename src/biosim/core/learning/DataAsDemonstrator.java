@@ -117,7 +117,10 @@ public class DataAsDemonstrator{
 			LearnerAgent learner = pspec.makeLearner();
 			learner.train(combinedFeatures,combinedOutputs);
 			if(cvData.size()>0){
-				System.out.println("Average error per sequence: "+pspec.computeError(cvData,learner)/(double)cvData.size());
+				for(PerformanceMetric pm : pspec.evaluate(cvData,learner)){
+					System.out.println(pm);
+				}
+				// System.out.println("Average error per sequence: "+pspec.computeError(cvData,learner)/(double)cvData.size());
 			}
 			if(outputDirectory == null){
 				rv.add(learner);
@@ -268,6 +271,8 @@ public class DataAsDemonstrator{
 				cvRatio = Double.parseDouble(args[i+1]);
 			} else if (args[i].equalsIgnoreCase("--learner")){
 				pspec.learner = args[i+1];
+			} else if (args[i].equalsIgnoreCase("--norm")){
+				pspec.normalize_features = Boolean.parseBoolean(args[i+1]);
 			} else if(args[i].startsWith("--")) {
 				System.out.println("Unrecognized argument: "+args[i]);
 				System.out.println("Usage: java biosim.core.learning.DataAsDemonstrator <btfSequenceDir> [--threads <int>] [--iterations <int>] [--output <dir>]");

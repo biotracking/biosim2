@@ -13,6 +13,7 @@ import biosim.core.util.FastKNN;
 
 public class KNNModel implements LearnerAgent{
 	protected FastKNN knn;
+	public boolean normFeatures;
 	public FastKNN getKNN(){
 		return knn;
 	}
@@ -61,6 +62,7 @@ public class KNNModel implements LearnerAgent{
 	public KNNModel(){
 		knn = null;
 		featureNames = outputNames = null;
+		normFeatures = true;
 	}
 	public KNNModel(int numFeatures, int numOutputs){
 		knn = new FastKNN(numFeatures,numOutputs);
@@ -133,7 +135,9 @@ public class KNNModel implements LearnerAgent{
 			line = kNN_csv_data.readLine();
 			lnCtr++;
 		}
-		knn.sigmaNormalize();
+		if(normFeatures) {
+			knn.sigmaNormalize();
+		}
 		System.out.println("[KNNModel] Finished loading kNN.");
 	}
 
@@ -186,7 +190,9 @@ public class KNNModel implements LearnerAgent{
 		for(int i=0;i<inputs.length;i++){
 			knn.add(inputs[i],outputs[i]);
 		}
-		knn.sigmaNormalize();
+		if(normFeatures){
+			knn.sigmaNormalize();
+		}
 	}
 
 	public static void main(String[] args){

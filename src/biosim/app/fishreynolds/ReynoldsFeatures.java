@@ -18,6 +18,7 @@ import biosim.core.body.ReplayFish;
 import biosim.core.learning.KNNModel;
 import biosim.core.learning.LearnerAgent;
 import biosim.core.learning.LinregModel;
+import biosim.core.learning.PerformanceMetric;
 import biosim.core.learning.ProblemSpec;
 import biosim.core.sim.Environment;
 import biosim.core.sim.InitiallyPlacedEnvironment;
@@ -41,6 +42,9 @@ public class ReynoldsFeatures implements ProblemSpec{
 
 	public String learner;
 
+	public boolean normalize_features;
+	public boolean use_pvel;
+
 	public static Properties defaults(){
 		Properties defaultProps = new Properties();
 		defaultProps.setProperty("SEP_SIGMA","0.1");
@@ -49,6 +53,8 @@ public class ReynoldsFeatures implements ProblemSpec{
 		defaultProps.setProperty("OBS_SIGMA","0.05");
 		defaultProps.setProperty("TIMEOUT","5000"); //timeout is in milliseconds
 		defaultProps.setProperty("LEARNER","KNN");
+		defaultProps.setProperty("NORMALIZE_FEATURES","TRUE");
+		defaultProps.setProperty("USE_PVEL","TRUE");
 		return defaultProps;
 	}
 
@@ -69,6 +75,9 @@ public class ReynoldsFeatures implements ProblemSpec{
 		obs_sigma = Double.parseDouble(props.getProperty("OBS_SIGMA"));
 		timeout = Long.parseLong(props.getProperty("TIMEOUT"));
 		learner = props.getProperty("LEARNER");
+		normalize_features = Boolean.parseBoolean(props.getProperty("NORMALIZE_FEATURES"));
+		use_pvel = Boolean.parseBoolean(props.getProperty("USE_PVEL"));
+
 	}
 
 	public int getNumFeatures(){ return NUM_FEATURES;}
@@ -227,6 +236,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		LearnerAgent rv = null;
 		if(learner.equalsIgnoreCase("KNN")){
 			KNNModel knnm = new KNNModel();
+			knnm.normFeatures = normalize_features;
 			knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY","pvelX","pvelY","pvelT"}); //WITH PVEL
 			// knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY"}); //NO PVEL
 			knnm.setOutputNames(new String[] {"dvelX","dvelY","dvelT"});
@@ -241,9 +251,16 @@ public class ReynoldsFeatures implements ProblemSpec{
 		}
 		return rv;
 	}
-	public double computeError(ArrayList<Dataset> testSet, LearnerAgent learner){
+
+	public ArrayList<PerformanceMetric> evaluate(ArrayList<Dataset> testSet, LearnerAgent learner){
+		ArrayList<PerformanceMetric> rv = new ArrayList<PerformanceMetric>();
+		rv.add(averageSequenceError(testSet,learner));
+		return rv;
+	}
+
+	public PerformanceMetric averageSequenceError(ArrayList<Dataset> testSet, LearnerAgent learner){
 		double[] learnerOuts = new double[getNumOutputs()];
-		double rv = 0.0;
+		double sumErr = 0.0;
 		for(Dataset testD: testSet){
 			for(int row=0;row<testD.features.length;row++){
 				learner.computeOutputs(testD.features[row],learnerOuts);
@@ -251,10 +268,14 @@ public class ReynoldsFeatures implements ProblemSpec{
 				for(int col=0;col<learnerOuts.length;col++){
 					mse += Math.pow(learnerOuts[col]-testD.outputs[row][col],2);
 				}
-				rv += Math.sqrt(mse);
+				sumErr += Math.sqrt(mse);
 			}
 		}
-		return rv;
+		final double computedError = sumErr/(double)testSet.size();
+		return new PerformanceMetric(){
+			public String toString(){return "Average sequence error: "+value();}
+			public double value(){return computedError;}
+		};
 	}
 	public BTFDataLogger getLogger(){
 		return new BTFDataLogger(){
