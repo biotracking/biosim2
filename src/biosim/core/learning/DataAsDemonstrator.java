@@ -273,9 +273,13 @@ public class DataAsDemonstrator{
 				pspec.learner = args[i+1];
 			} else if (args[i].equalsIgnoreCase("--norm")){
 				pspec.normalize_features = Boolean.parseBoolean(args[i+1]);
-			} else if(args[i].startsWith("--")) {
+			} else if(args[i].equalsIgnoreCase("--method")){
+				pspec.combo_method = args[i+1];
+			}
+			else if(args[i].startsWith("--")) {
 				System.out.println("Unrecognized argument: "+args[i]);
-				System.out.println("Usage: java biosim.core.learning.DataAsDemonstrator <btfSequenceDir> [--threads <int>] [--iterations <int>] [--output <dir>]");
+				System.out.print("Usage: java biosim.core.learning.DataAsDemonstrator <btfSequenceDir> [--threads <int>] [--iterations <int>] [--output <dir>]");
+				System.out.println(" [--cvRatio <double>] [--learner {knn,linreg}] [--norm {true,false}] [--method {sample,average}]");
 				System.exit(1);
 			}
 		}

@@ -30,7 +30,15 @@ public class KNNModel implements LearnerAgent{
 	}
 	protected ComboMethod method=ComboMethod.SAMPLE;
 	public ComboMethod getMethod(){return method;}
-	public void setMethod(ComboMethod m){method=m;}	
+	public void setMethod(String m){
+		if(m.equalsIgnoreCase("AVERAGE")){
+			method = ComboMethod.AVERAGE;
+		} else if(m.equalsIgnoreCase("SAMPLE")){
+			method = ComboMethod.SAMPLE;
+		} else{
+			throw new RuntimeException("[KNNModel] trying to set unrecognized combination method: "+m);
+		}
+	}	
 
 	protected MersenneTwisterFast random=null;
 	public MersenneTwisterFast getRandom(){return random;}
@@ -99,6 +107,8 @@ public class KNNModel implements LearnerAgent{
 					outputs[i] = outputs[i]/(double)k;
 				}
 				break;
+			default:
+				throw new RuntimeException("[KNNModel] Unimplemented combination method:"+method);
 		}
 		return outputs;
 	}

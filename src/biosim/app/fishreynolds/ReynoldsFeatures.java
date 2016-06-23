@@ -44,6 +44,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 
 	public boolean normalize_features;
 	public boolean use_pvel;
+	public String combo_method;
 
 	public static Properties defaults(){
 		Properties defaultProps = new Properties();
@@ -55,6 +56,8 @@ public class ReynoldsFeatures implements ProblemSpec{
 		defaultProps.setProperty("LEARNER","KNN");
 		defaultProps.setProperty("NORMALIZE_FEATURES","TRUE");
 		defaultProps.setProperty("USE_PVEL","TRUE");
+		defaultProps.setProperty("COMBO_METHOD","SAMPLE");
+
 		return defaultProps;
 	}
 
@@ -77,6 +80,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		learner = props.getProperty("LEARNER");
 		normalize_features = Boolean.parseBoolean(props.getProperty("NORMALIZE_FEATURES"));
 		use_pvel = Boolean.parseBoolean(props.getProperty("USE_PVEL"));
+		combo_method = props.getProperty("COMBO_METHOD");
 
 	}
 
@@ -237,6 +241,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		if(learner.equalsIgnoreCase("KNN")){
 			KNNModel knnm = new KNNModel();
 			knnm.normFeatures = normalize_features;
+			knnm.setMethod(combo_method);
 			knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY","pvelX","pvelY","pvelT"}); //WITH PVEL
 			// knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY"}); //NO PVEL
 			knnm.setOutputNames(new String[] {"dvelX","dvelY","dvelT"});
