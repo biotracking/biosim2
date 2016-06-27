@@ -2,6 +2,7 @@
 package biosim.core.learning;
 
 import java.util.ArrayList;
+import java.util.Properties;
 
 import biosim.core.body.Body;
 import biosim.core.sim.Environment;
@@ -20,4 +21,5 @@ public interface ProblemSpec{
 	public BTFDataLogger getLogger();
 	public LearnerAgent makeLearner();
 	public ArrayList<PerformanceMetric> evaluate(ArrayList<Dataset> testSet, LearnerAgent learner);
+	public Properties getSettings();
 }

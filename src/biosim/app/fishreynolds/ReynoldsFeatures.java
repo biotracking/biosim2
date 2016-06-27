@@ -84,6 +84,20 @@ public class ReynoldsFeatures implements ProblemSpec{
 
 	}
 
+	public Properties getSettings(){
+		Properties settings = defaults();
+		settings.setProperty("SEP_SIGMA",Double.toString(sep_sigma));
+		settings.setProperty("ORI_SIGMA",Double.toString(ori_sigma));
+		settings.setProperty("COH_SIGMA",Double.toString(coh_sigma));
+		settings.setProperty("OBS_SIGMA",Double.toString(obs_sigma));
+		settings.setProperty("TIMEOUT",Long.toString(timeout));
+		settings.setProperty("LEARNER",learner);
+		settings.setProperty("NORMALIZE_FEATURES",Boolean.toString(normalize_features));
+		settings.setProperty("USE_PVEL",Boolean.toString(use_pvel));
+		settings.setProperty("COMBO_METHOD",combo_method);
+		return settings;
+	}
+
 	public int getNumFeatures(){ return NUM_FEATURES;}
 	public int getNumOutputs(){ return NUM_OUTPUTS;}
 

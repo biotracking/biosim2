@@ -2,11 +2,15 @@
 package biosim.core.learning;
 
 import java.io.BufferedWriter;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -282,6 +286,21 @@ public class DataAsDemonstrator{
 				System.out.println(" [--cvRatio <double>] [--learner {knn,linreg}] [--norm {true,false}] [--method {sample,average}]");
 				System.exit(1);
 			}
+		}
+		try{
+			OutputStream outstrm = System.out;
+			if(outputDirectory != null){
+				outstrm = new BufferedOutputStream(new FileOutputStream(new File(outputDirectory,"settings.prop")));
+			}
+			String settingsComments = "Data-as-Demonstrator settings\n";
+			settingsComments += "Arguments: ";
+			for(int i=0;i<args.length;i++){
+				settingsComments += args[i]+" ";
+			}
+			pspec.getSettings().store(outstrm,settingsComments);
+			outstrm.flush();
+		} catch(IOException ioe){
+			throw new RuntimeException("[DataAsDemonstrator] Failed to write settings file: "+ioe);
 		}
 		ArrayList<LearnerAgent> learners = dad.train(seqs,pspec,maxIterations,maxThreads,outputDirectory,cvRatio);
 		// System.out.println("#of models: "+learners.size());
