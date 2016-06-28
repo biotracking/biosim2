@@ -3,11 +3,15 @@ package biosim.core.learning;
 
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
 
 import biosim.core.body.Body;
 import biosim.core.sim.Environment;
 import biosim.core.util.BTFData;
 import biosim.core.util.BTFDataLogger;
+
+import ec.util.MersenneTwisterFast;
+
 
 public interface ProblemSpec{
 	public class Dataset{
@@ -20,6 +24,9 @@ public interface ProblemSpec{
 	public Environment getEnvironment(LearnerAgent la, BTFData btf, Integer ignoredID);
 	public BTFDataLogger getLogger();
 	public LearnerAgent makeLearner();
-	public ArrayList<PerformanceMetric> evaluate(ArrayList<Dataset> testSet, LearnerAgent learner);
+	public ArrayList<PerformanceMetric> evaluate(ArrayList<Dataset> testSet, LearnerAgent learner, ExecutorService threadPool);
 	public Properties getSettings();
+	public long getSeed();
+	public void setSeed(long seed);
+	public MersenneTwisterFast getRNG();
 }

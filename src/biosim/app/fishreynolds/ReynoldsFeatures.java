@@ -3,8 +3,15 @@ package biosim.app.fishreynolds;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import sim.util.MutableDouble2D;
 import sim.engine.SimState;
@@ -46,6 +53,17 @@ public class ReynoldsFeatures implements ProblemSpec{
 	public boolean use_pvel;
 	public String combo_method;
 
+	public long seed;
+	public void setSeed(long s){seed=s;}
+	public long getSeed(){return seed;}
+	private MersenneTwisterFast rng;
+	public MersenneTwisterFast getRNG(){
+		if(rng == null){
+			rng = new MersenneTwisterFast(getSeed());
+		}
+		return rng;
+	}
+
 	public static Properties defaults(){
 		Properties defaultProps = new Properties();
 		defaultProps.setProperty("SEP_SIGMA","0.1");
@@ -57,7 +75,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		defaultProps.setProperty("NORMALIZE_FEATURES","TRUE");
 		defaultProps.setProperty("USE_PVEL","TRUE");
 		defaultProps.setProperty("COMBO_METHOD","SAMPLE");
-
+		defaultProps.setProperty("SEED",Long.toString(System.currentTimeMillis()));
 		return defaultProps;
 	}
 
@@ -81,7 +99,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		normalize_features = Boolean.parseBoolean(props.getProperty("NORMALIZE_FEATURES"));
 		use_pvel = Boolean.parseBoolean(props.getProperty("USE_PVEL"));
 		combo_method = props.getProperty("COMBO_METHOD");
-
+		seed = Long.parseLong(props.getProperty("SEED"));
 	}
 
 	public Properties getSettings(){
@@ -95,6 +113,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		settings.setProperty("NORMALIZE_FEATURES",Boolean.toString(normalize_features));
 		settings.setProperty("USE_PVEL",Boolean.toString(use_pvel));
 		settings.setProperty("COMBO_METHOD",combo_method);
+		settings.setProperty("SEED",Long.toString(seed));
 		return settings;
 	}
 
@@ -259,8 +278,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 			knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY","pvelX","pvelY","pvelT"}); //WITH PVEL
 			// knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY"}); //NO PVEL
 			knnm.setOutputNames(new String[] {"dvelX","dvelY","dvelT"});
-			//TODO: Fix random to be consistant with seed
-			knnm.setRandom(new MersenneTwisterFast(System.currentTimeMillis()));
+			knnm.setRandom(getRNG());
 			rv = knnm;
 		} else if(learner.equalsIgnoreCase("LINREG")){
 			LinregModel lrm = new LinregModel(getNumFeatures(),getNumOutputs());
@@ -271,24 +289,54 @@ public class ReynoldsFeatures implements ProblemSpec{
 		return rv;
 	}
 
-	public ArrayList<PerformanceMetric> evaluate(ArrayList<Dataset> testSet, LearnerAgent learner){
+	public ArrayList<PerformanceMetric> evaluate(ArrayList<Dataset> testSet, LearnerAgent learner, ExecutorService threadPool){
 		ArrayList<PerformanceMetric> rv = new ArrayList<PerformanceMetric>();
-		rv.add(averageSequenceError(testSet,learner));
+		rv.add(averageSequenceError(testSet,learner,threadPool));
 		return rv;
 	}
 
-	public PerformanceMetric averageSequenceError(ArrayList<Dataset> testSet, LearnerAgent learner){
-		double[] learnerOuts = new double[getNumOutputs()];
-		double sumErr = 0.0;
+	public PerformanceMetric averageSequenceError(ArrayList<Dataset> testSet, LearnerAgent learner, ExecutorService threadPool){
+		HashSet<Callable<Double> > tasks = new HashSet<Callable<Double> >();
 		for(Dataset testD: testSet){
-			for(int row=0;row<testD.features.length;row++){
-				learner.computeOutputs(testD.features[row],learnerOuts);
-				double mse = 0.0;
-				for(int col=0;col<learnerOuts.length;col++){
-					mse += Math.pow(learnerOuts[col]-testD.outputs[row][col],2);
+			Callable<Double> tmp = new Callable<Double>(){
+				public Double call(){
+					double[] learnerOuts = new double[getNumOutputs()];
+					double sumErr = 0.0;
+					for(int row=0;row<testD.features.length;row++){
+						learner.computeOutputs(testD.features[row],learnerOuts);
+						double mse = 0.0;
+						for(int col=0;col<learnerOuts.length;col++){
+							mse += Math.pow(learnerOuts[col]-testD.outputs[row][col],2);
+						}
+						sumErr += Math.sqrt(mse);
+					}
+					return sumErr;
 				}
-				sumErr += Math.sqrt(mse);
-			}
+			};
+			// for(int row=0;row<testD.features.length;row++){
+			// 	learner.computeOutputs(testD.features[row],learnerOuts);
+			// 	double mse = 0.0;
+			// 	for(int col=0;col<learnerOuts.length;col++){
+			// 		mse += Math.pow(learnerOuts[col]-testD.outputs[row][col],2);
+			// 	}
+			// 	sumErr += Math.sqrt(mse);
+			// }
+			tasks.add( tmp );
+		}
+		List<Future<Double> > results;
+		double sumErr = 0.0;
+		try{
+			results = threadPool.invokeAll(tasks);
+			for(Future<Double> f : results){
+				sumErr += f.get();
+			} 
+		} catch(InterruptedException ie){
+			threadPool.shutdown();
+			throw new RuntimeException("[ReynoldsFeatures] Evaluation interrupted: "+ie);
+		} catch (ExecutionException ee){
+			threadPool.shutdown();
+			ee.printStackTrace();
+			throw new RuntimeException("[ReynoldsFeatures] ExecutionException in evaluation: "+ee);
 		}
 		final double computedError = sumErr/(double)testSet.size();
 		return new PerformanceMetric(){

@@ -93,7 +93,10 @@ public class KNNModel implements LearnerAgent{
 		knn.query(features,neighbors);
 		switch(method){
 			case SAMPLE:
-				int n_index = random.nextInt(k);
+				int n_index;
+				synchronized(random){
+					n_index = random.nextInt(k);
+				}
 				// System.out.println(n_index+" "+neighbors[0].length+" "+neighbors.length+" "+outputs.length);
 				System.arraycopy(neighbors[n_index],0,outputs,0,outputs.length);
 				break;

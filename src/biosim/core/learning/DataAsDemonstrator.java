@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.Random;
 
 import biosim.core.gui.GUISimulation;
 import biosim.core.sim.Environment;
@@ -45,7 +46,7 @@ public class DataAsDemonstrator{
 	}
 
 	public static final double[][] aDoubleArray = new double[0][0];
-	public static final ExecutorService pool = Executors.newFixedThreadPool(4);
+	// public static final ExecutorService pool = Executors.newFixedThreadPool(4);
 
 	public ArrayList<LearnerAgent> train(BTFSequences data, ProblemSpec pspec, int maxIterations, int maxThreads, File outputDirectory, double cvRatio){
 		ArrayList<double[]> dad_training_inputs = new ArrayList<double[]>();
@@ -56,10 +57,12 @@ public class DataAsDemonstrator{
 			rv = new ArrayList<LearnerAgent>();
 		}
 		//create thread pool
-		final ExecutorService pool = Executors.newFixedThreadPool(Math.min(maxThreads,Runtime.getRuntime().availableProcessors()));
+		int numThreads = Math.min(maxThreads,Runtime.getRuntime().availableProcessors());
+		// System.out.println("Threadpool size: "+numThreads);
+		final ExecutorService pool = Executors.newFixedThreadPool(numThreads);
 		List<BTFData> btfValues = new ArrayList<BTFData>(data.sequences.values());
 		//shuffle data 
-		Collections.shuffle(btfValues);
+		Collections.shuffle(btfValues, new Random(pspec.getSeed()));
 		Iterator<BTFData> seqIterator = btfValues.iterator();//data.sequences.values().iterator();
 		//pull out cross validation samples
 		int numCVSeqs = (int)(data.sequences.size()*cvRatio);
@@ -121,7 +124,7 @@ public class DataAsDemonstrator{
 			LearnerAgent learner = pspec.makeLearner();
 			learner.train(combinedFeatures,combinedOutputs);
 			if(cvData.size()>0){
-				for(PerformanceMetric pm : pspec.evaluate(cvData,learner)){
+				for(PerformanceMetric pm : pspec.evaluate(cvData,learner,pool)){
 					System.out.println(pm);
 				}
 				// System.out.println("Average error per sequence: "+pspec.computeError(cvData,learner)/(double)cvData.size());
@@ -147,15 +150,19 @@ public class DataAsDemonstrator{
 			for(int seqIdx=0;seqIdx<activeRealTrainingSequences.size();seqIdx++){
 				// Callable<ArrayListDataset> tmp = new RunSim(activeRealTrainingSequences.get(seqIdx),pspec,learner,null);
 				BTFData seq = activeRealTrainingSequences.get(seqIdx);
+				final MersenneTwisterFast tLocalRNG = new MersenneTwisterFast(pspec.getRNG().nextLong());
+				LearnerAgent tLocalLearner = learner; //learner.deepCopy();
+				final int tLocalThreadID = seqIdx;
 				Callable<ArrayListDataset> tmp = new Callable<ArrayListDataset>(){
 					public ArrayListDataset call(){
+						// System.out.println("THREAD ID "+tLocalThreadID+" START");
 						int numSimSteps = seq.numUniqueFrames();
 						ArrayList<Integer> idList=seq.getUniqueIDs();
 						ArrayListDataset rv = new ArrayListDataset();
 						for(int idIdx=0;idIdx<idList.size();idIdx++){
 							int activeID = idList.get(idIdx);
 							ArrayList<Integer> activeIDRows = seq.rowIndexForID(activeID);
-							Environment env = pspec.getEnvironment(learner,seq,activeID);
+							Environment env = pspec.getEnvironment(tLocalLearner,seq,activeID);
 							BTFDataLogger logs = pspec.getLogger();
 							env.addLogger(logs);
 							Simulation sim = env.newSimulation();
@@ -163,7 +170,9 @@ public class DataAsDemonstrator{
 							// CANNOT rely on these threads to execute in the same order, so probably need to 
 							// create new random's seeded from the initial seed and incremented in the same way
 							// BEFORE being passed to the threadpool. 
-							// sim.random = savedRandom;
+							// Current solution:
+							// Generate new rng objects from seeds generated from pspec.getRNG().nextLong();
+							sim.random = tLocalRNG;
 							sim.start();
 							while(sim.schedule.getSteps()<(numSimSteps)){
 								boolean step_success = sim.schedule.step(sim);
@@ -218,6 +227,7 @@ public class DataAsDemonstrator{
 								rv.outputs.add(fixed_dataset.outputs[theIdx]);
 							}
 						}
+						// System.out.println("THREAD ID "+tLocalThreadID+" END");						
 						return rv;
 					}
 				};
@@ -279,11 +289,13 @@ public class DataAsDemonstrator{
 				pspec.normalize_features = Boolean.parseBoolean(args[i+1]);
 			} else if(args[i].equalsIgnoreCase("--method")){
 				pspec.combo_method = args[i+1];
+			} else if(args[i].equalsIgnoreCase("--seed")){
+				pspec.setSeed(Long.parseLong(args[i+1]));
 			}
 			else if(args[i].startsWith("--")) {
 				System.out.println("Unrecognized argument: "+args[i]);
 				System.out.print("Usage: java biosim.core.learning.DataAsDemonstrator <btfSequenceDir> [--threads <int>] [--iterations <int>] [--output <dir>]");
-				System.out.println(" [--cvRatio <double>] [--learner {knn,linreg}] [--norm {true,false}] [--method {sample,average}]");
+				System.out.println(" [--cvRatio <double>] [--learner {knn,linreg}] [--norm {true,false}] [--method {sample,average}] [--seed <long>]");
 				System.exit(1);
 			}
 		}
@@ -300,7 +312,7 @@ public class DataAsDemonstrator{
 			pspec.getSettings().store(outstrm,settingsComments);
 			outstrm.flush();
 		} catch(IOException ioe){
-			throw new RuntimeException("[DataAsDemonstrator] Failed to write settings file: "+ioe);
+			throw new RuntimeException("[DataAsDemonstrator] Failed to store settings: "+ioe);
 		}
 		ArrayList<LearnerAgent> learners = dad.train(seqs,pspec,maxIterations,maxThreads,outputDirectory,cvRatio);
 		// System.out.println("#of models: "+learners.size());

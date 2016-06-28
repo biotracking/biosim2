@@ -13,6 +13,10 @@ public class BTFSequences{
 	}
 
 	public void loadDir(File parentDirectory){
+		loadDir(parentDirectory,true);
+	}
+
+	public void loadDir(File parentDirectory,boolean cached){
 		if(parentDirectory.isDirectory()){
 			File[] btfDirs = parentDirectory.listFiles();
 			String seqName;
@@ -21,6 +25,15 @@ public class BTFSequences{
 				seqName = btfDirs[i].getName();
 				seq = new BTFData();
 				seq.loadDir(btfDirs[i]);
+				if(cached){
+					BufferedBTFData buffered = new BufferedBTFData(seq);
+					try{
+						buffered.loadBuffer();
+					} catch(IOException ioe){
+						System.err.println("[BTFSequences] Warning! failed to load cache: "+ioe);
+					}
+					seq = buffered;
+				}
 				sequences.put(seqName,seq);
 			}
 		}
