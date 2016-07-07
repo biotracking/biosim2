@@ -11,7 +11,7 @@ import ec.util.MersenneTwisterFast;
 
 import biosim.core.util.FastKNN;
 
-public class KNNModel implements LearnerAgent{
+public class KNNModel implements LearnerAgent, RNGConsumer{
 	protected FastKNN knn;
 	public boolean normFeatures;
 	public FastKNN getKNN(){

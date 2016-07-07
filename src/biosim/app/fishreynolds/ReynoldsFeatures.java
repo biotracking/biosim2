@@ -133,8 +133,10 @@ public class ReynoldsFeatures implements ProblemSpec{
 			fishBody.getAverageRBFSameTypeVec(coh,coh_sigma);
 			fishBody.getNearestObstacleVec(wall);
 			wall.multiplyIn(Math.exp(-wall.lengthSq()/(2.0*Math.pow(obs_sigma,2))));
-			double[] pvel = new double[3];
-			fishBody.getSelfVelXYT(pvel);
+			double[] pvel = {0.0,0.0,0.0};
+			if(use_pvel){
+				fishBody.getSelfVelXYT(pvel);
+			}
 			double[] sensors = new double[getNumFeatures()];
 			sensors[0] = sep.x;
 			sensors[1] = sep.y;

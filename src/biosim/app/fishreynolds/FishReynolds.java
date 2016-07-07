@@ -11,6 +11,7 @@ import biosim.core.learning.KNNModel;
 import biosim.core.learning.LearnerAgent;
 import biosim.core.learning.LinregModel;
 import biosim.core.learning.ProblemSpec;
+import biosim.core.learning.RNGConsumer;
 import biosim.core.sim.InitiallyPlacedEnvironment;
 import biosim.core.sim.Environment;
 import biosim.core.sim.Simulation;
@@ -96,9 +97,9 @@ public class FishReynolds implements Agent{
 		double[] sensors = probSpec.computeFeatures(fishBody);
 		// double[] features = new double[NUM_FEATURES];
 		// System.arraycopy(sensors,0,features,0,features.length);
-		if(learner instanceof KNNModel){
-			if(((KNNModel)learner).getRandom()==null){
-				((KNNModel)learner).setRandom(fishBody.getRandom());
+		if(learner instanceof RNGConsumer){
+			if(((RNGConsumer)learner).getRandom()==null){
+				((RNGConsumer)learner).setRandom(fishBody.getRandom());
 			}
 		}
 		double[] learner_output = learner.computeOutputs(sensors,null);
@@ -268,6 +269,7 @@ public class FishReynolds implements Agent{
 			String sshotdir = null;
 			LinregModel lrm = null;//new FSLRMVelocityFeatures();
 			KNNModel knn_model = null;
+			BiasedLinearAgent bla_model = null;
 			LearnerAgent learner_to_use = null;
 			ReynoldsFeatures reynoldsSpec = new ReynoldsFeatures();
 			for(int i=0;i<args.length;i++){
@@ -321,6 +323,10 @@ public class FishReynolds implements Agent{
 					}
 				} else if(args[i].equalsIgnoreCase("-screenshotDir")){
 					sshotdir = args[i+1];
+				} else if(args[i].equalsIgnoreCase("-momentum")){
+					bla_model = new BiasedLinearAgent();
+					bla_model.loadParameters(new BufferedReader(new FileReader(args[i+1])));
+					learner_to_use = bla_model;
 				}
 			}
 			if(initialPlacement){
