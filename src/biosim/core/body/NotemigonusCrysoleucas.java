@@ -424,16 +424,16 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 		desiredVelXYT[2] = theta;
 	}
 	protected boolean computeNewConfiguration(MutableDouble2D newPos, MutableDouble2D newDir){
-		MutableDouble2D tmp = new MutableDouble2D(desiredVelXYT[0],desiredVelXYT[1]);
+		xVel = (Math.abs(desiredVelXYT[0])<=MAX_VELOCITY_X)?desiredVelXYT[0]:Math.signum(desiredVelXYT[0])*MAX_VELOCITY_X;
+		yVel = (Math.abs(desiredVelXYT[1])<=MAX_VELOCITY_Y)?desiredVelXYT[1]:Math.signum(desiredVelXYT[1])*MAX_VELOCITY_Y;
+		tVel = (Math.abs(desiredVelXYT[2])<=MAX_VELOCITY_THETA)?desiredVelXYT[2]:Math.signum(desiredVelXYT[2])*MAX_VELOCITY_THETA;
+		MutableDouble2D tmp = new MutableDouble2D(xVel,yVel);
 		MutableDouble2D curDir = new MutableDouble2D();
 		sim.getBodyOrientation(this,curDir);
 		tmp.rotate(curDir.angle());
-		xVel = (Math.abs(tmp.x)<=MAX_VELOCITY_X)?tmp.x:Math.signum(tmp.x)*MAX_VELOCITY_X;
-		yVel = (Math.abs(tmp.y)<=MAX_VELOCITY_Y)?tmp.y:Math.signum(tmp.y)*MAX_VELOCITY_Y;
-		tVel = (Math.abs(desiredVelXYT[2])<=MAX_VELOCITY_THETA)?desiredVelXYT[2]:Math.signum(desiredVelXYT[2])*MAX_VELOCITY_THETA;
 		Double2D oldPos = sim.field2D.getObjectLocation(this);
-		newPos.x = oldPos.x+(xVel*sim.resolution);
-		newPos.y = oldPos.y+(yVel*sim.resolution);
+		newPos.x = oldPos.x+(tmp.x*sim.resolution);
+		newPos.y = oldPos.y+(tmp.y*sim.resolution);
 		for(int i=0;i<sim.bodies.size();i++){
 			if(sim.bodies.get(i)==this){
 				newDir.setTo(sim.bodyOrientations.get(i));
@@ -441,6 +441,9 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 				break;
 			}
 		}
+		// System.out.println(desiredVelXYT[0]+" "+desiredVelXYT[1]+" "+desiredVelXYT[2]);
+		// System.out.println(xVel+" "+yVel+" "+tVel);
+		// System.out.println((newPos.x-oldPos.x)+" "+(newPos.y-oldPos.y)+" "+(newDir.angle()-curDir.angle()));
 		return true;
 	}
 
@@ -467,8 +470,10 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 					break;
 				}
 			}
-			xVelObserved = (oldPos.x-newPos.x)/sim.resolution;
-			yVelObserved = (oldPos.y-newPos.y)/sim.resolution;
+			MutableDouble2D observedVel = new MutableDouble2D(newPos.x-oldPos.x,newPos.y-oldPos.y);
+			observedVel.rotate(-oldDir.angle());
+			xVelObserved = (observedVel.x)/sim.resolution;
+			yVelObserved = (observedVel.y)/sim.resolution;
 			double tDelta = newDir.angle()-oldDir.angle();
 			if(tDelta > Math.PI){
 				tDelta = tDelta-(2.0*Math.PI);
@@ -476,6 +481,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 				tDelta = tDelta+(2.0*Math.PI);
 			}
 			tVelObserved = tDelta/sim.resolution;
+			// System.out.println(xVelObserved+" "+yVelObserved+" "+tVelObserved);
 		}
 	}
 
