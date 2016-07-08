@@ -55,7 +55,7 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 		if(knn!=null){
 			rv.knn = new FastKNN(knn);
 		}
-		rv.k = k;
+		rv.setK(getK());
 		rv.method = method;
 		if(random != null){
 			rv.random = (MersenneTwisterFast)(random.clone());
@@ -95,19 +95,19 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 			case SAMPLE:
 				int n_index;
 				synchronized(random){
-					n_index = random.nextInt(k);
+					n_index = random.nextInt(getK());
 				}
 				// System.out.println(n_index+" "+neighbors[0].length+" "+neighbors.length+" "+outputs.length);
 				System.arraycopy(neighbors[n_index],0,outputs,0,outputs.length);
 				break;
 			case AVERAGE:
-				for(int i=0;i<k;i++){
+				for(int i=0;i<getK();i++){
 					for(int j=0;j<outputs.length;j++){
 						outputs[j] += neighbors[i][j];
 					}
 				}
 				for(int i=0;i<outputs.length;i++){
-					outputs[i] = outputs[i]/(double)k;
+					outputs[i] = outputs[i]/(double)getK();
 				}
 				break;
 			default:
