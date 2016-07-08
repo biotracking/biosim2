@@ -327,6 +327,8 @@ public class FishReynolds implements Agent{
 					bla_model = new BiasedLinearAgent();
 					bla_model.loadParameters(new BufferedReader(new FileReader(args[i+1])));
 					learner_to_use = bla_model;
+				} else if(args[i].equalsIgnoreCase("-method")){
+					knn_model.setMethod(args[i+1]);
 				}
 			}
 			if(initialPlacement){

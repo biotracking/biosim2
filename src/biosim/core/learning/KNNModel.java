@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Properties;
 
 import ec.util.MersenneTwisterFast;
 
@@ -13,7 +14,6 @@ import biosim.core.util.FastKNN;
 
 public class KNNModel implements LearnerAgent, RNGConsumer{
 	protected FastKNN knn;
-	public boolean normFeatures;
 	public FastKNN getKNN(){
 		return knn;
 	}
@@ -21,6 +21,10 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 		this.knn = knn;
 	}
 	
+	protected boolean normFeatures;
+	public boolean getNormFeatures(){return normFeatures;}
+	public void setNormFeatures(boolean nfp){normFeatures = nfp;}
+
 	protected int k=3;
 	public int getK(){return k;}
 	public void setK(int k){this.k = k;}
@@ -65,6 +69,12 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 		rv.outputNames = new String[outputNames.length];
 		System.arraycopy(outputNames,0,rv.outputNames,0,outputNames.length);
 		return rv;
+	}
+
+	public void configure(Properties settings){
+		setK(Integer.parseInt(settings.getProperty("K","3")));
+		setMethod(settings.getProperty("COMBO_METHOD","SAMPLE"));
+		setNormFeatures(Boolean.parseBoolean(settings.getProperty("NORMALIZE_FEATURES","FALSE")));
 	}
 
 	public KNNModel(){

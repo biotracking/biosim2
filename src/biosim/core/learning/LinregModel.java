@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Properties;
 
 // import org.apache.commons.math.linear.*;
 import org.jblas.*;
@@ -25,6 +26,10 @@ public class LinregModel implements LearnerAgent{
 			System.arraycopy(parameters[i],0,rv.parameters[i],0,parameters[0].length);
 		}
 		return rv;
+	}
+
+	public void configure(Properties settings){
+		setBias(Boolean.parseBoolean(settings.getProperty("USE_BIAS","true")));
 	}
 
 	public LinregModel(){

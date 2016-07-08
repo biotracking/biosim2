@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -14,6 +15,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -26,6 +28,7 @@ import biosim.core.gui.GUISimulation;
 import biosim.core.sim.Environment;
 import biosim.core.sim.Simulation;
 import biosim.core.sim.InitiallyPlacedEnvironment;
+import biosim.core.util.ArgsToProps;
 import biosim.core.util.BTFData;
 import biosim.core.util.BufferedBTFData;
 import biosim.core.util.BTFDataLogger;
@@ -266,57 +269,73 @@ public class DataAsDemonstrator{
 	}
 
 	public static void main(String[] args){
-		DataAsDemonstrator dad = new DataAsDemonstrator();
-		BTFSequences seqs = new BTFSequences();
-		seqs.loadDir(new File(args[0]));
-		ReynoldsFeatures pspec = new ReynoldsFeatures();
-		int maxIterations = -1;
-		int maxThreads = Integer.MAX_VALUE;
-		File outputDirectory = null;
-		double cvRatio = 0.1;
-		for(int i=1;i<args.length;i++){
-			if(args[i].equalsIgnoreCase("--threads")){
-				maxThreads = Integer.parseInt(args[i+1]);
-			} else if(args[i].equalsIgnoreCase("--iterations")){
-				maxIterations = Integer.parseInt(args[i+1]);
-			} else if(args[i].equalsIgnoreCase("--output")){
-				outputDirectory = new File(args[i+1]);
-			} else if(args[i].equalsIgnoreCase("--cvRatio")){
-				cvRatio = Double.parseDouble(args[i+1]);
-			} else if (args[i].equalsIgnoreCase("--learner")){
-				pspec.learner = args[i+1];
-			} else if (args[i].equalsIgnoreCase("--norm")){
-				pspec.normalize_features = Boolean.parseBoolean(args[i+1]);
-			} else if(args[i].equalsIgnoreCase("--method")){
-				pspec.combo_method = args[i+1];
-			} else if(args[i].equalsIgnoreCase("--seed")){
-				pspec.setSeed(Long.parseLong(args[i+1]));
-			}
-			else if(args[i].startsWith("--")) {
-				System.out.println("Unrecognized argument: "+args[i]);
-				System.out.print("Usage: java biosim.core.learning.DataAsDemonstrator <btfSequenceDir> [--threads <int>] [--iterations <int>] [--output <dir>]");
-				System.out.println(" [--cvRatio <double>] [--learner {knn,linreg}] [--norm {true,false}] [--method {sample,average}] [--seed <long>]");
-				System.exit(1);
-			}
-		}
 		try{
-			OutputStream outstrm = System.out;
-			if(outputDirectory != null){
-				outstrm = new BufferedOutputStream(new FileOutputStream(new File(outputDirectory,"settings.prop")));
+			Properties cmdlnArgs = ArgsToProps.parse(args);
+			DataAsDemonstrator dad = new DataAsDemonstrator();
+			BTFSequences seqs = new BTFSequences();
+			// seqs.loadDir(new File(args[0]));
+			seqs.loadDir(new File(cmdlnArgs.getProperty("--sequences")));
+			ReynoldsFeatures pspec = new ReynoldsFeatures();
+			// int maxIterations = -1;
+			int maxIterations = Integer.parseInt(cmdlnArgs.getProperty("--iterations","-1"));
+			// int maxThreads = Integer.MAX_VALUE;
+			int maxThreads = Integer.parseInt(cmdlnArgs.getProperty("--threads",new Integer(Integer.MAX_VALUE).toString()));
+			// File outputDirectory = null;
+			File outputDirectory = (cmdlnArgs.getProperty("--output")==null)?null:new File(cmdlnArgs.getProperty("--output"));
+			// double cvRatio = 0.1;
+			double cvRatio = Double.parseDouble(cmdlnArgs.getProperty("--cvRatio","0.1"));
+			String learnerPropFile = cmdlnArgs.getProperty("--learnerSettings");
+			Properties learnerSettings = new Properties(cmdlnArgs);
+			if(learnerPropFile != null){
+				learnerSettings.load(new FileReader(new File(learnerPropFile)));
 			}
-			String settingsComments = "Data-as-Demonstrator settings\n";
-			settingsComments += "Arguments: ";
-			for(int i=0;i<args.length;i++){
-				settingsComments += args[i]+" ";
+			pspec.setLearnerProps(learnerSettings);
+			// for(int i=1;i<args.length;i++){
+			// 	if(args[i].equalsIgnoreCase("--threads")){
+			// 		maxThreads = Integer.parseInt(args[i+1]);
+			// 	} else if(args[i].equalsIgnoreCase("--iterations")){
+			// 		maxIterations = Integer.parseInt(args[i+1]);
+			// 	} else if(args[i].equalsIgnoreCase("--output")){
+			// 		outputDirectory = new File(args[i+1]);
+			// 	} else if(args[i].equalsIgnoreCase("--cvRatio")){
+			// 		cvRatio = Double.parseDouble(args[i+1]);
+			// 	} else if (args[i].equalsIgnoreCase("--learner")){
+			// 		pspec.learner = args[i+1];
+			// 	// } else if (args[i].equalsIgnoreCase("--norm")){
+			// 	// 	pspec.normalize_features = Boolean.parseBoolean(args[i+1]);
+			// 	// } else if(args[i].equalsIgnoreCase("--method")){
+			// 	// 	pspec.combo_method = args[i+1];
+			// 	} else if(args[i].equalsIgnoreCase("--seed")){
+			// 		pspec.setSeed(Long.parseLong(args[i+1]));
+			// 	} 
+			// 	else if(args[i].startsWith("--")) {
+			// 		System.out.println("Unrecognized argument: "+args[i]);
+			// 		System.out.print("Usage: java biosim.core.learning.DataAsDemonstrator <btfSequenceDir> [--threads <int>] [--iterations <int>] [--output <dir>]");
+			// 		System.out.println(" [--cvRatio <double>] [--learner {knn,linreg}] [--norm {true,false}] [--method {sample,average}] [--seed <long>]");
+			// 		System.exit(1);
+			// 	}
+			// }
+			try{
+				OutputStream outstrm = System.out;
+				if(outputDirectory != null){
+					outstrm = new BufferedOutputStream(new FileOutputStream(new File(outputDirectory,"settings.prop")));
+				}
+				String settingsComments = "Data-as-Demonstrator settings\n";
+				settingsComments += "Arguments: ";
+				for(int i=0;i<args.length;i++){
+					settingsComments += args[i]+" ";
+				}
+				pspec.getSettings().store(outstrm,settingsComments);
+				outstrm.flush();
+			} catch(IOException ioe){
+				throw new RuntimeException("[DataAsDemonstrator] Failed to store settings: "+ioe);
 			}
-			pspec.getSettings().store(outstrm,settingsComments);
-			outstrm.flush();
+			ArrayList<LearnerAgent> learners = dad.train(seqs,pspec,maxIterations,maxThreads,outputDirectory,cvRatio);
+			// System.out.println("#of models: "+learners.size());
+			System.out.println("Free memory: " + Runtime.getRuntime().freeMemory());
+			System.out.println("Allocated memory: "+ Runtime.getRuntime().totalMemory());
 		} catch(IOException ioe){
-			throw new RuntimeException("[DataAsDemonstrator] Failed to store settings: "+ioe);
+			throw new RuntimeException(ioe);
 		}
-		ArrayList<LearnerAgent> learners = dad.train(seqs,pspec,maxIterations,maxThreads,outputDirectory,cvRatio);
-		// System.out.println("#of models: "+learners.size());
-		System.out.println("Free memory: " + Runtime.getRuntime().freeMemory());
-		System.out.println("Allocated memory: "+ Runtime.getRuntime().totalMemory());
 	}
 }

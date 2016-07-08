@@ -49,14 +49,19 @@ public class ReynoldsFeatures implements ProblemSpec{
 
 	public String learner;
 
-	public boolean normalize_features;
+	// public boolean normalize_features;
 	public boolean use_pvel;
-	public String combo_method;
+	// public String combo_method;
 
 	public long seed;
 	public void setSeed(long s){seed=s;}
 	public long getSeed(){return seed;}
-	private MersenneTwisterFast rng;
+
+	protected Properties learnerProps=null;
+	public Properties getLearnerProps(){return learnerProps;}
+	public void setLearnerProps(Properties lp){learnerProps=lp;} 
+
+	protected MersenneTwisterFast rng;
 	public MersenneTwisterFast getRNG(){
 		if(rng == null){
 			rng = new MersenneTwisterFast(getSeed());
@@ -72,9 +77,9 @@ public class ReynoldsFeatures implements ProblemSpec{
 		defaultProps.setProperty("OBS_SIGMA","0.05");
 		defaultProps.setProperty("TIMEOUT","5000"); //timeout is in milliseconds
 		defaultProps.setProperty("LEARNER","KNN");
-		defaultProps.setProperty("NORMALIZE_FEATURES","TRUE");
+		// defaultProps.setProperty("NORMALIZE_FEATURES","TRUE");
 		defaultProps.setProperty("USE_PVEL","TRUE");
-		defaultProps.setProperty("COMBO_METHOD","SAMPLE");
+		// defaultProps.setProperty("COMBO_METHOD","SAMPLE");
 		defaultProps.setProperty("SEED",Long.toString(System.currentTimeMillis()));
 		return defaultProps;
 	}
@@ -96,9 +101,9 @@ public class ReynoldsFeatures implements ProblemSpec{
 		obs_sigma = Double.parseDouble(props.getProperty("OBS_SIGMA"));
 		timeout = Long.parseLong(props.getProperty("TIMEOUT"));
 		learner = props.getProperty("LEARNER");
-		normalize_features = Boolean.parseBoolean(props.getProperty("NORMALIZE_FEATURES"));
+		// normalize_features = Boolean.parseBoolean(props.getProperty("NORMALIZE_FEATURES"));
 		use_pvel = Boolean.parseBoolean(props.getProperty("USE_PVEL"));
-		combo_method = props.getProperty("COMBO_METHOD");
+		// combo_method = props.getProperty("COMBO_METHOD");
 		seed = Long.parseLong(props.getProperty("SEED"));
 	}
 
@@ -110,9 +115,9 @@ public class ReynoldsFeatures implements ProblemSpec{
 		settings.setProperty("OBS_SIGMA",Double.toString(obs_sigma));
 		settings.setProperty("TIMEOUT",Long.toString(timeout));
 		settings.setProperty("LEARNER",learner);
-		settings.setProperty("NORMALIZE_FEATURES",Boolean.toString(normalize_features));
+		// settings.setProperty("NORMALIZE_FEATURES",Boolean.toString(normalize_features));
 		settings.setProperty("USE_PVEL",Boolean.toString(use_pvel));
-		settings.setProperty("COMBO_METHOD",combo_method);
+		// settings.setProperty("COMBO_METHOD",combo_method);
 		settings.setProperty("SEED",Long.toString(seed));
 		return settings;
 	}
@@ -275,8 +280,8 @@ public class ReynoldsFeatures implements ProblemSpec{
 		LearnerAgent rv = null;
 		if(learner.equalsIgnoreCase("KNN")){
 			KNNModel knnm = new KNNModel();
-			knnm.normFeatures = normalize_features;
-			knnm.setMethod(combo_method);
+			// knnm.setNormFeatures(normalize_features);
+			// knnm.setMethod(combo_method);
 			knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY","pvelX","pvelY","pvelT"}); //WITH PVEL
 			// knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY"}); //NO PVEL
 			knnm.setOutputNames(new String[] {"dvelX","dvelY","dvelT"});
@@ -287,6 +292,9 @@ public class ReynoldsFeatures implements ProblemSpec{
 			rv = lrm;
 		} else {
 			throw new RuntimeException("[ReynoldsFeatures] Unknown learner: "+learner);
+		}
+		if(learnerProps != null){
+			rv.configure(learnerProps);
 		}
 		return rv;
 	}
