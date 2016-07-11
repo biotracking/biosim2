@@ -126,8 +126,10 @@ public class DataAsDemonstrator{
 			}
 			LearnerAgent learner = pspec.makeLearner();
 			learner.train(combinedFeatures,combinedOutputs);
+			ArrayList<PerformanceMetric> perf = new ArrayList<PerformanceMetric>();
 			if(cvData.size()>0){
-				for(PerformanceMetric pm : pspec.evaluate(cvData,learner,pool)){
+				perf = pspec.evaluate(cvData,learner,pool);
+				for(PerformanceMetric pm : perf){
 					System.out.println(pm);
 				}
 				// System.out.println("Average error per sequence: "+pspec.computeError(cvData,learner)/(double)cvData.size());
@@ -136,6 +138,12 @@ public class DataAsDemonstrator{
 				rv.add(learner);
 			} else {
 				try{
+					BufferedWriter perfFile = new BufferedWriter(new FileWriter(new File(outputDirectory,"evaluation_log.txt"), true));
+					perfFile.write("Iteration "+iterationCounter+":\n");
+					for(PerformanceMetric pm : perf){
+						perfFile.write(pm+"\n");
+					}
+					perfFile.close();
 					File saveTo = new File(outputDirectory,"learner_"+iterationCounter+".txt");
 					System.out.print("Writting learner to: "+saveTo);
 					System.out.flush();
@@ -270,20 +278,26 @@ public class DataAsDemonstrator{
 
 	public static void main(String[] args){
 		try{
-			Properties cmdlnArgs = ArgsToProps.parse(args);
+			ReynoldsFeatures pspec = new ReynoldsFeatures();
+			Properties cmdlnDefaults = new Properties(pspec.defaults());
+			cmdlnDefaults.setProperty("--iterations","-1");
+			cmdlnDefaults.setProperty("--threads",new Integer(Integer.MAX_VALUE).toString());
+			cmdlnDefaults.setProperty("--cvRatio","0.1");
+			cmdlnDefaults.setProperty("--learner","KNN");
+			Properties cmdlnArgs = ArgsToProps.parse(args,cmdlnDefaults);
 			DataAsDemonstrator dad = new DataAsDemonstrator();
 			BTFSequences seqs = new BTFSequences();
 			// seqs.loadDir(new File(args[0]));
 			seqs.loadDir(new File(cmdlnArgs.getProperty("--sequences")));
-			ReynoldsFeatures pspec = new ReynoldsFeatures();
 			// int maxIterations = -1;
-			int maxIterations = Integer.parseInt(cmdlnArgs.getProperty("--iterations","-1"));
+			int maxIterations = Integer.parseInt(cmdlnArgs.getProperty("--iterations"));
 			// int maxThreads = Integer.MAX_VALUE;
-			int maxThreads = Integer.parseInt(cmdlnArgs.getProperty("--threads",new Integer(Integer.MAX_VALUE).toString()));
+			int maxThreads = Integer.parseInt(cmdlnArgs.getProperty("--threads"));
 			// File outputDirectory = null;
 			File outputDirectory = (cmdlnArgs.getProperty("--output")==null)?null:new File(cmdlnArgs.getProperty("--output"));
 			// double cvRatio = 0.1;
-			double cvRatio = Double.parseDouble(cmdlnArgs.getProperty("--cvRatio","0.1"));
+			double cvRatio = Double.parseDouble(cmdlnArgs.getProperty("--cvRatio"));
+			pspec.learner = cmdlnArgs.getProperty("--learner");
 			String learnerPropFile = cmdlnArgs.getProperty("--learnerSettings");
 			Properties learnerSettings = new Properties(cmdlnArgs);
 			if(learnerPropFile != null){

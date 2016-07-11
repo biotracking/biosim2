@@ -77,6 +77,14 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 		setNormFeatures(Boolean.parseBoolean(settings.getProperty("NORMALIZE_FEATURES","FALSE")));
 	}
 
+	public Properties getSettings(){
+		Properties settings = new Properties();
+		settings.setProperty("K",new Integer(getK()).toString());
+		settings.setProperty("COMBO_METHOD",getMethod().toString());
+		settings.setProperty("NORMALIZE_FEATURES",new Boolean(getNormFeatures()).toString());
+		return settings;
+	}
+
 	public KNNModel(){
 		knn = null;
 		featureNames = outputNames = null;

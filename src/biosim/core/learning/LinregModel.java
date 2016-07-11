@@ -32,6 +32,12 @@ public class LinregModel implements LearnerAgent{
 		setBias(Boolean.parseBoolean(settings.getProperty("USE_BIAS","true")));
 	}
 
+	public Properties getSettings(){
+		Properties settings = new Properties();
+		settings.setProperty("USE_BIAS",new Boolean(useBias).toString());
+		return settings;
+	}
+
 	public LinregModel(){
 		parameters = null;
 	}

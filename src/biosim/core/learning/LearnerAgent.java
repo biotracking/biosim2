@@ -14,5 +14,6 @@ public interface LearnerAgent{
 	public void loadParameters(BufferedReader source) throws IOException;
 	public void saveParameters(BufferedWriter outf) throws IOException;
 	public void configure(Properties settings);
+	public Properties getSettings();
 	public LearnerAgent deepCopy();
 }

@@ -329,6 +329,8 @@ public class FishReynolds implements Agent{
 					learner_to_use = bla_model;
 				} else if(args[i].equalsIgnoreCase("-method")){
 					knn_model.setMethod(args[i+1]);
+				} else if(args[i].equalsIgnoreCase("-signorm")){
+					knn_model.setNormFeatures(Boolean.parseBoolean(args[i+1]));
 				}
 			}
 			if(initialPlacement){

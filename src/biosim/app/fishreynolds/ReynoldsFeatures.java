@@ -119,6 +119,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		settings.setProperty("USE_PVEL",Boolean.toString(use_pvel));
 		// settings.setProperty("COMBO_METHOD",combo_method);
 		settings.setProperty("SEED",Long.toString(seed));
+		settings.putAll(makeLearner().getSettings());
 		return settings;
 	}
 
