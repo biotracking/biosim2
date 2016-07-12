@@ -16,8 +16,9 @@ import biosim.core.sim.InitiallyPlacedEnvironment;
 import biosim.core.sim.Environment;
 import biosim.core.sim.Simulation;
 import biosim.core.sim.RectObstacle;
-import biosim.core.util.FastKNN;
+import biosim.core.util.ArgsToProps;
 import biosim.core.util.BTFData;
+import biosim.core.util.FastKNN;
 
 import sim.util.MutableDouble2D;
 import sim.util.Double3D;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.io.BufferedReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Properties;
 
 
 public class FishReynolds implements Agent{
@@ -272,76 +274,84 @@ public class FishReynolds implements Agent{
 			BiasedLinearAgent bla_model = null;
 			LearnerAgent learner_to_use = null;
 			ReynoldsFeatures reynoldsSpec = new ReynoldsFeatures();
-			for(int i=0;i<args.length;i++){
-				//System.err.println(args[i]);
-				// if(args[i].equalsIgnoreCase("-vis")){
-				// 	doKNNVis=true;
-				// 	if(knn == null){
-				// 		knn = loadKNN(new BufferedReader(new FileReader(args[i+1])));
-				// 	}
-				// }
-				// else if(args[i].equalsIgnoreCase("-lr")){
-				if(args[i].equalsIgnoreCase("-lr")){
-					lrm = new LinregModel();
-					lrm.loadParameters(new BufferedReader(new FileReader(args[i+1])));
-					learner_to_use = lrm;
-					// loadLRCoeff(new BufferedReader(new FileReader(args[i+1])));
-				}
-				else if(args[i].equalsIgnoreCase("-spec")){
-					reynoldsSpec.loadFeatureSigma(new BufferedReader(new FileReader(args[i+1])));
-					// loadFeatureSigma(new BufferedReader(new FileReader(args[i+1])));
-				}
-				else if(args[i].equalsIgnoreCase("-placed")){
-					initialPlacement = true;
-					poseSrc = new BufferedReader(new FileReader(args[i+1]));
-				}
-				else if(args[i].equalsIgnoreCase("-nogui")){
-					doGui = false;
-				}
-				else if(args[i].equalsIgnoreCase("-logging")){
-					logging = true;
-					if (i<args.length-1 && args[i+1].charAt(0)!='-'){
-						loggingDir = new File(args[i+1]);
-					}
-				}
-				else if(args[i].equalsIgnoreCase("-knn")){
-					knn_model = new KNNModel(reynoldsSpec.getNumFeatures(),reynoldsSpec.getNumOutputs());
-					knn_model.loadParameters(new BufferedReader(new FileReader(args[i+1])));
-					learner_to_use = knn_model;
-				}
-				else if (args[i].equalsIgnoreCase("-nowalls")){
-					walls=false;
-				}
-				else if(args[i].equalsIgnoreCase("-replay")){
-					replayBTF = new BTFData();
-					replayBTF.loadDir(new File(args[i+1]));
-				}
-				else if(args[i].equalsIgnoreCase("-ignoreTrackIDs")){
-					String[] ids = args[i+1].split(",");
-					for(int jay=0;jay<ids.length;jay++){
-						ignoreTrackIDs.add(Integer.parseInt(ids[jay]));
-					}
-				} else if(args[i].equalsIgnoreCase("-screenshotDir")){
-					sshotdir = args[i+1];
-				} else if(args[i].equalsIgnoreCase("-momentum")){
-					bla_model = new BiasedLinearAgent();
-					bla_model.loadParameters(new BufferedReader(new FileReader(args[i+1])));
-					learner_to_use = bla_model;
-				} else if(args[i].equalsIgnoreCase("-method")){
-					knn_model.setMethod(args[i+1]);
-				} else if(args[i].equalsIgnoreCase("-signorm")){
-					knn_model.setNormFeatures(Boolean.parseBoolean(args[i+1]));
-				}
-			}
-			if(initialPlacement){
-				env = new InitiallyPlacedEnvironment(WIDTH,HEIGHT,1.0/30.0);
+			Properties cmdlnDefaults = new Properties();
+			cmdlnDefaults.setProperty("--modelType","LINREG");
+			cmdlnDefaults.setProperty("--gui","true");
+			// cmdlnDefaults.setProperty("--logging","false");
+			cmdlnDefaults.setProperty("--walls","true");
+			Properties cmdlnArgs = ArgsToProps.parse(args,cmdlnDefaults);
+			// for(int i=0;i<args.length;i++){
+			// 	//System.err.println(args[i]);
+			// 	// if(args[i].equalsIgnoreCase("-vis")){
+			// 	// 	doKNNVis=true;
+			// 	// 	if(knn == null){
+			// 	// 		knn = loadKNN(new BufferedReader(new FileReader(args[i+1])));
+			// 	// 	}
+			// 	// }
+			// 	// else if(args[i].equalsIgnoreCase("-lr")){
+			// 	if(args[i].equalsIgnoreCase("-lr")){
+			// 		lrm = new LinregModel();
+			// 		lrm.loadParameters(new BufferedReader(new FileReader(args[i+1])));
+			// 		learner_to_use = lrm;
+			// 		// loadLRCoeff(new BufferedReader(new FileReader(args[i+1])));
+			// 	}
+			// 	else if(args[i].equalsIgnoreCase("-spec")){
+			// 		reynoldsSpec.loadFeatureSigma(new BufferedReader(new FileReader(args[i+1])));
+			// 		// loadFeatureSigma(new BufferedReader(new FileReader(args[i+1])));
+			// 	}
+			// 	else if(args[i].equalsIgnoreCase("-placed")){
+			// 		initialPlacement = true;
+			// 		poseSrc = new BufferedReader(new FileReader(args[i+1]));
+			// 	}
+			// 	else if(args[i].equalsIgnoreCase("-nogui")){
+			// 		doGui = false;
+			// 	}
+			// 	else if(args[i].equalsIgnoreCase("-logging")){
+			// 		logging = true;
+			// 		if (i<args.length-1 && args[i+1].charAt(0)!='-'){
+			// 			loggingDir = new File(args[i+1]);
+			// 		}
+			// 	}
+			// 	else if(args[i].equalsIgnoreCase("-knn")){
+			// 		knn_model = new KNNModel(reynoldsSpec.getNumFeatures(),reynoldsSpec.getNumOutputs());
+			// 		knn_model.loadParameters(new BufferedReader(new FileReader(args[i+1])));
+			// 		learner_to_use = knn_model;
+			// 	}
+			// 	else if (args[i].equalsIgnoreCase("-nowalls")){
+			// 		walls=false;
+			// 	}
+			// 	else if(args[i].equalsIgnoreCase("-replay")){
+			// 		replayBTF = new BTFData();
+			// 		replayBTF.loadDir(new File(args[i+1]));
+			// 	}
+			// 	else if(args[i].equalsIgnoreCase("-ignoreTrackIDs")){
+			// 		String[] ids = args[i+1].split(",");
+			// 		for(int jay=0;jay<ids.length;jay++){
+			// 			ignoreTrackIDs.add(Integer.parseInt(ids[jay]));
+			// 		}
+			// 	} else if(args[i].equalsIgnoreCase("-screenshotDir")){
+			// 		sshotdir = args[i+1];
+			// 	} else if(args[i].equalsIgnoreCase("-momentum")){
+			// 		bla_model = new BiasedLinearAgent();
+			// 		bla_model.loadParameters(new BufferedReader(new FileReader(args[i+1])));
+			// 		learner_to_use = bla_model;
+			// 	} else if(args[i].equalsIgnoreCase("-method")){
+			// 		knn_model.setMethod(args[i+1]);
+			// 	} else if(args[i].equalsIgnoreCase("-signorm")){
+			// 		knn_model.setNormFeatures(Boolean.parseBoolean(args[i+1]));
+			// 	}
+			// }
+			if(cmdlnArgs.getProperty("--placed") != null){
+				InitiallyPlacedEnvironment placedEnv = new InitiallyPlacedEnvironment(WIDTH,HEIGHT,1.0/30.0);
 				// ((InitiallyPlacedEnvironment)env).parseInitialPoses(btf);
-				numFish = ((InitiallyPlacedEnvironment)env).parseInitialPoses(poseSrc);
+				poseSrc = new BufferedReader(new FileReader(cmdlnArgs.getProperty("--placed")));
+				numFish = placedEnv.parseInitialPoses(poseSrc);
+				env = placedEnv;
 			} else {
 				env = new Environment(WIDTH,HEIGHT,1.0/30.0);
 			}
 			//set up the environment
-			if(walls){
+			if(cmdlnArgs.getProperty("--walls").equalsIgnoreCase("true")){
 				env.addObstacle(new RectObstacle(0.01,HEIGHT), WIDTH-0.01,  0.0);//east wall
 				env.addObstacle(new RectObstacle(0.01,HEIGHT),  0.0,  0.0);//west
 				env.addObstacle(new RectObstacle(WIDTH,0.01),  0.0,  0.0);//north
@@ -349,8 +359,41 @@ public class FishReynolds implements Agent{
 			} else {
 				env.setToroidal(true);				
 			}
+			switch(cmdlnArgs.getProperty("--modelType").toUpperCase()){
+				case "LINREG":
+					lrm = new LinregModel();
+					learner_to_use = lrm;
+					break;
+				case "KNN":
+					knn_model = new KNNModel(reynoldsSpec.getNumFeatures(), reynoldsSpec.getNumOutputs());
+					learner_to_use = knn_model;
+					break;
+				case "MOMENTUM":
+					bla_model = new BiasedLinearAgent();
+					learner_to_use = bla_model;
+					break;
+				default:
+					throw new RuntimeException("Unrecognized model type: "+cmdlnArgs.getProperty("--modelType"));
+			}
+			Properties modelProps = new Properties(cmdlnArgs);
+			if(cmdlnArgs.getProperty("--modelSettings")!=null){
+				modelProps.load(new FileReader(cmdlnArgs.getProperty("--modelSettings")));
+			}
+			learner_to_use.configure(modelProps);
+			learner_to_use.loadParameters(new BufferedReader(new FileReader(cmdlnArgs.getProperty("--modelFile"))));
+			if(cmdlnArgs.getProperty("--pspec")!=null){
+				reynoldsSpec.loadFeatureSigma(new BufferedReader(new FileReader(cmdlnArgs.getProperty("--pspec"))));
+			}
+			if(cmdlnArgs.getProperty("--ignoreTrackIDs")!=null){
+				String[] ids = cmdlnArgs.getProperty("--ignoreTrackIDs").split(",");
+				// for(int eye=0;eye<ids.length;eye++){
+				for(String ignoreid : cmdlnArgs.getProperty("--ignoreTrackIDs").split(",")){
+					// ignoreTrackIDs.add(Integer.parseInt(ids[eye]));
+					ignoreTrackIDs.add(Integer.parseInt(ignoreid));
+				}
+			}
 			//add agents
-			if(replayBTF==null){
+			if(cmdlnArgs.getProperty("--replay") == null){
 				NotemigonusCrysoleucas[] bodies = new NotemigonusCrysoleucas[numFish];
 				for(int i=0;i<bodies.length;i++){
 					bodies[i] = new NotemigonusCrysoleucas();
@@ -363,6 +406,8 @@ public class FishReynolds implements Agent{
 					bodies[i].setAgent(agents[i]);
 				}
 			} else {
+				replayBTF = new BTFData();
+				replayBTF.loadDir(new File(cmdlnArgs.getProperty("--replay")));
 				ArrayList<Integer> allIDs = new ArrayList<Integer>();
 				String[] idCol = replayBTF.loadColumn("id");
 				for(int i=0;i<idCol.length;i++){
@@ -385,20 +430,20 @@ public class FishReynolds implements Agent{
 					body.setAgent(agent);
 				}
 			}
-			if(logging){
+			if(cmdlnArgs.getProperty("--logging")!=null){
 				FishLRLogger logger = null;
 				if(loggingDir == null){
 					logger = new FishLRLogger();
 				} else {
-					logger = new FishLRLogger(loggingDir);
+					logger = new FishLRLogger(new File(cmdlnArgs.getProperty("--logging")));
 				}
 				logger.setSigmas(reynoldsSpec.sep_sigma,reynoldsSpec.ori_sigma,reynoldsSpec.coh_sigma,reynoldsSpec.obs_sigma);
 				env.addLogger(logger);				
 			}
-			if(doGui){
+			if(cmdlnArgs.getProperty("--gui").equalsIgnoreCase("true")){
 				Simulation sim = env.newSimulation();
 				GUISimulation gui = new GUISimulation(sim);
-				gui.screenshotDir = sshotdir;
+				gui.screenshotDir = cmdlnArgs.getProperty("--screenshots");
 				gui.setPortrayalClass(NotemigonusCrysoleucas.class, biosim.app.fishknn.FishPortrayal.class);
 				gui.setPortrayalClass(ReplayFish.class, ReplayPortrayal.class);
 				biosim.app.fishknn.FishPortrayal.AVG_DIST = 0.0449592693977;
