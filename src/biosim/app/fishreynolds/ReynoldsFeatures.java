@@ -324,14 +324,6 @@ public class ReynoldsFeatures implements ProblemSpec{
 					return sumErr;
 				}
 			};
-			// for(int row=0;row<testD.features.length;row++){
-			// 	learner.computeOutputs(testD.features[row],learnerOuts);
-			// 	double mse = 0.0;
-			// 	for(int col=0;col<learnerOuts.length;col++){
-			// 		mse += Math.pow(learnerOuts[col]-testD.outputs[row][col],2);
-			// 	}
-			// 	sumErr += Math.sqrt(mse);
-			// }
 			tasks.add( tmp );
 		}
 		List<Future<Double> > results;

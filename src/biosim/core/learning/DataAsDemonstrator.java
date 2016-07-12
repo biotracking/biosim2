@@ -41,13 +41,6 @@ import ec.util.MersenneTwisterFast;
 
 public class DataAsDemonstrator{
 
-	private void addDataToList(ProblemSpec.Dataset data, ArrayList<double[]> inputs, ArrayList<double[]> outputs){
-		for(int dataRow = 0; dataRow < data.features.length; dataRow++){
-			inputs.add(data.features[dataRow]);
-			outputs.add(data.outputs[dataRow]);
-		}
-	}
-
 	public static final double[][] aDoubleArray = new double[0][0];
 	// public static final ExecutorService pool = Executors.newFixedThreadPool(4);
 
@@ -84,9 +77,6 @@ public class DataAsDemonstrator{
 			throw new RuntimeException("[DataAsDemonstrator] Error getting seq sizes: "+ioe);
 		}
 		int iterationCounter = 0;
-		// System.out.println("outOfData: "+outOfData);
-		// System.out.println("iterationCounter: "+iterationCounter);
-		// System.out.println("maxIterations: "+maxIterations);
 		while((!outOfData) && (iterationCounter<maxIterations || maxIterations<0)){
 			System.out.println("Beginning iteration "+iterationCounter);
 			//1. Train predictor
@@ -107,12 +97,7 @@ public class DataAsDemonstrator{
 			int oCols = pspec.getNumOutputs();
 			double[][] combinedFeatures = new double[totalRows][fCols];
 			double[][] combinedOutputs = new double[totalRows][oCols];
-			// System.out.println("totalRows: "+totalRows);
-			// System.out.println("fCols: "+fCols);
-			// System.out.println("oCols: "+oCols);
 			if(dad_training_inputs.size() > 0){
-				// System.out.println("dad_training_inputs.get(0).length: "+dad_training_inputs.get(0).length);
-				// System.out.println("dad_training_outputs.get(0).legnth: "+ dad_training_outputs.get(0).length);
 				ReynoldsFeatures.copyInto(dad_training_inputs.toArray(aDoubleArray), combinedFeatures,0);
 				ReynoldsFeatures.copyInto(dad_training_outputs.toArray(aDoubleArray), combinedOutputs, 0);
 			}

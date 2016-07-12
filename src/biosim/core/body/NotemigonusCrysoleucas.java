@@ -441,9 +441,6 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 				break;
 			}
 		}
-		// System.out.println(desiredVelXYT[0]+" "+desiredVelXYT[1]+" "+desiredVelXYT[2]);
-		// System.out.println(xVel+" "+yVel+" "+tVel);
-		// System.out.println((newPos.x-oldPos.x)+" "+(newPos.y-oldPos.y)+" "+(newDir.angle()-curDir.angle()));
 		return true;
 	}
 
@@ -481,54 +478,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 				tDelta = tDelta+(2.0*Math.PI);
 			}
 			tVelObserved = tDelta/sim.resolution;
-			// System.out.println(xVelObserved+" "+yVelObserved+" "+tVelObserved);
 		}
 	}
-
-	/*
-	public void step(SimState simstate){
-		if(simstate instanceof Simulation){
-			sim= (Simulation)simstate;
-			//double[] desiredVelXYT = agent.act(sim.schedule.getSteps()*sim.resolution);
-			agent.act(sim.schedule.getSteps()*sim.resolution);
-			//rotate back to global frame
-			MutableDouble2D tmp = new MutableDouble2D(desiredVelXYT[0],desiredVelXYT[1]);
-			MutableDouble2D curDir = new MutableDouble2D();
-			sim.getBodyOrientation(this,curDir);
-			tmp.rotate(curDir.angle());
-			
-			xVel = (tmp.x<=MAX_VELOCITY_X)?tmp.x:MAX_VELOCITY_X;
-			yVel = (tmp.y<=MAX_VELOCITY_Y)?tmp.y:MAX_VELOCITY_Y;
-			tVel = (Math.abs(desiredVelXYT[2])<=MAX_VELOCITY_THETA)?desiredVelXYT[2]:Math.signum(desiredVelXYT[2])*MAX_VELOCITY_THETA;
-			Double2D oldLoc = sim.field2D.getObjectLocation(this);
-			Double2D newLoc = new Double2D(oldLoc.x+(xVel*sim.resolution),oldLoc.y+(yVel*sim.resolution));
-			//for now, just check against all obstacles defined in the Environment object, since the
-			//continuous field doesn't have a sense of the extent of large obstacles
-			boolean collides = false;
-			for(int i=0;i<sim.obstacles.size();i++){
-				Obstacle o = sim.obstacles.get(i);
-				if(newLoc.distance(o.closestPoint(newLoc,sim.field2D.getObjectLocation(o)))<(SIZE/2)){
-					collides = true;
-					//System.out.println("Collision!");
-					break;
-				}
-			}
-			if(!collides){
-				sim.setObjectLocation(this,newLoc);
-			} 
-			for(int i=0;i<sim.bodies.size();i++){
-				if(sim.bodies.get(i) == this){
-					MutableDouble2D oldDir = new MutableDouble2D(sim.bodyOrientations.get(i));
-					MutableDouble2D newDir = new MutableDouble2D(oldDir);
-					newDir.rotate(tVel*sim.resolution);
-					sim.bodyOrientations.set(i,new Double2D(newDir));
-					break;
-				}
-			}
-		} else {
-			throw new RuntimeException("SimState object not an instance of "+Simulation.class.getName());
-		}
-	}
-	*/
 
 }
