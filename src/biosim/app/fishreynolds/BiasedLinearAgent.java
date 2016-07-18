@@ -25,7 +25,9 @@ public class BiasedLinearAgent extends LinregModel implements RNGConsumer{
 
 	public double[] computeOutputs(double[] features,double[] outputs){
 		outputs = super.computeOutputs(features,outputs);
-		outputs[0] = outputs[0]+ (mean+random.nextGaussian()*sigma);
+		// double bias_rv = mean+random.nextGaussian()*sigma;
+		double bias_rv = -1.0*mean*Math.log(random.nextDouble(false,false));
+		outputs[0] = outputs[0]+ bias_rv;
 		return outputs;
 	}
 
