@@ -107,7 +107,7 @@ public class FishReynolds implements Agent{
 			boolean initialPlacement = false, doGui = true, logging = false, walls = true; //doKNNVis = false;
 			BufferedReader poseSrc = null;
 			File loggingDir = null;
-			int numFish = 27; //30; //initial tracked number of fish is 27
+			int numFish;
 			ArrayList<ReplayFish> replayFish = null;
 			ArrayList<Integer> ignoreTrackIDs = new ArrayList<Integer>();
 			BTFData replayBTF=null;
@@ -122,7 +122,9 @@ public class FishReynolds implements Agent{
 			cmdlnDefaults.setProperty("--gui","true");
 			// cmdlnDefaults.setProperty("--logging","false");
 			cmdlnDefaults.setProperty("--walls","true");
+			cmdlnDefaults.setProperty("--numFish","27"); //30; //initial tracked number of fish is 27
 			Properties cmdlnArgs = ArgsToProps.parse(args,cmdlnDefaults);
+			reynoldsSpec.configure(cmdlnArgs);
 			// for(int i=0;i<args.length;i++){
 			// 	if(args[i].equalsIgnoreCase("-lr")){
 			// 		lrm = new LinregModel();
@@ -176,6 +178,7 @@ public class FishReynolds implements Agent{
 			// 		knn_model.setNormFeatures(Boolean.parseBoolean(args[i+1]));
 			// 	}
 			// }
+			numFish = Integer.parseInt(cmdlnArgs.getProperty("--numFish"));
 			if(cmdlnArgs.getProperty("--placed") != null){
 				InitiallyPlacedEnvironment placedEnv = new InitiallyPlacedEnvironment(WIDTH,HEIGHT,1.0/30.0);
 				// ((InitiallyPlacedEnvironment)env).parseInitialPoses(btf);
@@ -217,7 +220,7 @@ public class FishReynolds implements Agent{
 			learner_to_use.configure(modelProps);
 			learner_to_use.loadParameters(new BufferedReader(new FileReader(cmdlnArgs.getProperty("--modelFile"))));
 			if(cmdlnArgs.getProperty("--pspec")!=null){
-				reynoldsSpec.loadFeatureSigma(new BufferedReader(new FileReader(cmdlnArgs.getProperty("--pspec"))));
+				reynoldsSpec.configure(new BufferedReader(new FileReader(cmdlnArgs.getProperty("--pspec"))));
 			}
 			if(cmdlnArgs.getProperty("--ignoreTrackIDs")!=null){
 				String[] ids = cmdlnArgs.getProperty("--ignoreTrackIDs").split(",");
@@ -267,11 +270,7 @@ public class FishReynolds implements Agent{
 			}
 			if(cmdlnArgs.getProperty("--logging")!=null){
 				FishLRLogger logger = null;
-				if(loggingDir == null){
-					logger = new FishLRLogger();
-				} else {
-					logger = new FishLRLogger(new File(cmdlnArgs.getProperty("--logging")));
-				}
+				logger = new FishLRLogger(new File(cmdlnArgs.getProperty("--logging")));
 				logger.setSigmas(reynoldsSpec.sep_sigma,reynoldsSpec.ori_sigma,reynoldsSpec.coh_sigma,reynoldsSpec.obs_sigma);
 				env.addLogger(logger);				
 			}
