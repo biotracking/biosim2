@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Properties;
 import java.util.Collections;
 import java.util.concurrent.Callable;
@@ -59,13 +60,62 @@ public class DataAsDemonstrator{
 		List<BTFData> btfValues = new ArrayList<BTFData>(data.sequences.values());
 		//shuffle data 
 		Collections.shuffle(btfValues, new Random(pspec.getSeed()));
-		Iterator<BTFData> seqIterator = btfValues.iterator();//data.sequences.values().iterator();
+		ListIterator<BTFData> seqIterator = btfValues.listIterator();//data.sequences.values().iterator();
 		//pull out cross validation samples
 		int numCVSeqs = (int)(data.sequences.size()*cvRatio);
 		ArrayList<ProblemSpec.Dataset> cvData = new ArrayList<ProblemSpec.Dataset>();
 		for(int i=0;i<numCVSeqs;i++){
 			cvData.add(pspec.btf2array(seqIterator.next()));
 		}
+		//compute baseline learner
+		ListIterator<BTFData> baselineIterator = btfValues.listIterator(seqIterator.nextIndex());
+		ArrayList<ProblemSpec.Dataset> baselineData = new ArrayList<ProblemSpec.Dataset>();
+		while(baselineIterator.hasNext()){
+			baselineData.add(pspec.btf2array(baselineIterator.next()));
+		}
+		int baselineRows = 0;
+		for(ProblemSpec.Dataset d : baselineData){
+			baselineRows += d.features.length;
+		}
+		double[][] baselineFeatures = new double[baselineRows][pspec.getNumFeatures()];
+		double[][] baselineOutputs = new double[baselineRows][pspec.getNumOutputs()];
+		int rowctr=0;
+		for(int btfidx=0;btfidx<baselineData.size();btfidx++){
+			ReynoldsFeatures.copyInto(baselineData.get(btfidx).features,baselineFeatures,0,rowctr);
+			ReynoldsFeatures.copyInto(baselineData.get(btfidx).outputs,baselineOutputs,0,rowctr);
+			rowctr += baselineData.get(btfidx).features.length;
+		}
+		LearnerAgent baselineLearner = pspec.makeLearner();
+		baselineLearner.train(baselineFeatures,baselineOutputs);
+		ArrayList<PerformanceMetric> baselinePerf = new ArrayList<PerformanceMetric>();
+		if(cvData.size()>0){
+			baselinePerf = pspec.evaluate(cvData,baselineLearner,pool);
+			System.out.println("Baseline learner performance:");
+			for(PerformanceMetric pm : baselinePerf){
+				System.out.println(pm);
+			}
+			if(outputDirectory != null){
+				try{
+					BufferedWriter perfFile = new BufferedWriter(new FileWriter(new File(outputDirectory,"evaluation_log.txt"), true));
+					perfFile.write("Baseline:\n");
+					for(PerformanceMetric pm : baselinePerf){
+						perfFile.write(pm+"\n");
+					}
+					perfFile.close();
+					File saveTo = new File(outputDirectory,"learner_baseline.txt");
+					System.out.print("Writting baseline learner to: "+saveTo);
+					System.out.flush();
+					BufferedWriter saveFile = new BufferedWriter(new FileWriter(saveTo));
+					baselineLearner.saveParameters(saveFile);
+					saveFile.close();
+					System.out.println(" done");					
+				} catch(IOException ioe){
+					throw new RuntimeException("[DataAsDemonstrator] Failed writting baseline learner: "+ioe);					
+				}
+			}
+		}
+
+
 		//add initial data
 		activeRealTrainingSequences.add(seqIterator.next());
 		boolean outOfData = false;
@@ -270,6 +320,7 @@ public class DataAsDemonstrator{
 			cmdlnDefaults.setProperty("--cvRatio","0.1");
 			cmdlnDefaults.setProperty("--learner","KNN");
 			Properties cmdlnArgs = ArgsToProps.parse(args,cmdlnDefaults);
+			pspec.configure(cmdlnArgs);
 			DataAsDemonstrator dad = new DataAsDemonstrator();
 			BTFSequences seqs = new BTFSequences();
 			// seqs.loadDir(new File(args[0]));
