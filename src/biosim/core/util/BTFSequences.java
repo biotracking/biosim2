@@ -58,6 +58,7 @@ public class BTFSequences{
 		int seqCtr = 0;
 		int curStartFrame = 0;
 		long lastTime = System.currentTimeMillis();
+		long startTime = lastTime;
 		double lastLine = frames.get(frames.size()-1).start + frames.get(frames.size()-1).len;
 		while(curStartFrame<frames.size()){
 			//System.out.println("Outer loop");
@@ -70,7 +71,8 @@ public class BTFSequences{
 				ArrayList<Integer> frameEndIDs = tmp.parentObj.getUniqueIDs(tmp.start,tmp.start+tmp.len);
 				long curTime = System.currentTimeMillis();
 				if( (curTime - lastTime) > timeout){
-					System.out.println("Sequence "+seqCtr+" Frame: "+frameEnd+" ("+(100*tmp.start/lastLine)+"%)");
+					String stats = String.format(" (%.1f%%, %.1f fps)",(100*tmp.start/lastLine), (1000.0*frameEnd)/(double)(curTime-startTime));
+					System.out.println("Sequence "+seqCtr+" Frame: "+frameEnd+stats);
 					lastTime = curTime;
 				}
 				if(frameEndIDs.size() != startIDs.size()){
