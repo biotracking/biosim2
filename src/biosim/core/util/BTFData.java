@@ -207,6 +207,75 @@ public class BTFData{
 		return rv;
 	}
 
+	public String[] computeXVMean() throws IOException{
+		ArrayList<BTFDataFrame> frames = splitIntoFrames();
+		String[] id_col = loadColumn("id");
+		double[][] pvel = columnAsDoubles("pvel");
+		String[] rv = new String[id_col.length];
+		BTFDataFrame frame;
+		for(int frame_idx=0; frame_idx<frames.size();frame_idx++){
+			double avg_xvel = 0.0;
+			if(frame_idx > 0){
+				frame = frames.get(frame_idx-1);
+				for(int i=0;i<frame.len;i++){
+					avg_xvel += pvel[i+frame.start][0];
+				}
+				avg_xvel = avg_xvel/frame.len;
+			}
+			frame = frames.get(frame_idx);
+			for(int i=0;i<frame.len;i++){
+				rv[i+frame.start] = String.format("%f",avg_xvel);
+			}
+		}
+		return rv;
+	}
+
+	public String[] computeXVStd() throws IOException{
+		ArrayList<BTFDataFrame> frames = splitIntoFrames();
+		String[] id_col = loadColumn("id");
+		double[][] pvel = columnAsDoubles("pvel");
+		double[][] xvmean = columnAsDoubles("xvmean");
+		String[] rv = new String[id_col.length];
+		BTFDataFrame frame;
+		for(int frameIdx=0; frameIdx<frames.size(); frameIdx++){
+			double std_xvel = 0.0;
+			if(frameIdx > 0){
+				frame = frames.get(frameIdx-1);
+				for(int i=0;i<frame.len;i++){
+					std_xvel += Math.pow(pvel[i+frame.start][0]-xvmean[i+frame.start][0],2);
+				}
+				std_xvel = Math.sqrt(std_xvel/frame.len);
+			}
+			frame = frames.get(frameIdx);
+			for(int i=0;i<frame.len;i++){
+				rv[i+frame.start] = String.format("%f",std_xvel);
+			}
+		}
+		return rv;
+	}
+
+	public String[] computeXVMaxMag() throws IOException{
+		ArrayList<BTFDataFrame> frames = splitIntoFrames();
+		String[] id_col = loadColumn("id");
+		double[][] pvel = columnAsDoubles("pvel");
+		String[] rv = new String[id_col.length];
+		BTFDataFrame frame;
+		for(int frameIdx=0; frameIdx< frames.size(); frameIdx++){
+			double max_xvel = 0.0;
+			if(frameIdx > 0){
+				frame = frames.get(frameIdx-1);
+				for(int i=0;i<frame.len;i++){
+					max_xvel = Math.max(max_xvel, Math.abs(pvel[i+frame.start][0]));
+				}
+			}
+			frame = frames.get(frameIdx);
+			for(int i=0;i<frame.len;i++){
+				rv[i+frame.start] = String.format("%f",max_xvel);
+			}
+		}
+		return rv;
+	}
+
 	public static void main(String[] args){
 		if((args.length > 0)&&(args.length<3)){
 			BTFData btf = new BTFData();
