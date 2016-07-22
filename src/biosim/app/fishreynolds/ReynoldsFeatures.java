@@ -20,6 +20,7 @@ import ec.util.MersenneTwisterFast;
 import biosim.core.agent.Agent;
 import biosim.core.body.AbstractFish;
 import biosim.core.body.Body;
+import biosim.core.body.sensors.NeighborhoodStatistics;
 import biosim.core.body.NotemigonusCrysoleucas;
 import biosim.core.body.ReplayFish;
 import biosim.core.learning.KNNModel;
@@ -37,7 +38,7 @@ import biosim.core.util.BTFDataLogger;
 
 public class ReynoldsFeatures implements ProblemSpec{
 
-	// WITH PVEL: sepX,sepY,oriX,oriY,cohX,cohY,obsX,obsY,pvelX,pvelY,pvelT
+	// WITH VELSTATS: sepX,sepY,oriX,oriY,cohX,cohY,obsX,obsY,xvmean,xvstd,xvmax
 	// NO PVEL:   sepX,sepY,oriX,oriY,cohX,cohY,obsX,obsY
 	public static final int NUM_FEATURES=11;
 	//X, Y, T
@@ -50,8 +51,9 @@ public class ReynoldsFeatures implements ProblemSpec{
 	public String learner;
 
 	// public boolean normalize_features;
-	public boolean use_pvel;
+	// public boolean use_pvel;
 	public boolean use_walls;
+	public boolean use_velstats;
 	// public String combo_method;
 
 	public long seed;
@@ -79,10 +81,11 @@ public class ReynoldsFeatures implements ProblemSpec{
 		defaultProps.setProperty("TIMEOUT","5000"); //timeout is in milliseconds
 		defaultProps.setProperty("LEARNER","KNN");
 		// defaultProps.setProperty("NORMALIZE_FEATURES","TRUE");
-		defaultProps.setProperty("USE_PVEL","FALSE");
+		// defaultProps.setProperty("USE_PVEL","FALSE");
 		// defaultProps.setProperty("COMBO_METHOD","SAMPLE");
 		defaultProps.setProperty("SEED",Long.toString(System.currentTimeMillis()));
 		defaultProps.setProperty("USE_WALLS","TRUE");
+		defaultProps.setProperty("USE_VELSTATS","FALSE");
 		return defaultProps;
 	}
 
@@ -107,7 +110,8 @@ public class ReynoldsFeatures implements ProblemSpec{
 		timeout = Long.parseLong(props.getProperty("TIMEOUT"));
 		learner = props.getProperty("LEARNER");
 		// normalize_features = Boolean.parseBoolean(props.getProperty("NORMALIZE_FEATURES"));
-		use_pvel = Boolean.parseBoolean(props.getProperty("USE_PVEL"));
+		// use_pvel = Boolean.parseBoolean(props.getProperty("USE_PVEL"));
+		use_velstats = Boolean.parseBoolean(props.getProperty("USE_VELSTATS"));
 		// combo_method = props.getProperty("COMBO_METHOD");
 		seed = Long.parseLong(props.getProperty("SEED"));
 		use_walls = Boolean.parseBoolean(props.getProperty("USE_WALLS"));
@@ -122,7 +126,8 @@ public class ReynoldsFeatures implements ProblemSpec{
 		settings.setProperty("TIMEOUT",Long.toString(timeout));
 		settings.setProperty("LEARNER",learner);
 		// settings.setProperty("NORMALIZE_FEATURES",Boolean.toString(normalize_features));
-		settings.setProperty("USE_PVEL",Boolean.toString(use_pvel));
+		// settings.setProperty("USE_PVEL",Boolean.toString(use_pvel));
+		settings.setProperty("USE_VELSTATS",Boolean.toString(use_velstats));
 		// settings.setProperty("COMBO_METHOD",combo_method);
 		settings.setProperty("SEED",Long.toString(seed));
 		settings.setProperty("USE_WALLS",Boolean.toString(use_walls));
@@ -130,7 +135,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		return settings;
 	}
 
-	public int getNumFeatures(){ return (use_pvel)?NUM_FEATURES:NUM_FEATURES-3;}
+	public int getNumFeatures(){ return (use_velstats)?NUM_FEATURES:NUM_FEATURES-3;}
 	public int getNumOutputs(){ return NUM_OUTPUTS;}
 
 	public double[] computeFeatures(Body b){
@@ -146,9 +151,13 @@ public class ReynoldsFeatures implements ProblemSpec{
 			fishBody.getAverageRBFSameTypeVec(coh,coh_sigma);
 			fishBody.getNearestObstacleVec(wall);
 			wall.multiplyIn(Math.exp(-wall.lengthSq()/(2.0*Math.pow(obs_sigma,2))));
-			double[] pvel = {0.0,0.0,0.0};
-			if(use_pvel){
-				fishBody.getSelfVelXYT(pvel);
+			NeighborhoodStatistics.VelocityStatistics velstats = new NeighborhoodStatistics.VelocityStatistics();
+			// double[] pvel = {0.0,0.0,0.0};
+			// if(use_pvel){
+			// 	fishBody.getSelfVelXYT(pvel);
+			// }
+			if(use_velstats){
+				fishBody.getVelocityStatistics(velstats);
 			}
 			double[] sensors = new double[getNumFeatures()];
 			sensors[0] = sep.x;
@@ -159,10 +168,15 @@ public class ReynoldsFeatures implements ProblemSpec{
 			sensors[5] = coh.y;
 			sensors[6] = wall.x * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(obs_sigma,2)));
 			sensors[7] = wall.y * Math.exp(-(Math.pow(wall.x,2)+Math.pow(wall.y,2))/(2.0*Math.pow(obs_sigma,2)));
-			if(use_pvel){
-				sensors[8] = pvel[0];
-				sensors[9] = pvel[1];
-				sensors[10] = pvel[2];
+			// if(use_pvel){
+			// 	sensors[8] = pvel[0];
+			// 	sensors[9] = pvel[1];
+			// 	sensors[10] = pvel[2];
+			// }
+			if(use_velstats){
+				sensors[8] = velstats.xvmean;
+				sensors[9] = velstats.xvstd;
+				sensors[10] = velstats.xvmax;
 			}
 			return sensors;
 		} else {
@@ -194,9 +208,17 @@ public class ReynoldsFeatures implements ProblemSpec{
 			copyInto(column,rv.features,4);
 			column = btf.columnAsDoubles("rbfwallvec");
 			copyInto(column,rv.features,6);
-			if(use_pvel){
-				column = btf.columnAsDoubles("pvel");
+			// if(use_pvel){
+			// 	column = btf.columnAsDoubles("pvel");
+			// 	copyInto(column,rv.features,8);
+			// }
+			if(use_velstats){
+				column = btf.columnAsDoubles("xvmean");
 				copyInto(column,rv.features,8);
+				column = btf.columnAsDoubles("xvstd");
+				copyInto(column,rv.features,9);
+				column = btf.columnAsDoubles("xvmax");
+				copyInto(column,rv.features,10);
 			}
 			//dvelX, dvelY, dvelT
 			column = btf.columnAsDoubles("dvel");
@@ -298,10 +320,13 @@ public class ReynoldsFeatures implements ProblemSpec{
 			KNNModel knnm = new KNNModel();
 			// knnm.setNormFeatures(normalize_features);
 			// knnm.setMethod(combo_method);
-			if(use_pvel){
-				knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY","pvelX","pvelY","pvelT"}); //WITH PVEL
-			} else {
-				knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY"}); //NO PVEL
+			// if(use_pvel){
+			// 	knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY","pvelX","pvelY","pvelT"}); //WITH PVEL
+			// } 
+			if(use_velstats){
+				knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY","xvmean","xvstd","xvmax"}); //velstats
+			}else {
+				knnm.setFeatureNames(new String[] {"sepX","sepY","oriX","oriY","cohX","cohY","wallX","wallY"}); //NO VELSTATS
 			}
 			knnm.setOutputNames(new String[] {"dvelX","dvelY","dvelT"});
 			knnm.setRandom(getRNG());
@@ -367,15 +392,20 @@ public class ReynoldsFeatures implements ProblemSpec{
 	}
 	public BTFDataLogger getLogger(){
 		return new BTFDataLogger(){
-			public LinkedList<String> rbfsepvec, rbforivec, rbfcohvec, rbfwallvec, pvel, dvel, dbool;
+			public LinkedList<String> rbfsepvec, rbforivec, rbfcohvec, rbfwallvec, xvmean, xvstd, xvmax, dvel, dbool; //pvel
 			public void init(){
 				super.init();
 				rbfsepvec = new LinkedList<String>();
 				rbforivec = new LinkedList<String>();
 				rbfcohvec = new LinkedList<String>();
 				rbfwallvec = new LinkedList<String>();
-				if(use_pvel){
-					pvel = new LinkedList<String>();					
+				// if(use_pvel){
+				// 	pvel = new LinkedList<String>();					
+				// }
+				if(use_velstats){
+					xvmean = new LinkedList<String>();
+					xvstd = new LinkedList<String>();
+					xvmax = new LinkedList<String>();
 				}
 				dvel = new LinkedList<String>();
 				dbool = new LinkedList<String>();
@@ -387,8 +417,13 @@ public class ReynoldsFeatures implements ProblemSpec{
 				rv.data.put("rbforivec",new ArrayList<String>(rbforivec));
 				rv.data.put("rbfcohvec",new ArrayList<String>(rbfcohvec));
 				rv.data.put("rbfwallvec",new ArrayList<String>(rbfwallvec));
-				if(use_pvel){
-					rv.data.put("pvel",new ArrayList<String>(pvel));
+				// if(use_pvel){
+				// 	rv.data.put("pvel",new ArrayList<String>(pvel));
+				// }
+				if(use_velstats){
+					rv.data.put("xvmean",new ArrayList<String>(xvmean));
+					rv.data.put("xvstd", new ArrayList<String>(xvstd));
+					rv.data.put("xvmax", new ArrayList<String>(xvmax));
 				}
 				rv.data.put("dvel",new ArrayList<String>(dvel));
 				rv.data.put("dbool",new ArrayList<String>(dbool));
@@ -414,9 +449,13 @@ public class ReynoldsFeatures implements ProblemSpec{
 							fish.getAverageRBFSameTypeVec(cohSensorVec, coh_sigma);
 							fish.getNearestObstacleVec(wallSensorVec);
 							wallSensorVec.multiplyIn(Math.exp(-wallSensorVec.lengthSq()/(2.0*Math.pow(obs_sigma,2))));
-							double[] prevVel = {0.0, 0.0, 0.0};
-							if(use_pvel){
-								fish.getSelfVelXYT(prevVel);
+							// double[] prevVel = {0.0, 0.0, 0.0};
+							// if(use_pvel){
+							// 	fish.getSelfVelXYT(prevVel);
+							// }
+							NeighborhoodStatistics.VelocityStatistics velstats = new NeighborhoodStatistics.VelocityStatistics();
+							if(use_velstats){
+								fish.getVelocityStatistics(velstats);
 							}
 							double[] foo = {0.0, 0.0, 0.0};
 							boolean bar = false;
@@ -426,8 +465,13 @@ public class ReynoldsFeatures implements ProblemSpec{
 							rbforivec.add(oriSensorVec.x+" "+oriSensorVec.y);
 							rbfcohvec.add(cohSensorVec.x+" "+cohSensorVec.y);
 							rbfwallvec.add(wallSensorVec.x+" "+wallSensorVec.y);
-							if(use_pvel){
-								pvel.add(prevVel[0]+" "+prevVel[1]+" "+prevVel[2]);
+							// if(use_pvel){
+							// 	pvel.add(prevVel[0]+" "+prevVel[1]+" "+prevVel[2]);
+							// }
+							if(use_velstats){
+								xvmean.add(String.format("%f",velstats.xvmean));
+								xvstd.add(String.format("%f",velstats.xvstd));
+								xvmax.add(String.format("%f",velstats.xvmax));
 							}
 							dvel.add(foo[0]+" "+foo[1]+" "+foo[2]);
 							dbool.add(""+bar);

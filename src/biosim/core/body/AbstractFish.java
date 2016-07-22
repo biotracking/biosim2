@@ -12,7 +12,8 @@ public abstract class AbstractFish extends Body
 				Proximity,
 				ZoneCoMVecs,
 				HolonomicDrive,
-				SelfVelXYT{
+				SelfVelXYT,
+				NeighborhoodStatistics{
 	public boolean sameAsMe(AbstractFish other){
 		return other == this;
 	}

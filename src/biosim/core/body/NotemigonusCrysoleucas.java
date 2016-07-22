@@ -143,6 +143,40 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	}
 	public double getNearestSameTypeVecSensorRange(){ return RANGE; }
 	
+	public boolean getVelocityStatistics(NeighborhoodStatistics.VelocityStatistics rv){
+		Bag allObjects = sim.field2D.getAllObjects();
+		double xvmean=0.0;
+		double xvstd=0.0;
+		double xvmax=0.0;
+		int numFish = 0;
+		for(int i=0;i<allObjects.numObjs;i++){
+			if(allObjects.objs[i] instanceof AbstractFish){
+				AbstractFish tmpFish = (AbstractFish)allObjects.objs[i];
+				double[] otherVel = {0.0,0.0,0.0};
+				tmpFish.getSelfVelXYT(otherVel);
+				if(this.sameAsMe(tmpFish)) continue;
+				xvmax = Math.max(xvmax,Math.abs(otherVel[0]));
+				xvmean += otherVel[0];
+				numFish++;
+			}
+		}
+		if(numFish > 0) xvmean = xvmean/(double)numFish;
+		for(int i=0;i<allObjects.numObjs;i++){
+			if(allObjects.objs[i] instanceof AbstractFish){
+				AbstractFish tmpFish = (AbstractFish)allObjects.objs[i];
+				double[] otherVel = {0.0,0.0,0.0};
+				tmpFish.getSelfVelXYT(otherVel);
+				if(this.sameAsMe(tmpFish)) continue;
+				xvstd += Math.pow(otherVel[0]-xvmean,2);
+			}
+		}
+		if(numFish > 0) xvstd = xvstd/(double)numFish;
+		rv.xvmean = xvmean;
+		rv.xvstd = xvstd;
+		rv.xvmax = xvmax;
+		return true;
+	}
+
 	public double[] getProximity(double[] rv){
 		Double2D loc = sim.field2D.getObjectLocation(this);
 		MutableDouble2D dir = new MutableDouble2D();
