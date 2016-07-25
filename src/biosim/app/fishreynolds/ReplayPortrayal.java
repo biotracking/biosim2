@@ -8,6 +8,7 @@ import sim.portrayal.DrawInfo2D;
 import biosim.core.sim.Simulation;
 import biosim.core.body.Body;
 import biosim.core.body.NotemigonusCrysoleucas;
+import biosim.core.body.ReplayFish;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -41,6 +42,7 @@ public class ReplayPortrayal extends OvalPortrayal2D implements Oriented2D{
 		}
 	}
 	public void draw(Object object, Graphics2D graphics, DrawInfo2D info){
+		if(object instanceof ReplayFish && ((ReplayFish)object).visible==false) return;
 		double width = info.draw.width*body.getSize();//0.008;
 		double height = info.draw.height*body.getSize();//0.008;
 		int x = (int)(info.draw.x);// - width/2.0);

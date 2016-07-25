@@ -15,7 +15,7 @@ public class ReplayFish extends AbstractFish{
 	public boolean visible;
 	//A track is: [x y theta time]
 	public ArrayList<double[]> track;
-	private int lastTrackIdx = 0;
+	// private int lastTrackIdx = 0;
 	public int trackID;
 
 	private Double2D lastPos, curPos;
@@ -25,6 +25,7 @@ public class ReplayFish extends AbstractFish{
 		doNotLog = true;
 		lastPos = curPos = null;
 		lastDir = curDir = null;
+		visible=false;
 	}
 
 	public MersenneTwisterFast getRandom(){
@@ -39,19 +40,20 @@ public class ReplayFish extends AbstractFish{
 			double curTime = sim.schedule.getSteps()*sim.resolution;
 			double x,y,theta;
 			//find the closest time in the track
-			if(track.get(lastTrackIdx)[3] > curTime) lastTrackIdx = 0;
-			if(curTime > track.get(track.size()-1)[3]){
+			// if(track.get(lastTrackIdx)[3] > curTime) lastTrackIdx = 0;
+			if(curTime > track.get(track.size()-1)[3] || curTime < track.get(0)[3]){
 				visible = false;
 				return;
 			}
-			for(int i=lastTrackIdx; i< track.size()-1;i++){
+			visible = true;
+			for(int i=0; i< track.size()-1;i++){
 				if(track.get(i+1)[3] > curTime){
-					if(track.get(i)[3] > curTime){
-						//remain invisible until our track is active
-						visible = false;
-						return;
-					}
-					visible = true;
+					// if(track.get(i)[3] > curTime){
+					// 	//remain invisible until our track is active
+					// 	visible = false;
+					// 	return;
+					// }
+					// visible = true;
 					//interpolate between the previous point and this one
 					//to handle differences between tracking rate and
 					//simulation rate
