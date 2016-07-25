@@ -26,7 +26,7 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	public static final double RANGE=1.0;//Double.POSITIVE_INFINITY; //no limit on the range for now
 	public static final double MAX_VELOCITY_X=3*SIZE; //3 bodylengths per second forwards/backwards
 	public static final double MAX_VELOCITY_Y=SIZE/5.0; //1/5th of a bodylength per second sidways
-	public static final double MAX_VELOCITY_THETA=2*Math.PI; //fish can turn quickly
+	public static final double MAX_VELOCITY_THETA=2*Math.PI*30.0; //fish can turn quickly
 	public static final int PROX_SENSORS=8;
 	public static final double PROX_RANGE=4*SIZE;//Double.POSITIVE_INFINITY;
 	public static final int NUM_ZONES = 3;
