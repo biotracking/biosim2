@@ -276,6 +276,76 @@ public class BTFData{
 		return rv;
 	}
 
+	public String[] computeXAccel(double fps) throws IOException{
+		return computeAccel(0,fps);
+	}
+
+	public String[] computeAccel(int xyt, double framesPerSecond) throws IOException{
+		ArrayList<BTFDataFrame> frames = splitIntoFrames();
+		String[] id_col = loadColumn("id");
+		double[][] pvel = columnAsDoubles("pvel");
+		String[] rv = new String[id_col.length];
+		BTFDataFrame prevFrame, curFrame;
+		for(int frameIdx=0; frameIdx < frames.size(); frameIdx++){
+			double accel = 0.0;
+			curFrame = frames.get(frameIdx);
+			for(int curIDIdx=0;curIDIdx<curFrame.len;curIDIdx++){
+				if(frameIdx > 0){
+					prevFrame = frames.get(frameIdx-1);
+					int prevFrameIDIdx = -1;
+					for(int i=0;i<prevFrame.len;i++){
+						if(id_col[prevFrame.start+i].equals(id_col[curFrame.start+curIDIdx])){
+							prevFrameIDIdx = i;
+							break;
+						}
+					}
+					if(prevFrameIDIdx != -1){
+						double curVel = pvel[curFrame.start+curIDIdx][xyt];
+						double prevVel = pvel[prevFrame.start+prevFrameIDIdx][xyt];
+						accel = (curVel-prevVel)*framesPerSecond;
+					}
+				}
+				rv[curFrame.start+curIDIdx] = String.format("%f",accel);
+			}
+		}
+		return rv;
+	}
+
+	public String[] computeEMA(String colname, double alpha) throws IOException{
+		ArrayList<BTFDataFrame> frames = splitIntoFrames();
+		String[] id_col = loadColumn("id");
+		double[][] emaCol = columnAsDoubles(colname);
+		int emaNumVals = emaCol[0].length;
+		String[] rv = new String[id_col.length];
+		BTFDataFrame prevFrame, curFrame;
+		for(int frameIdx=0; frameIdx < frames.size(); frameIdx++){
+			curFrame = frames.get(frameIdx);
+			for(int curIDIdx=0;curIDIdx<curFrame.len;curIDIdx++){
+				if(frameIdx > 0){
+					prevFrame = frames.get(frameIdx-1);
+					int prevFrameIDIdx = -1;
+					for(int i=0;i<prevFrame.len;i++){
+						if(id_col[prevFrame.start+i].equals(id_col[curFrame.start+curIDIdx])){
+							prevFrameIDIdx = i;
+							break;
+						}
+					}
+					if(prevFrameIDIdx != -1){
+						for(int i=0;i<emaNumVals;i++){
+							emaCol[curFrame.start+curIDIdx][i] = (alpha*emaCol[curFrame.start+curIDIdx][i]) + ((1.0-alpha)*emaCol[prevFrame.start+prevFrameIDIdx][i]);
+						}
+					}
+				}
+				String tmpRv = "";
+				for(int i=0;i<emaNumVals;i++){
+					tmpRv += String.format("%f ",emaCol[curFrame.start+curIDIdx][i]);
+				}
+				rv[curFrame.start+curIDIdx] = tmpRv.trim();
+			}
+		}
+		return rv;
+	}
+
 	public static void main(String[] args){
 		if((args.length > 0)&&(args.length<3)){
 			BTFData btf = new BTFData();

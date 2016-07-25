@@ -50,7 +50,7 @@ public class BTFSequences{
 		}
 	}
 
-	public static void splitIntoSequences(File parentDirectory, BTFData originalBTF, int framesPerSeq) throws IOException{
+	public static void splitIntoSequencesFixedFPS(File parentDirectory, BTFData originalBTF, int framesPerSeq) throws IOException{
 		System.out.println("Splitting into frames");
 		ArrayList<BTFData.BTFDataFrame> frames = originalBTF.splitIntoFrames();
 		BTFSequences rv = new BTFSequences();
@@ -97,9 +97,57 @@ public class BTFSequences{
 		}
 	}
 
+	public static void splitIntoSequences(File parentDirectory, BTFData originalBTF, int minFramesPerSeq) throws IOException{
+		System.out.println("Splitting into frames");
+		ArrayList<BTFData.BTFDataFrame> frames = originalBTF.splitIntoFrames();
+		BTFSequences rv = new BTFSequences();
+		String seqPrefix = "seq_";
+		int seqCtr = 0;
+		int curStartFrame = 0;
+		long lastTime = System.currentTimeMillis();
+		long startTime = lastTime;
+		double lastLine = frames.get(frames.size()-1).start + frames.get(frames.size()-1).len;
+		while(curStartFrame<frames.size()){
+			//System.out.println("Outer loop");
+			int frameEnd=curStartFrame+1;
+			BTFData.BTFDataFrame startFrame = frames.get(curStartFrame);
+			ArrayList<Integer> startIDs = startFrame.parentObj.getUniqueIDs(startFrame.start,startFrame.start+startFrame.len);
+			while(frameEnd<frames.size() ){ //&& (frameEnd-curStartFrame)<framesPerSeq){
+				//System.out.println("Inner loop");
+				BTFData.BTFDataFrame tmp = frames.get(frameEnd);
+				ArrayList<Integer> frameEndIDs = tmp.parentObj.getUniqueIDs(tmp.start,tmp.start+tmp.len);
+				long curTime = System.currentTimeMillis();
+				if( (curTime - lastTime) > timeout){
+					String stats = String.format(" (%.1f%%, %.1f fps)",(100*tmp.start/lastLine), (1000.0*frameEnd)/(double)(curTime-startTime));
+					System.out.println("Sequence "+seqCtr+" Frame: "+frameEnd+stats);
+					lastTime = curTime;
+				}
+				if(frameEndIDs.size() != startIDs.size()){
+					break;
+				}
+				if( !startIDs.containsAll(frameEndIDs)){
+					break;
+				}
+				frameEnd++;
+			}
+			if((frameEnd-curStartFrame)>=minFramesPerSeq){
+				File seqDir = new File(parentDirectory,seqPrefix+seqCtr);
+				//System.out.println("Writting sequence "+seqCtr);
+				if(!seqDir.exists()){
+					seqDir.mkdir();
+				}
+				// BTFData.BTFDataFrame endFrame = frames.get(curStartFrame+framesPerSeq);
+				BTFData.BTFDataFrame endFrame = frames.get(frameEnd);
+				originalBTF.writeDir(seqDir,startFrame.start,endFrame.start);
+				seqCtr++;
+			}
+			curStartFrame = frameEnd;
+		}
+	}
+
 	public static void main(String[] args){
 		if(args.length != 3){
-			System.out.println("Usage: java BTFSequences <BTFFile> <saveDir> <framesPerSeq>");
+			System.out.println("Usage: java BTFSequences <BTFFile> <saveDir> <minFramesPerSeq>");
 			System.out.print("Args:");
 			for(int i=0;i<args.length;i++){
 				System.out.print(" "+args[i]);
@@ -109,13 +157,13 @@ public class BTFSequences{
 			BTFData btf = new BTFData();
 			btf.loadDir(new File(args[0]));
 			File saveDir = new File(args[1]);
-			int framesPerSeq = Integer.parseInt(args[2]);
+			int minFramesPerSeq = Integer.parseInt(args[2]);
 			try{
 				BufferedBTFData bbtf = new BufferedBTFData(btf);
 				System.out.println("Loading btf to memory");
 				bbtf.loadBuffer();
 				System.out.println("Done");
-				splitIntoSequences(saveDir,bbtf, framesPerSeq);
+				splitIntoSequences(saveDir,bbtf, minFramesPerSeq);
 			} catch(IOException ioe){
 				throw new RuntimeException("[BTFSequences] Error splitting into sequences: "+ioe);
 			}
