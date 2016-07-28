@@ -13,7 +13,30 @@ public class DifferentialEvolution{
 			phenotype = null;
 			fitness = null;
 		}
-		// public DEIndividual add(DEIndividual other){}
+		public DEIndividual add(DEIndividual other){
+			DEIndividual rv = new DEIndividual();
+			rv.phenotype = new double[phenotype.length];
+			for(int i=0;i<phenotype.length;i++){
+				rv.phenotype[i] = phenotype[i]+other.phenotype[i];
+			}
+			return rv;
+		}
+		public DEIndividual sub(DEIndividual other){
+			DEIndividual rv = new DEIndividual();
+			rv.phenotype = new double[phenotype.length];
+			for(int i=0;i<phenotype.length;i++){
+				rv.phenotype[i] = phenotype[i]-other.phenotype[i];
+			}
+			return rv;
+		}
+		public DEIndividual scale(double alpha){
+			DEIndividual rv = new DEIndividual();
+			rv.phenotype = new double[phenotype.length];
+			for(int i=0;i<rv.phenotype.length;i++){
+				rv.phenotype[i] = alpha*phenotype[i];
+			}
+			return rv;
+		}
 	}
 	public class DEResult{
 		public DEIndividual best;
@@ -49,7 +72,7 @@ public class DifferentialEvolution{
 					children.set(i,parents.get(i));
 				}
 				if(rv.best==null || children.get(i).fitness > rv.best.fitness){
-					rv.best = children.get();
+					rv.best = children.get(i);
 				}
 			}
 			parents = children;
@@ -61,6 +84,12 @@ public class DifferentialEvolution{
 				while(b==i || b==a) b = problem.getRandom().nextInt(problem.getPopSize());
 				int c = i;
 				while(c==i || c==a || c==b) c = problem.getRandom().nextInt(problem.getPopSize());
+				DEIndividual d, tmp = parents.get(b).sub(parents.get(c));
+				tmp = tmp.scale(problem.getMutationRate());
+				d = parents.get(a).add(tmp);
+				tmp = problem.oneChildCrossover(d,parents.get(i));
+				children.add(tmp);
+				// children.add(problem.oneChildCrossover(parents.get(a).add(parents.get(b).sub(parents.get(c)).scale(problem.getMutationRate())),parents.get(i)));
 			}
 		}
 		return rv;
