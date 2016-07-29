@@ -63,9 +63,9 @@ public class DataAsDemonstrator{
 		ListIterator<BTFData> seqIterator = btfValues.listIterator();//data.sequences.values().iterator();
 		//pull out cross validation samples
 		int numCVSeqs = (int)(data.sequences.size()*cvRatio);
-		ArrayList<ProblemSpec.Dataset> cvData = new ArrayList<ProblemSpec.Dataset>();
+		ArrayList<BTFData> cvData = new ArrayList<BTFData>();
 		for(int i=0;i<numCVSeqs;i++){
-			cvData.add(pspec.btf2array(seqIterator.next()));
+			cvData.add(seqIterator.next());
 		}
 		//compute baseline learner
 		ListIterator<BTFData> baselineIterator = btfValues.listIterator(seqIterator.nextIndex());

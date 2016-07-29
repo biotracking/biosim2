@@ -343,15 +343,17 @@ public class ReynoldsFeatures implements ProblemSpec{
 		return rv;
 	}
 
-	public ArrayList<PerformanceMetric> evaluate(ArrayList<Dataset> testSet, LearnerAgent learner, ExecutorService threadPool){
+	public ArrayList<PerformanceMetric> evaluate(ArrayList<BTFData> testSet, LearnerAgent learner, ExecutorService threadPool){
 		ArrayList<PerformanceMetric> rv = new ArrayList<PerformanceMetric>();
 		rv.add(averageSequenceError(testSet,learner,threadPool));
+		rv.add(averageEndpointError(testSet,learner,threadPool));
 		return rv;
 	}
 
-	public PerformanceMetric averageSequenceError(ArrayList<Dataset> testSet, LearnerAgent learner, ExecutorService threadPool){
+	public PerformanceMetric averageSequenceError(ArrayList<BTFData> testSet, LearnerAgent learner, ExecutorService threadPool){
 		HashSet<Callable<Double> > tasks = new HashSet<Callable<Double> >();
-		for(Dataset testD: testSet){
+		for(BTFData testBTF: testSet){
+			Dataset testD = btf2array(testBTF);
 			Callable<Double> tmp = new Callable<Double>(){
 				public Double call(){
 					double[] learnerOuts = new double[getNumOutputs()];
@@ -386,10 +388,107 @@ public class ReynoldsFeatures implements ProblemSpec{
 		}
 		final double computedError = sumErr/(double)testSet.size();
 		return new PerformanceMetric(){
-			public String toString(){return "Average sequence error: "+value();}
+			public String toString(){return "Average 1-step error per fish: "+value();}
 			public double value(){return computedError;}
 		};
 	}
+
+	public PerformanceMetric averageEndpointError(ArrayList<BTFData> testSet, LearnerAgent learner, ExecutorService threadPool){
+		// double avgXEPErr = 0.0, avgYEPErr = 0.0, avgTEPErr = 0.0;
+		// try{
+		int tmpl = -1;
+		for(BTFData seq: testSet){
+			int snf = seq.numUniqueFrames();
+			if(tmpl < 0 || snf < tmpl){
+				tmpl = snf;
+			}
+		}
+		final int minPredictionLength = tmpl;
+		HashSet<Callable<Double[]>> tasks = new HashSet<Callable<Double[]>>();
+		for(BTFData seq : testSet){
+			// ArrayList<BTFData.BTFDataFrame> frames = seq.splitIntoFrames();
+			// int numSimSteps = frames.size();
+			// int numSimSteps = seq.numUniqueFrames();
+			final MersenneTwisterFast tLocalRNG = new MersenneTwisterFast(getRNG().nextLong());
+			Callable<Double[]> tmp = new Callable<Double[]>(){
+				public Double[] call() throws IOException{
+					Double[] callableRv = new Double[3];
+					ArrayList<Integer> idList = seq.getUniqueIDs();
+					String[] testingX = seq.loadColumn("xpos");
+					String[] testingY = seq.loadColumn("ypos");
+					String[] testingTheta = seq.loadColumn("timage");
+					double seqXEPErr = 0.0;
+					double seqYEPErr = 0.0;
+					double seqTEPErr = 0.0;
+					for(int idIdx=0;idIdx<idList.size();idIdx++){
+						int activeID = idList.get(idIdx);
+						Environment env = getEnvironment(learner,seq,activeID);
+						BTFDataLogger logs = getLogger();
+						env.addLogger(logs);
+						Simulation sim = env.newSimulation();
+						sim.random = tLocalRNG;
+						sim.start();
+						while(sim.schedule.getSteps()<(minPredictionLength)){
+							boolean step_success = sim.schedule.step(sim);
+						}
+						sim.finish();
+						BufferedBTFData loggedBTF = (BufferedBTFData)(logs.getBTFData());
+						ArrayList<Integer> activeIDRows = loggedBTF.rowIndexForID(activeID);
+						ArrayList<Integer> testingActiveIDRows = seq.rowIndexForID(activeID);
+						int lastActiveIDRow = activeIDRows.get(activeIDRows.size()-1);
+						int lastTestingActiveIDRow = testingActiveIDRows.get(testingActiveIDRows.size()-1);
+						String predictedX = loggedBTF.loadColumn("xpos")[lastActiveIDRow];
+						String predictedY = loggedBTF.loadColumn("ypos")[lastActiveIDRow];
+						String predictedTheta = loggedBTF.loadColumn("timage")[lastActiveIDRow];
+						double xEPErr = (Double.parseDouble(testingX[lastTestingActiveIDRow]) - Double.parseDouble(predictedX));
+						double yEPErr = (Double.parseDouble(testingY[lastTestingActiveIDRow]) - Double.parseDouble(predictedY));
+						double thetaEPErr = (Double.parseDouble(testingTheta[lastTestingActiveIDRow]) - Double.parseDouble(predictedTheta));
+						seqXEPErr += Math.pow(xEPErr,2);
+						seqYEPErr += Math.pow(yEPErr,2);
+						seqTEPErr += Math.pow(thetaEPErr,2);
+					}
+					// avgXEPErr += Math.sqrt(seqXEPErr)/(double)idList.size();
+					// avgYEPErr += Math.sqrt(seqYEPErr)/(double)idList.size();
+					// avgTEPErr += Math.sqrt(seqTEPErr)/(double)idList.size();
+					callableRv[0] = Math.sqrt(seqXEPErr)/(double)idList.size();
+					callableRv[1] = Math.sqrt(seqYEPErr)/(double)idList.size();
+					callableRv[2] = Math.sqrt(seqTEPErr)/(double)idList.size();
+					return callableRv;
+				}
+			};
+			tasks.add(tmp);
+		}
+		List<Future<Double[]>> results = null;
+		double tmpX=0.0, tmpY=0.0, tmpT=0.0;
+		try{
+			results=threadPool.invokeAll(tasks);
+			for(Future<Double[]> res : results){
+				Double[] tmpRv = res.get();
+				tmpX += tmpRv[0];
+				tmpY += tmpRv[1];
+				tmpT += tmpRv[2];
+			}
+		} catch(InterruptedException ie){
+			threadPool.shutdown();
+			throw new RuntimeException("[ReynoldsFeatures] Evaluation interrupted in averageEndpointError: "+ie);
+		} catch(ExecutionException ee){
+			threadPool.shutdown();
+			ee.printStackTrace();
+			throw new RuntimeException("[ReynoldsFeatures] ExecutionException in averageEndpointError: "+ee);
+		} 
+		final double x = tmpX/(double)testSet.size();
+		final double y = tmpY/(double)testSet.size();
+		final double t = tmpT/(double)testSet.size();
+		return new PerformanceMetric(){
+			// final double x=avgXEPErr,y=avgYEPErr,t=avgTEPErr;
+			public String toString(){return String.format("Average endpoint error per fish: x:%f y:%f t:%f, sum: %f",x,y,t,(x+y+t));}
+			public double value(){return x+y+t;}
+		};
+		// } catch(IOException ioe){
+		// 	throw new RuntimeException("[ReynoldsFeatures] IOException on averageEndpointError evaluation:"+ioe);
+		// }
+	}
+
 	public BTFDataLogger getLogger(){
 		return new BTFDataLogger(){
 			public LinkedList<String> rbfsepvec, rbforivec, rbfcohvec, rbfwallvec, xvmean, xvstd, xvmax, dvel, dbool; //pvel

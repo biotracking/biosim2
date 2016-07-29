@@ -24,7 +24,7 @@ public interface ProblemSpec{
 	public Environment getEnvironment(LearnerAgent la, BTFData btf, Integer ignoredID);
 	public BTFDataLogger getLogger();
 	public LearnerAgent makeLearner();
-	public ArrayList<PerformanceMetric> evaluate(ArrayList<Dataset> testSet, LearnerAgent learner, ExecutorService threadPool);
+	public ArrayList<PerformanceMetric> evaluate(ArrayList<BTFData> testSet, LearnerAgent learner, ExecutorService threadPool);
 	public void configure(Properties p);
 	public Properties getSettings();
 	public long getSeed();
