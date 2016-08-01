@@ -1,58 +1,22 @@
 // DifferentialEvolution.java
 package biosim.core.optimization;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Properties;
 
 import ec.util.MersenneTwisterFast;
 
+import biosim.core.util.ArgsToProps;
+
 public class DifferentialEvolution{
-	public class DEIndividual{
-		public double[] phenotype;
-		public Double fitness;
-		public DEIndividual(){
-			phenotype = null;
-			fitness = null;
-		}
-		public DEIndividual add(DEIndividual other){
-			DEIndividual rv = new DEIndividual();
-			rv.phenotype = new double[phenotype.length];
-			for(int i=0;i<phenotype.length;i++){
-				rv.phenotype[i] = phenotype[i]+other.phenotype[i];
-			}
-			return rv;
-		}
-		public DEIndividual sub(DEIndividual other){
-			DEIndividual rv = new DEIndividual();
-			rv.phenotype = new double[phenotype.length];
-			for(int i=0;i<phenotype.length;i++){
-				rv.phenotype[i] = phenotype[i]-other.phenotype[i];
-			}
-			return rv;
-		}
-		public DEIndividual scale(double alpha){
-			DEIndividual rv = new DEIndividual();
-			rv.phenotype = new double[phenotype.length];
-			for(int i=0;i<rv.phenotype.length;i++){
-				rv.phenotype[i] = alpha*phenotype[i];
-			}
-			return rv;
-		}
-	}
+	public static long timeout=2000;//2 seconds 
 	public class DEResult{
 		public DEIndividual best;
 		// public ArrayList<Double[]> generationBest, bestSoFar;
 		public DEResult(){
 			best = null;
 		}
-	}
-	public interface DEProblem{
-		void evaluate(DEIndividual individual);
-		double getMutationRate();
-		int getPopSize();
-		DEIndividual generateRandomIndividual();
-		boolean stopIterations(int iteration, DEIndividual best);
-		MersenneTwisterFast getRandom();
-		DEIndividual oneChildCrossover(DEIndividual p1, DEIndividual p2);
 	}
 	public DEResult solve(DEProblem problem){
 		// Taken from "Essentials of Metaheuristics", Second Edition
@@ -65,6 +29,7 @@ public class DifferentialEvolution{
 			children.add(problem.generateRandomIndividual());
 		}
 		int iterationCtr = 0;
+		long curTime, lastTime = System.currentTimeMillis();
 		while(!problem.stopIterations(iterationCtr,rv.best)){
 			for(int i=0;i<problem.getPopSize();i++){
 				problem.evaluate(children.get(i));
@@ -74,6 +39,11 @@ public class DifferentialEvolution{
 				if(rv.best==null || children.get(i).fitness > rv.best.fitness){
 					rv.best = children.get(i);
 				}
+			}
+			curTime = System.currentTimeMillis();
+			if(curTime - lastTime > timeout){
+				System.out.println("Iteration "+iterationCtr+" best "+rv.best);
+				lastTime = curTime;
 			}
 			parents = children;
 			children = new ArrayList<DEIndividual>();
@@ -91,7 +61,70 @@ public class DifferentialEvolution{
 				children.add(tmp);
 				// children.add(problem.oneChildCrossover(parents.get(a).add(parents.get(b).sub(parents.get(c)).scale(problem.getMutationRate())),parents.get(i)));
 			}
+			iterationCtr++;
 		}
 		return rv;
+	}
+	public static void main(String[] args){
+		try{
+			Properties cmdLineArgs = ArgsToProps.parse(args);
+			final int maxIters = Integer.parseInt(cmdLineArgs.getProperty("--maxIters","100"));
+			final int popSize = Integer.parseInt(cmdLineArgs.getProperty("--popSize","100"));
+			final int vecSize = Integer.parseInt(cmdLineArgs.getProperty("--vecSize","10"));
+
+			DEProblem maxOnes = new DEProblem(){
+				MersenneTwisterFast rng = new MersenneTwisterFast();
+				public void evaluate(DEIndividual dei){
+					dei.fitness = 0.0;
+					for(int i=0;i<dei.phenotype.length;i++) dei.fitness += -Math.abs(1.0-dei.phenotype[i]);
+				}
+				public double getMutationRate(){ return 0.1;}
+				public int getPopSize(){ return popSize; }
+				public DEIndividual generateRandomIndividual(){
+					DEIndividual rv = new DEIndividual();
+					rv.phenotype = new double[vecSize];
+					for(int i=0;i<rv.phenotype.length;i++) rv.phenotype[i] = getRandom().nextDouble();
+					return rv;
+				}
+				public boolean stopIterations(int it, DEIndividual b){
+					double sum = 0.0;
+					if(b != null){
+						for(int i=0;i<b.phenotype.length;i++){
+							sum += b.phenotype[i];
+						}
+						if (sum == b.phenotype.length){
+							System.out.println("Max individual found at iteration "+it);
+							return true;
+						}
+					}
+					return it >= maxIters;
+				}
+				public MersenneTwisterFast getRandom(){ return rng; }
+				public DEIndividual oneChildCrossover(DEIndividual p1, DEIndividual p2){
+					DEIndividual rv = new DEIndividual();
+					rv.phenotype = new double[p1.phenotype.length];
+					//uniform random crossover, choose one gene from p2 to keep
+					boolean pickedP2 = false;
+					for(int i=0;i<rv.phenotype.length;i++){
+						if(getRandom().nextDouble() > 0.5){
+							rv.phenotype[i] = p1.phenotype[i];
+						} else {
+							rv.phenotype[i] = p2.phenotype[i];
+							pickedP2 = true;
+						}
+					}
+					if(!pickedP2){
+						int randFromP2 = getRandom().nextInt(rv.phenotype.length);
+						rv.phenotype[randFromP2] = p2.phenotype[randFromP2];
+					}
+					return rv;
+				}
+			};
+			DifferentialEvolution.DEResult der = (new DifferentialEvolution()).solve(maxOnes);
+			System.out.println("Best individual found:");
+			System.out.println(der.best);
+		} catch(IOException ioe){
+			throw new RuntimeException("[DifferentialEvolution] Failed test main max ones: "+ioe);
+		}
 	}
 }
