@@ -452,6 +452,29 @@ public class NotemigonusCrysoleucas extends AbstractFish {
 	}
 	public int getNumZones(){ return NUM_ZONES; }
 
+	public boolean getPoiDir(MutableDouble2D rv, String name){
+		Double2D loc = sim.field2D.getObjectLocation(this);
+		MutableDouble2D dir = new MutableDouble2D();
+		if(sim.getBodyOrientation(this,dir)){
+			for(int i=0;i<sim.poi.size();i++){
+				if(sim.poi.get(i).equalsIgnoreCase(name)){
+					Double2D poiLoc = sim.field2D.getObjectLocation(sim.poi.get(i));
+					if(sim.toroidal){
+						rv.setTo(sim.field2D.tv(poiLoc,loc));
+					} else {
+						rv.setTo(poiLoc);
+						rv.subtractIn(loc);
+					}
+					rv.rotate(-dir.angle());
+					rv.normalize();
+					return true;
+				}
+			}
+		} 
+		return false;
+	}
+
+
 	public void setDesiredVelocity(double x, double y, double theta){
 		desiredVelXYT[0] = x;
 		desiredVelXYT[1] = y;
