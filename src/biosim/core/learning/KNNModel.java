@@ -29,8 +29,13 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 	public int getK(){return k;}
 	public void setK(int k){this.k = k;}
 
+	protected double kernelBandwidth;
+	public double getBandwidth(){return kernelBandwidth;}
+	public void setBandwidth(double b){this.kernelBandwidth=b;}
+
+
 	public enum ComboMethod{
-		AVERAGE, SAMPLE
+		AVERAGE, SAMPLE, KERNEL_SMOOTH, KERNEL_SAMPLE
 	}
 	protected ComboMethod method=ComboMethod.SAMPLE;
 	public ComboMethod getMethod(){return method;}
@@ -39,6 +44,8 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 			method = ComboMethod.AVERAGE;
 		} else if(m.equalsIgnoreCase("SAMPLE")){
 			method = ComboMethod.SAMPLE;
+		} else if(m.equalsIgnoreCase("KERNEL_SMOOTH")){
+			method = ComboMethod.KERNEL_SMOOTH;
 		} else{
 			throw new RuntimeException("[KNNModel] trying to set unrecognized combination method: "+m);
 		}
@@ -75,6 +82,7 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 		setK(Integer.parseInt(settings.getProperty("K","3")));
 		setMethod(settings.getProperty("COMBO_METHOD","SAMPLE"));
 		setNormFeatures(Boolean.parseBoolean(settings.getProperty("NORMALIZE_FEATURES","FALSE")));
+		setBandwidth(Double.parseDouble(settings.getProperty("KERNEL_BANDWIDTH","0.01")));
 	}
 
 	public Properties getSettings(){
@@ -82,6 +90,7 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 		settings.setProperty("K",new Integer(getK()).toString());
 		settings.setProperty("COMBO_METHOD",getMethod().toString());
 		settings.setProperty("NORMALIZE_FEATURES",new Boolean(getNormFeatures()).toString());
+		settings.setProperty("KERNEL_BANDWIDTH",String.format("%f",getBandwidth()));
 		return settings;
 	}
 
@@ -99,6 +108,30 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 		featureNames = outputNames = null;
 	}
 
+	private double[] neighborSqDists(double[] features, double[][] neighbors){
+		double[] rv = new double[neighbors.length];
+		for(int i=0;i<rv.length;i++){
+			rv[i] = 0.0;
+			for(int j=0;j<neighbors[i].length;j++){
+				rv[i] += Math.pow(features[j]-neighbors[i][j],2);
+			}
+		}
+		return rv;
+	}
+
+	private double[] neighborDists(double[] features, double[][] neighbors){
+		double[] rv = neighborSqDists(features,neighbors);
+		for(int i=0;i<rv.length;i++){
+			rv[i] = Math.sqrt(rv[i]);
+		}
+		return rv;
+	}
+
+	protected double kernel(double u, double h){
+		//Gaussian with bandwidth h
+		return Math.exp(-0.5*Math.pow(u,2)/h)/(h*Math.sqrt(2.0*Math.PI));
+	}
+
 	public double[] computeOutputs(double[] features, double[] outputs){
 		if(knn == null){
 			throw new RuntimeException("knn uninitialized!");
@@ -107,14 +140,15 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 			outputs = new double[knn.getClassDim()];
 			for(int i=0;i<outputs.length;i++) outputs[i]=0.0;
 		}
-		double[][] neighbors = new double[k][knn.getClassDim()];
-		knn.query(features,neighbors);
+		double[][] neighbors = new double[getK()][knn.getClassDim()];
+		double[][] neighbors_features = new double[getK()][features.length];
+		knn.query(features,neighbors,null,neighbors_features);
 		switch(method){
 			case SAMPLE:
 				int n_index;
-				synchronized(random){
-					n_index = random.nextInt(getK());
-				}
+				// synchronized(random){
+					n_index = getRandom().nextInt(getK());
+				// }
 				// System.out.println(n_index+" "+neighbors[0].length+" "+neighbors.length+" "+outputs.length);
 				System.arraycopy(neighbors[n_index],0,outputs,0,outputs.length);
 				break;
@@ -127,6 +161,33 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 				for(int i=0;i<outputs.length;i++){
 					outputs[i] = outputs[i]/(double)getK();
 				}
+				break;
+			case KERNEL_SMOOTH:
+				double[] dists = neighborDists(features,neighbors_features);
+				double[] kernelWeights = new double[dists.length];
+				double weightSum = 0.0;
+				for(int i=0;i<kernelWeights.length;i++){
+					kernelWeights[i] = kernel(dists[i],getBandwidth());
+					weightSum += kernelWeights[i];
+				}
+				for(int i=0;i<getK();i++){
+					for(int j=0;j<outputs.length;j++){
+						outputs[j] += neighbors[i][j]*kernelWeights[i]/weightSum;
+					}
+				}
+				break;
+			case KERNEL_SAMPLE:
+				double[] sampleDists = neighborDists(features,neighbors_features);
+				double[] sampleVec = new double[sampleDists.length];
+				double runningSum = 0.0;
+				for(int i=0;i<sampleVec.length;i++){
+					sampleVec[i] = runningSum+kernel(sampleDists[i],getBandwidth());
+					runningSum = sampleVec[i];
+				}
+				double p = getRandom().nextDouble();
+				int selectedNeighbor = 0;
+				while(p>sampleVec[selectedNeighbor] && selectedNeighbor<(getK()-1)) selectedNeighbor++;
+				System.arraycopy(neighbors[selectedNeighbor],0,outputs,0,outputs.length);
 				break;
 			default:
 				throw new RuntimeException("[KNNModel] Unimplemented combination method:"+method);
