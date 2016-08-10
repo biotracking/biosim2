@@ -353,13 +353,14 @@ public class ReynoldsFeatures implements ProblemSpec{
 	public PerformanceMetric averageSequenceError(ArrayList<BTFData> testSet, LearnerAgent learner, ExecutorService threadPool){
 		HashSet<Callable<Double> > tasks = new HashSet<Callable<Double> >();
 		for(BTFData testBTF: testSet){
-			Dataset testD = btf2array(testBTF);
+			final Dataset testD = btf2array(testBTF);
+			final LearnerAgent tloc_learner = learner;
 			Callable<Double> tmp = new Callable<Double>(){
 				public Double call(){
 					double[] learnerOuts = new double[getNumOutputs()];
 					double sumErr = 0.0;
 					for(int row=0;row<testD.features.length;row++){
-						learner.computeOutputs(testD.features[row],learnerOuts);
+						tloc_learner.computeOutputs(testD.features[row],learnerOuts);
 						double mse = 0.0;
 						for(int col=0;col<learnerOuts.length;col++){
 							mse += Math.pow(learnerOuts[col]-testD.outputs[row][col],2);
@@ -410,19 +411,21 @@ public class ReynoldsFeatures implements ProblemSpec{
 			// int numSimSteps = frames.size();
 			// int numSimSteps = seq.numUniqueFrames();
 			final MersenneTwisterFast tLocalRNG = new MersenneTwisterFast(getRNG().nextLong());
+			final LearnerAgent tLocalLearner = learner;
+			final BTFData tLocalSeq = seq;
 			Callable<Double[]> tmp = new Callable<Double[]>(){
 				public Double[] call() throws IOException{
 					Double[] callableRv = new Double[3];
-					ArrayList<Integer> idList = seq.getUniqueIDs();
-					String[] testingX = seq.loadColumn("xpos");
-					String[] testingY = seq.loadColumn("ypos");
-					String[] testingTheta = seq.loadColumn("timage");
+					ArrayList<Integer> idList = tLocalSeq.getUniqueIDs();
+					String[] testingX = tLocalSeq.loadColumn("xpos");
+					String[] testingY = tLocalSeq.loadColumn("ypos");
+					String[] testingTheta = tLocalSeq.loadColumn("timage");
 					double seqXEPErr = 0.0;
 					double seqYEPErr = 0.0;
 					double seqTEPErr = 0.0;
 					for(int idIdx=0;idIdx<idList.size();idIdx++){
 						int activeID = idList.get(idIdx);
-						Environment env = getEnvironment(learner,seq,activeID);
+						Environment env = getEnvironment(tLocalLearner,tLocalSeq,activeID);
 						BTFDataLogger logs = getLogger();
 						env.addLogger(logs);
 						Simulation sim = env.newSimulation();
@@ -434,7 +437,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 						sim.finish();
 						BufferedBTFData loggedBTF = (BufferedBTFData)(logs.getBTFData());
 						ArrayList<Integer> activeIDRows = loggedBTF.rowIndexForID(activeID);
-						ArrayList<Integer> testingActiveIDRows = seq.rowIndexForID(activeID);
+						ArrayList<Integer> testingActiveIDRows = tLocalSeq.rowIndexForID(activeID);
 						int lastActiveIDRow = activeIDRows.get(activeIDRows.size()-1);
 						int lastTestingActiveIDRow = testingActiveIDRows.get(testingActiveIDRows.size()-1);
 						String predictedX = loggedBTF.loadColumn("xpos")[lastActiveIDRow];

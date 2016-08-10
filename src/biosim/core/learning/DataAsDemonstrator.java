@@ -195,10 +195,11 @@ public class DataAsDemonstrator{
 			// HashSet<RunSim> tasks = new HashSet<RunSim>();
 			for(int seqIdx=0;seqIdx<activeRealTrainingSequences.size();seqIdx++){
 				// Callable<ArrayListDataset> tmp = new RunSim(activeRealTrainingSequences.get(seqIdx),pspec,learner,null);
-				BTFData seq = activeRealTrainingSequences.get(seqIdx);
+				final BTFData seq = activeRealTrainingSequences.get(seqIdx);
 				final MersenneTwisterFast tLocalRNG = new MersenneTwisterFast(pspec.getRNG().nextLong());
-				LearnerAgent tLocalLearner = learner; //learner.deepCopy();
+				final LearnerAgent tLocalLearner = learner; //learner.deepCopy();
 				final int tLocalThreadID = seqIdx;
+				final ProblemSpec tLocalPspec = pspec;
 				Callable<ArrayListDataset> tmp = new Callable<ArrayListDataset>(){
 					public ArrayListDataset call(){
 						// System.out.println("THREAD ID "+tLocalThreadID+" START");
@@ -208,8 +209,8 @@ public class DataAsDemonstrator{
 						for(int idIdx=0;idIdx<idList.size();idIdx++){
 							int activeID = idList.get(idIdx);
 							ArrayList<Integer> activeIDRows = seq.rowIndexForID(activeID);
-							Environment env = pspec.getEnvironment(tLocalLearner,seq,activeID);
-							BTFDataLogger logs = pspec.getLogger();
+							Environment env = tLocalPspec.getEnvironment(tLocalLearner,seq,activeID);
+							BTFDataLogger logs = tLocalPspec.getLogger();
 							env.addLogger(logs);
 							Simulation sim = env.newSimulation();
 							// TODO: Come up with a way to get consistant simulations by supplying a single seed.
@@ -266,7 +267,7 @@ public class DataAsDemonstrator{
 								fixedRows.add(i);
 								trainIdxCounter++;
 							}
-							ProblemSpec.Dataset fixed_dataset = pspec.btf2array(logged_btf);
+							ProblemSpec.Dataset fixed_dataset = tLocalPspec.btf2array(logged_btf);
 							for(int i=0;i<fixedRows.size();i++){
 								int theIdx = fixedRows.get(i);
 								rv.inputs.add(fixed_dataset.features[theIdx]);

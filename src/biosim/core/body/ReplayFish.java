@@ -101,6 +101,8 @@ public class ReplayFish extends AbstractFish{
 	public int getNumProximitySensors(){return 0;}
 	public double getProximitySensorRange(){return 0.0;}
 
+	public boolean getPoiDir(MutableDouble2D rv, String name){return false;}
+
 	public boolean getSelfVelXYT(double[] rv){
 		if(rv == null || rv.length != 3) return false;
 		if(lastDir == null || lastPos == null) return false;
