@@ -1,6 +1,9 @@
 package biosim.app.fishreynolds;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -347,6 +350,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		ArrayList<PerformanceMetric> rv = new ArrayList<PerformanceMetric>();
 		rv.add(averageSequenceError(testSet,learner,threadPool));
 		rv.add(averageEndpointError(testSet,learner,threadPool));
+		rv.add(KLDivergence(testSet,learner,threadPool));
 		return rv;
 	}
 
@@ -355,6 +359,7 @@ public class ReynoldsFeatures implements ProblemSpec{
 		for(BTFData testBTF: testSet){
 			final Dataset testD = btf2array(testBTF);
 			final LearnerAgent tloc_learner = learner;
+			// final LearnerAgent tloc_learner = learner.deepCopy();
 			Callable<Double> tmp = new Callable<Double>(){
 				public Double call(){
 					double[] learnerOuts = new double[getNumOutputs()];
@@ -486,6 +491,135 @@ public class ReynoldsFeatures implements ProblemSpec{
 			// final double x=avgXEPErr,y=avgYEPErr,t=avgTEPErr;
 			public String toString(){return String.format("Average endpoint error per fish: x:%f y:%f t:%f, sum: %f",x,y,t,(x+y+t));}
 			public double value(){return x+y+t;}
+		};
+		// } catch(IOException ioe){
+		// 	throw new RuntimeException("[ReynoldsFeatures] IOException on averageEndpointError evaluation:"+ioe);
+		// }
+	}
+
+	private int computeBin(int numBins, double binMin, double binMax, double x){
+		double binWidth = (binMax-binMin)/(double)numBins;
+		if(x<binMin) return -1;
+		if(x>binMax) return numBins;
+		int foundBin = numBins;
+		for(int bin=0;bin<numBins;bin++){
+			if(x< ((bin+1)*binWidth)+binMin){
+				foundBin = bin;
+				break;
+			}
+		}
+		return foundBin;
+	}
+
+	public PerformanceMetric KLDivergence(ArrayList<BTFData> testSet, LearnerAgent learner, ExecutorService threadPool){
+		HashSet<Callable<Double[]>> tasks = new HashSet<Callable<Double[]>>();
+		final int numBins = 150;
+		final double binMin = -0.5;
+		final double binMax = 0.5;
+		final double EPS = Double.MIN_VALUE;
+		Double[] cvHist = new Double[numBins];
+		Double cvHistCount = 0.0;
+		for(int i=0;i<cvHist.length;i++) cvHist[i] = 0.0;
+		for(BTFData seq : testSet){
+			String[] seqDvel=null;
+			try{
+				seqDvel = seq.loadColumn("dvel");
+			} catch(IOException ioe){
+				threadPool.shutdown();
+				throw new RuntimeException("[ReynoldsFeatures] IOException reading dvel from CV sequences in KLDivergence: "+ioe);
+			}
+			for(int rowIdx=0;rowIdx<seqDvel.length;rowIdx++){
+				double xvel = Double.parseDouble(seqDvel[rowIdx].split(" ")[0]);
+				int bin = computeBin(numBins,binMin,binMax,xvel);
+				if(bin>=numBins || bin<0) continue;
+				cvHist[bin] = cvHist[bin]+1.0;
+				cvHistCount = cvHistCount+1.0;
+			}
+			final MersenneTwisterFast tLocalRNG = new MersenneTwisterFast(getRNG().nextLong());
+			final LearnerAgent tLocalLearner = learner;
+			final BTFData tLocalSeq = seq;
+			final int numSimSteps = seq.numUniqueFrames();
+			Callable<Double[]> tmp = new Callable<Double[]>(){
+				public Double[] call() throws IOException{
+					Double[] callableRv = new Double[numBins];
+					for(int i=0;i<callableRv.length;i++) callableRv[i]=0.0;
+					ArrayList<Integer> idList = tLocalSeq.getUniqueIDs();
+					Environment env = getEnvironment(tLocalLearner,tLocalSeq,null);
+					BTFDataLogger logs = getLogger();
+					env.addLogger(logs);
+					Simulation sim = env.newSimulation();
+					sim.random = tLocalRNG;
+					sim.start();
+					while(sim.schedule.getSteps()<numSimSteps){
+						boolean step_success=sim.schedule.step(sim);
+					}
+					sim.finish();
+					BufferedBTFData loggedBTF = (BufferedBTFData)(logs.getBTFData());
+					String[] loggedDvel = loggedBTF.loadColumn("dvel");
+					for(int rowIdx=0;rowIdx<loggedDvel.length;rowIdx++){
+						double xvel =Double.parseDouble(loggedDvel[rowIdx].split(" ")[0]);
+						int bin = computeBin(numBins,binMin,binMax,xvel);
+						if(bin >= numBins || bin<0) continue;
+						callableRv[bin] = callableRv[bin]+1.0;
+					}
+					return callableRv;
+				}
+			};
+			tasks.add(tmp);
+		}
+		List<Future<Double[]>> results = null;
+		double kldiv = -1.0;
+		try{
+			kldiv = 0.0;
+			Double[] learnedHist = new Double[numBins];
+			Double learnedHistCount = 0.0;
+			for(int i=0;i<learnedHist.length;i++) learnedHist[i]=0.0;
+			results=threadPool.invokeAll(tasks);
+			for(Future<Double[]> res : results){
+				Double[] tmpRv = res.get();
+				for(int i=0;i<learnedHist.length;i++){
+					learnedHist[i] = learnedHist[i]+tmpRv[i];
+					learnedHistCount = learnedHistCount+tmpRv[i];
+				}
+			}
+			String learnedHistStr = "";
+			String cvHistStr = "";
+			for(int i=0;i<numBins;i++){
+				learnedHist[i] = learnedHist[i]/learnedHistCount;
+				learnedHistStr = learnedHistStr+learnedHist[i]+" ";
+				cvHist[i] = cvHist[i]/cvHistCount;
+				cvHistStr = cvHistStr+cvHist[i]+" ";
+				// if(cvHist[i]==0.0) continue;
+				kldiv = kldiv + ((cvHist[i]+EPS)*(Math.log((cvHist[i]+EPS)) -Math.log((learnedHist[i]+EPS))));
+			}
+						// Log the actual histograms for the paper
+			File tmpCvFout = File.createTempFile("cvhist-",null,new File(System.getProperty("user.dir")));
+			File tmpLearnFout = File.createTempFile("learnhist-",null,new File(System.getProperty("user.dir")));
+			BufferedWriter cvWriter = new BufferedWriter(new FileWriter(tmpCvFout, true));
+			BufferedWriter learnWriter = new BufferedWriter(new FileWriter(tmpLearnFout, true));
+			System.out.println("Writing cv hist to ["+tmpCvFout+"]");
+			cvWriter.write(cvHistStr+"\n");
+			cvWriter.close();
+			System.out.println("Writing learned hist to ["+tmpLearnFout+"]");
+			learnWriter.write(learnedHistStr+"\n");
+			learnWriter.close();
+		} catch(InterruptedException ie){
+			threadPool.shutdown();
+			throw new RuntimeException("[ReynoldsFeatures] Evaluation interrupted in KLDivergence: "+ie);
+		} catch(ExecutionException ee){
+			threadPool.shutdown();
+			ee.printStackTrace();
+			throw new RuntimeException("[ReynoldsFeatures] ExecutionException in KLDivergence: "+ee);
+		} catch(IOException ioe){
+			threadPool.shutdown();
+			throw new RuntimeException("[ReynoldsFeatures] IOException in KLDivergence: "+ioe);
+		}
+		final double fixedKLDiv = kldiv;
+
+		return new PerformanceMetric(){
+			// final double x=avgXEPErr,y=avgYEPErr,t=avgTEPErr;
+			public String toString(){return String.format("K-L Divergence of x-velocity: %f",fixedKLDiv);}
+			public double value(){return fixedKLDiv;}
 		};
 		// } catch(IOException ioe){
 		// 	throw new RuntimeException("[ReynoldsFeatures] IOException on averageEndpointError evaluation:"+ioe);

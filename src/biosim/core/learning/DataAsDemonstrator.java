@@ -45,7 +45,31 @@ public class DataAsDemonstrator{
 	public static final double[][] aDoubleArray = new double[0][0];
 	// public static final ExecutorService pool = Executors.newFixedThreadPool(4);
 
-	public ArrayList<LearnerAgent> train(BTFSequences data, ProblemSpec pspec, int maxIterations, int maxThreads, File outputDirectory, double cvRatio){
+	public void kFoldCV(BTFSequences data, ProblemSpec pspec, int maxIterations, int maxThreads, File outputDirectory, int folds, boolean dontSaveLearner){
+		int numCVSeqs = data.sequences.size()/folds;
+		ArrayList<BTFData> allData = new ArrayList<BTFData>();
+		//shuffle data
+		Collections.shuffle(allData, new Random(pspec.getSeed()));
+		allData.addAll(data.sequences.values());
+		for(int i=0;i<folds;i++){
+			ArrayList<BTFData> cvData = new ArrayList<BTFData>();
+			ArrayList<BTFData> trainingData = new ArrayList<BTFData>();
+			for(int j=0;j<data.sequences.size();j++){
+				if(j>=i*numCVSeqs && j<(i+1)*numCVSeqs){
+					cvData.add(allData.get(j));
+				} else {
+					trainingData.add(allData.get(j));
+				}
+			}
+			File foldDir = new File(outputDirectory,"fold_"+i);
+			foldDir.mkdir();
+			System.out.println("Beginning fold "+i+" in "+foldDir);
+			train(trainingData,cvData,pspec,maxIterations,maxThreads,foldDir,dontSaveLearner);
+		}
+	}
+
+	// public ArrayList<LearnerAgent> train(BTFSequences data, ProblemSpec pspec, int maxIterations, int maxThreads, File outputDirectory, double cvRatio){
+	public ArrayList<LearnerAgent> train(ArrayList<BTFData> trainingData, ArrayList<BTFData> cvData, ProblemSpec pspec, int maxIterations, int maxThreads, File outputDirectory, boolean dontSaveLearner){
 		ArrayList<double[]> dad_training_inputs = new ArrayList<double[]>();
 		ArrayList<double[]> dad_training_outputs = new ArrayList<double[]>();
 		ArrayList<BTFData> activeRealTrainingSequences = new ArrayList<BTFData>();
@@ -57,6 +81,8 @@ public class DataAsDemonstrator{
 		int numThreads = Math.min(maxThreads,Runtime.getRuntime().availableProcessors());
 		// System.out.println("Threadpool size: "+numThreads);
 		final ExecutorService pool = Executors.newFixedThreadPool(numThreads);
+		
+		/* 		
 		List<BTFData> btfValues = new ArrayList<BTFData>(data.sequences.values());
 		//shuffle data 
 		Collections.shuffle(btfValues, new Random(pspec.getSeed()));
@@ -67,8 +93,11 @@ public class DataAsDemonstrator{
 		for(int i=0;i<numCVSeqs;i++){
 			cvData.add(seqIterator.next());
 		}
+		*/
+
 		//compute baseline learner
-		ListIterator<BTFData> baselineIterator = btfValues.listIterator(seqIterator.nextIndex());
+		// ListIterator<BTFData> baselineIterator = btfValues.listIterator(seqIterator.nextIndex());
+		ListIterator<BTFData> baselineIterator = trainingData.listIterator();
 		ArrayList<ProblemSpec.Dataset> baselineData = new ArrayList<ProblemSpec.Dataset>();
 		while(baselineIterator.hasNext()){
 			baselineData.add(pspec.btf2array(baselineIterator.next()));
@@ -102,13 +131,15 @@ public class DataAsDemonstrator{
 						perfFile.write(pm+"\n");
 					}
 					perfFile.close();
-					File saveTo = new File(outputDirectory,"learner_baseline.txt");
-					System.out.print("Writting baseline learner to: "+saveTo);
-					System.out.flush();
-					BufferedWriter saveFile = new BufferedWriter(new FileWriter(saveTo));
-					baselineLearner.saveParameters(saveFile);
-					saveFile.close();
-					System.out.println(" done");					
+					if(!dontSaveLearner){
+						File saveTo = new File(outputDirectory,"learner_baseline.txt");
+						System.out.print("Writting baseline learner to: "+saveTo);
+						System.out.flush();
+						BufferedWriter saveFile = new BufferedWriter(new FileWriter(saveTo));
+						baselineLearner.saveParameters(saveFile);
+						saveFile.close();
+					}
+					System.out.println(" done");
 				} catch(IOException ioe){
 					throw new RuntimeException("[DataAsDemonstrator] Failed writting baseline learner: "+ioe);					
 				}
@@ -117,7 +148,8 @@ public class DataAsDemonstrator{
 
 
 		//add initial data
-		activeRealTrainingSequences.add(seqIterator.next());
+		ListIterator<BTFData> dadIterator = trainingData.listIterator();
+		activeRealTrainingSequences.add(dadIterator.next());
 		boolean outOfData = false;
 		int numRealDataPoints;
 
@@ -131,8 +163,8 @@ public class DataAsDemonstrator{
 			System.out.println("Beginning iteration "+iterationCounter);
 			//1. Train predictor
 			//1.0 Add training data until it balances the d-a-d data, or until we run out
-			while(numRealDataPoints < dad_training_inputs.size() && seqIterator.hasNext()){
-				BTFData seqHolder = seqIterator.next();
+			while(numRealDataPoints < dad_training_inputs.size() && dadIterator.hasNext()){
+				BTFData seqHolder = dadIterator.next();
 				try{
 					numRealDataPoints += seqHolder.loadColumn("id").length;
 				} catch(IOException ioe){
@@ -140,7 +172,7 @@ public class DataAsDemonstrator{
 				}
 				activeRealTrainingSequences.add(seqHolder);
 			}
-			if(!seqIterator.hasNext()) outOfData = true;
+			if(!dadIterator.hasNext()) outOfData = true;
 			//1.1 Make a combined double[][], and put the d-a-d data into it
 			int totalRows = numRealDataPoints+dad_training_inputs.size();
 			int fCols = pspec.getNumFeatures();
@@ -179,12 +211,14 @@ public class DataAsDemonstrator{
 						perfFile.write(pm+"\n");
 					}
 					perfFile.close();
-					File saveTo = new File(outputDirectory,"learner_"+iterationCounter+".txt");
-					System.out.print("Writting learner to: "+saveTo);
-					System.out.flush();
-					BufferedWriter saveFile = new BufferedWriter(new FileWriter(saveTo));
-					learner.saveParameters(saveFile);
-					saveFile.close();
+					if(!dontSaveLearner){
+						File saveTo = new File(outputDirectory,"learner_"+iterationCounter+".txt");
+						System.out.print("Writting learner to: "+saveTo);
+						System.out.flush();
+						BufferedWriter saveFile = new BufferedWriter(new FileWriter(saveTo));
+						learner.saveParameters(saveFile);
+						saveFile.close();
+					}
 					System.out.println(" done");
 				} catch(IOException ioe){
 					throw new RuntimeException("[DataAsDemonstrator] Failed writting learner: "+ioe);
@@ -318,8 +352,9 @@ public class DataAsDemonstrator{
 			Properties cmdlnDefaults = new Properties(pspec.defaults());
 			cmdlnDefaults.setProperty("--iterations","-1");
 			cmdlnDefaults.setProperty("--threads",new Integer(Integer.MAX_VALUE).toString());
-			cmdlnDefaults.setProperty("--cvRatio","0.1");
+			cmdlnDefaults.setProperty("--cvFolds","10");
 			cmdlnDefaults.setProperty("--learner","KNN");
+			cmdlnDefaults.setProperty("--dontSaveLearner","false");
 			Properties cmdlnArgs = ArgsToProps.parse(args,cmdlnDefaults);
 			pspec.configure(cmdlnArgs);
 			DataAsDemonstrator dad = new DataAsDemonstrator();
@@ -333,7 +368,7 @@ public class DataAsDemonstrator{
 			// File outputDirectory = null;
 			File outputDirectory = (cmdlnArgs.getProperty("--output")==null)?null:new File(cmdlnArgs.getProperty("--output"));
 			// double cvRatio = 0.1;
-			double cvRatio = Double.parseDouble(cmdlnArgs.getProperty("--cvRatio"));
+			int cvFolds = Integer.parseInt(cmdlnArgs.getProperty("--cvFolds"));
 			pspec.learner = cmdlnArgs.getProperty("--learner");
 			String learnerPropFile = cmdlnArgs.getProperty("--learnerSettings");
 			Properties learnerSettings = new Properties(cmdlnArgs);
@@ -381,7 +416,8 @@ public class DataAsDemonstrator{
 			} catch(IOException ioe){
 				throw new RuntimeException("[DataAsDemonstrator] Failed to store settings: "+ioe);
 			}
-			ArrayList<LearnerAgent> learners = dad.train(seqs,pspec,maxIterations,maxThreads,outputDirectory,cvRatio);
+			// ArrayList<LearnerAgent> learners = dad.train(seqs,pspec,maxIterations,maxThreads,outputDirectory,cvRatio);
+			dad.kFoldCV(seqs,pspec,maxIterations,maxThreads,outputDirectory,cvFolds,Boolean.parseBoolean(cmdlnArgs.getProperty("--dontSaveLearner")));
 			// System.out.println("#of models: "+learners.size());
 			System.out.println("Free memory: " + Runtime.getRuntime().freeMemory());
 			System.out.println("Allocated memory: "+ Runtime.getRuntime().totalMemory());

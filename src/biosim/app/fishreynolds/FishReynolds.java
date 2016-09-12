@@ -23,10 +23,13 @@ import biosim.core.util.FastKNN;
 import sim.util.MutableDouble2D;
 import sim.util.Double3D;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.BufferedReader;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Properties;
@@ -272,8 +275,25 @@ public class FishReynolds implements Agent{
 				FishLRLogger logger = null;
 				logger = new FishLRLogger(new File(cmdlnArgs.getProperty("--logging")));
 				logger.setSigmas(reynoldsSpec.sep_sigma,reynoldsSpec.ori_sigma,reynoldsSpec.coh_sigma,reynoldsSpec.obs_sigma);
-				env.addLogger(logger);				
+				env.addLogger(logger);
 			}
+			String settingsFile = cmdlnArgs.getProperty("--settingsFile");
+			try{
+				OutputStream outstrm = System.out;
+				if(settingsFile != null){
+					outstrm = new BufferedOutputStream(new FileOutputStream(new File(settingsFile)));
+				}
+				String settingsComments = "FishReynolds settings\n";
+				settingsComments += "Arguments: ";
+				for(int i=0;i<args.length;i++){
+					settingsComments += args[i]+" ";
+				}
+				cmdlnArgs.store(outstrm,settingsComments);
+				outstrm.flush();
+			} catch(IOException ioe){
+				throw new RuntimeException("[DataAsDemonstrator] Failed to store settings: "+ioe);
+			}
+
 			if(cmdlnArgs.getProperty("--gui").equalsIgnoreCase("true")){
 				Simulation sim = env.newSimulation();
 				GUISimulation gui = new GUISimulation(sim);

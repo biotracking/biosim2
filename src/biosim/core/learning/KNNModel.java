@@ -146,9 +146,9 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 		switch(method){
 			case SAMPLE:
 				int n_index;
-				// synchronized(random){
+				synchronized(getRandom()){
 					n_index = getRandom().nextInt(getK());
-				// }
+				}
 				// System.out.println(n_index+" "+neighbors[0].length+" "+neighbors.length+" "+outputs.length);
 				System.arraycopy(neighbors[n_index],0,outputs,0,outputs.length);
 				break;
@@ -184,7 +184,10 @@ public class KNNModel implements LearnerAgent, RNGConsumer{
 					sampleVec[i] = runningSum+kernel(sampleDists[i],getBandwidth());
 					runningSum = sampleVec[i];
 				}
-				double p = getRandom().nextDouble();
+				double p;
+				synchronized(getRandom()){
+					p = getRandom().nextDouble();
+				}
 				int selectedNeighbor = 0;
 				while(p>sampleVec[selectedNeighbor] && selectedNeighbor<(getK()-1)) selectedNeighbor++;
 				System.arraycopy(neighbors[selectedNeighbor],0,outputs,0,outputs.length);

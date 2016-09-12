@@ -163,7 +163,10 @@ public class BTFSequences{
 				System.out.println("Loading btf to memory");
 				bbtf.loadBuffer();
 				System.out.println("Done");
-				splitIntoSequences(saveDir,bbtf, minFramesPerSeq);
+				if(minFramesPerSeq >= 0)
+					splitIntoSequences(saveDir,bbtf, minFramesPerSeq);
+				else
+					splitIntoSequencesFixedFPS(saveDir,bbtf,-minFramesPerSeq);
 			} catch(IOException ioe){
 				throw new RuntimeException("[BTFSequences] Error splitting into sequences: "+ioe);
 			}
